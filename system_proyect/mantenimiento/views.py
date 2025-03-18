@@ -10,7 +10,7 @@ from .models import MaintenanceRecord
 from .forms import MaintenanceRecordForm
 
 # URL pública para el logo
-PUBLIC_IMAGE_URL = "https://soporte.ana-hn.org:437/static/inventory/img/ana.jpg"
+PUBLIC_IMAGE_URL = ""
 
 @login_required
 def maintenance_dashboard(request):

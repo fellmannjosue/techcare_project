@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario de Sponsors</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .checkbox-group label {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 class="text-center">Formulario de Sponsors</h2>
+
+    <!-- Buscadores -->
+    <div class="row">
+        <div class="col-md-4">
+            <label for="search_lastname">Buscar por Apellido</label>
+            <select id="search_lastname" class="form-control">
+                <option value="">Seleccione un apellido</option>
+                {% for sponsor in sponsors %}
+                    <option value="{{ sponsor.id }}">{{ sponsor.last_name_1 }} {{ sponsor.last_name_2 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="search_name">Buscar por Nombre</label>
+            <select id="search_name" class="form-control">
+                <option value="">Seleccione un nombre</option>
+                {% for sponsor in sponsors %}
+                    <option value="{{ sponsor.id }}">{{ sponsor.first_name_1 }} {{ sponsor.first_name_2 }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="search_id">Buscar por ID</label>
+            <select id="search_id" class="form-control">
+                <option value="">Seleccione un ID</option>
+                {% for sponsor in sponsors %}
+                    <option value="{{ sponsor.id }}">{{ sponsor.id }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-4">
+                <label>Persona ID</label>
+                <input type="text" class="form-control" name="persona_id">
+            </div>
+            <div class="col-md-4">
+                <label>Título</label>
+                {{ form.title }}
+            </div>
+            <div class="col-md-4">
+                <label>Dirigido A</label>
+                {{ form.directed }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Apellido 1</label>
+                {{ form.last_name_1 }}
+            </div>
+            <div class="col-md-4">
+                <label>Apellido 2</label>
+                {{ form.last_name_2 }}
+            </div>
+            <div class="col-md-4">
+                <label>Nombre 1</label>
+                {{ form.first_name_1 }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Nombre 2</label>
+                {{ form.first_name_2 }}
+            </div>
+            <div class="col-md-4">
+                <label>Unión Libre</label>
+                {{ form.free_union }}
+            </div>
+            <div class="col-md-4">
+                <label>Contacto</label>
+                {{ form.contact }}
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <label>Ciudad</label>
+                <select id="city" name="city" class="form-control">
+                    <option value="">Seleccione una ciudad</option>
+                    {% for city in cities %}
+                        <option value="{{ city.id }}" data-zip="{{ city.zip_code }}" data-country="{{ city.country }}">{{ city.name }} ({{ city.zip_code }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label>Código Postal</label>
+                <input type="text" class="form-control" id="postal_code" readonly>
+            </div>
+            <div class="col-md-4">
+                <label>País</label>
+                <input type="text" class="form-control" id="country" readonly>
+            </div>
+        </div>
+
+        <!-- Checkboxes -->
+        <div class="row">
+            <div class="col-md-6 checkbox-group">
+                <label>{{ form.deceased }} Fallecido</label>
+                <label>{{ form.deactivated }} Desactivado</label>
+                <label>{{ form.bad_address }} Dirección Incorrecta</label>
+                <label>{{ form.private }} Privado</label>
+                <label>{{ form.godfather }} Bienhechor</label>
+                <label><input type="checkbox" id="padrino_checkbox"> Padrino</label>
+            </div>
+            <div class="col-md-6 checkbox-group">
+                <label>{{ form.member }} Miembro</label>
+                <label>{{ form.visitor }} Visitante</label>
+                <label>{{ form.former_volunteer }} Ex Voluntario</label>
+                <label>{{ form.member_jd }} Miembro JD</label>
+                <label>Puesto</label>
+            </div>
+        </div>
+
+        <!-- Botones -->
+        <div class="text-center mt-4">
+            <button type="button" id="godfatherBtn" class="btn btn-info" disabled onclick="redirectWithAlert('{% url 'sponsors:add_godfather' %}', 'Godfather')">Godfather</button>
+            <button type="button" class="btn btn-warning" onclick="redirectWithAlert('{% url 'sponsors:add_income' %}', 'Income')">Income</button>
+            <button type="button" class="btn btn-primary" onclick="redirectWithAlert('{% url 'sponsors:add_correspondence' %}', 'Correspondence')">Correspondence</button>
+            <button type="submit" class="btn btn-success">Guardar Sponsor</button>
+            <a href="{% url 'sponsors:sponsors_dashboard' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function redirectWithAlert(url, section) {
+        Swal.fire({
+            title: "Redirigiendo...",
+            text: "Cargando " + section,
+            icon: "info",
+            showConfirmButton: false,
+            timer: 1200
+        }).then(() => {
+            window.location.href = url;
+        });
+    }
+
+    document.getElementById("padrino_checkbox").addEventListener("change", function() {
+        document.getElementById("godfatherBtn").disabled = !this.checked;
+    });
+
+    document.getElementById("city").addEventListener("change", function() {
+        let selected = this.options[this.selectedIndex];
+        document.getElementById("postal_code").value = selected.getAttribute("data-zip");
+        document.getElementById("country").value = selected.getAttribute("data-country");
+    });
+</script>
+
+</body>
+</html>

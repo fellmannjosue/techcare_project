@@ -9,4 +9,5 @@ urlpatterns = [
     path('mantenimiento/', include('mantenimiento.urls')),
     path('citas_billingue/', include('citas_billingue.urls')),
     path('citas_colegio/', include('citas_colegio.urls')),
+    path('sponsors/', include ('sponsors.urls')),
 ]

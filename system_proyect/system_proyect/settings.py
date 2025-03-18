@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'mantenimiento',
     'citas_billingue',
     'citas_colegio',
+    'sponsors'
 ]
 
 MIDDLEWARE = [
@@ -69,17 +70,17 @@ WSGI_APPLICATION = 'system_proyect.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
+# DATABASE
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'system_proyect',               # El nombre de la BD que creaste
-        'USER': 'root',              # Usuario MySQL
-        'PASSWORD': '',  # Contraseña
-        'HOST': '127.0.0.1',               # O la IP de tu servidor MySQL
-        'PORT': '3306',                    # Puerto de MySQL (por defecto 3306)
+        'NAME': os.getenv('DB_NAME', 'sponsors2'),
+        'USER': os.getenv('DB_USER', 'admin3'),
+        'PASSWORD': os.getenv('DB_PASSWORD', 'Test-12345'),
+        'HOST': os.getenv('DB_HOST', '192.168.10.6'),
+        'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
-
 # LOGIN CONFIGURATION
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/accounts/menu/'
@@ -131,12 +132,12 @@ USE_TZ = True
 # Archivos estáticos
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-    BASE_DIR / 'helpdesk/static',
-    BASE_DIR / 'inventory/static',
-    BASE_DIR / 'maintenance/static',
-    BASE_DIR / 'accounts/static',
+    BASE_DIR / "system_proyect/helpdesk/static",
+    BASE_DIR / "system_proyect/inventory/static",
+    BASE_DIR / "system_proyect/maintenance/static",
+    BASE_DIR / "system_proyect/static",
 ]
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
