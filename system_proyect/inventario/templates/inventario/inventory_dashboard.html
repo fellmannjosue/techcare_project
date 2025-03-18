@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventariado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+        .logo-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-title img {
+            width: 80px;
+            height: auto;
+        }
+        .btn-submit {
+            background-color: #007bff;
+            color: #fff;
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+        }
+        .table-container {
+            max-width: 800px;
+            margin: 30px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="form-container">
+            <div class="logo-title">
+                <img src="{% static 'inventario/img/ana-transformed.png' %}" alt="Logo">
+                <h2>Sistema de Inventariado</h2>
+            </div>
+                       
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_category" class="form-label">Categoría:</label>
+                    <select name="category" id="id_category" class="form-select">
+                        <option value="Red y Seguridad">Red y Seguridad</option>
+                        <option value="Sistema de comunicación">Sistema de comunicación</option>
+                        <option value="Proyección audiovisual">Proyección audiovisual</option>
+                        <option value="Equipos de informática">Equipos de informática</option>
+                        <option value="Pantallas digitales">Pantallas digitales</option>
+                        <option value="Equipos de impresión">Equipos de impresión</option>
+                        <option value="Enrutadores de red">Enrutadores de red</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_details" class="form-label">Detalles:</label>
+                    <input type="text" name="details" id="id_details" class="form-control">
+                </div>
+
+                <button type="submit" class="btn btn-submit">Guardar</button>
+            </form>
+        </div>
+
+        <div class="table-container">
+            <h3 class="text-center">Lista de Ítems del Inventario</h3>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Categoría</th>
+                        <th>Detalles</th>
+                        <th>Fecha</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.id }}</td>
+                        <td>{{ item.category }}</td>
+                        <td>{{ item.details }}</td>
+                        <td>{{ item.created_at }}</td>
+                        <td>
+                            <a href="{% url 'download_item_pdf' item.id %}" class="btn btn-primary btn-sm">
+                                Descargar PDF
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay ítems registrados.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+        </div>
+
+        <div class="container mt-5">
+            <!-- Contenido del sistema de inventariado -->
+            <a href="{% url 'menu' %}" class="btn btn-secondary mt-3">
+                <img src="{% static 'inventario/img/regresar.png' %}" alt="Regresar" style="width: 24px; height: 24px; margin-right: 5px;">
+                Regresar al Menú Principal
+            </a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,156 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ficha de Mantenimiento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: auto;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .logo-title {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo-title img {
+            width: 100px;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            width: 100%;
+        }
+        .table-container {
+            max-width: 1000px;
+            margin: 40px auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <!-- Formulario para Ficha de Mantenimiento -->
+        <div class="form-container">
+            <div class="logo-title">
+                <img src="{% static 'mantenimiento/img/ana.jpg' %}" alt="Logo">
+                <h2>Ficha de Mantenimiento</h2>
+            </div>
+           
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="id_equipment_name" class="form-label">Nombre del Equipo:</label>
+                    <input type="text" name="equipment_name" id="id_equipment_name" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="id_problem_description" class="form-label">Descripción del Problema:</label>
+                    <textarea name="problem_description" id="id_problem_description" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="id_technician" class="form-label">Técnico Responsable:</label>
+                    <select name="technician" id="id_technician" class="form-select">
+                        <option value="Técnico 1">Técnico 1</option>
+                        <option value="Técnico 2">Técnico 2</option>
+                        <option value="Técnico 3">Técnico 3</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="id_maintenance_type" class="form-label">Tipo de Mantenimiento:</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="maintenance_type" id="preventivo" value="Preventivo" class="form-check-input" required>
+                            <label class="form-check-label" for="preventivo">Preventivo</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="maintenance_type" id="correctivo" value="Correctivo" class="form-check-input" required>
+                            <label class="form-check-label" for="correctivo">Correctivo</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="maintenance_type" id="predictivo" value="Predictivo" class="form-check-input" required>
+                            <label class="form-check-label" for="predictivo">Predictivo</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="id_maintenance_date" class="form-label">Fecha de Mantenimiento:</label>
+                    <input type="date" name="maintenance_date" id="id_maintenance_date" class="form-control">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="id_maintenance_status" class="form-label">Estado del Mantenimiento:</label>
+                    <div>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="maintenance_status" id="pendiente" value="Pendiente" class="form-check-input" required>
+                            <label class="form-check-label" for="pendiente">Pendiente</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="maintenance_status" id="en_proceso" value="En Proceso" class="form-check-input" required>
+                            <label class="form-check-label" for="en_proceso">En Proceso</label>
+                        </div>
+                        
+                        <div class="form-check form-check-inline">
+                            <input type="radio" name="maintenance_status" id="completado" value="Completado" class="form-check-input" required>
+                            <label class="form-check-label" for="completado">Completado</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="id_activities_done" class="form-label">Actividades Realizadas:</label>
+                    <textarea name="activities_done" id="id_activities_done" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="id_observations" class="form-label">Observaciones:</label>
+                    <textarea name="observations" id="id_observations" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar Ficha</button>
+            </form>
+        </div>
+
+        <!-- Lista de Fichas Registradas -->
+        <div class="table-container">
+            <h3 class="text-center">Lista de Fichas Registradas</h3>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre del Equipo</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td>ID_ANA-{{ record.id|stringformat:"02d" }}</td>
+                        <td>{{ record.equipment_name }}</td>
+                        <td>{{ record.maintenance_date }}</td>
+                        <td>{{ record.maintenance_status }}</td>
+                        <td>
+                            <a href="{% url 'download_maintenance_pdf' record.id %}" class="btn btn-sm btn-secondary">Descargar PDF</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay fichas registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="container mt-5">
+            <!-- Contenido de la ficha de mantenimiento -->
+            <a href="{% url 'menu' %}" class="btn btn-secondary mt-3">
+                <img src="{% static 'mantenimiento/img/regresar.png' %}" alt="Regresar" style="width: 24px; height: 24px; margin-right: 5px;">
+                Regresar al Menú Principal
+            </a>
+        </div> 
+    </div>
+</body>
+</html>

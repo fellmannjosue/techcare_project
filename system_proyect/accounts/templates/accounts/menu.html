@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Principal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .logo {
+            margin-bottom: 20px;
+        }
+        .menu-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            text-align: center;
+        }
+        .menu-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .menu-item img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 10px;
+        }
+        .menu-item span {
+            font-size: 16px;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+            color: #666;
+        }
+        .logout-container {
+            display: none;
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+        }
+        .spinner {
+            margin: 0 auto 20px;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .message {
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+    <script>
+        function navigateTo(url) {
+            window.location.href = url;
+        }
+
+        function logoutAnimation(url) {
+            document.querySelector('.menu-grid').style.display = 'none';
+            document.querySelector('.logout-container').style.display = 'flex';
+
+            setTimeout(() => {
+                window.location.href = url;
+            }, 2000);
+        }
+    </script>
+</head>
+<body>
+    <div class="logo">
+        <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo TechCare" width="120">
+    </div>
+
+    <h2 class="menu-title">Dashboard Principal</h2>
+
+    <div class="menu-grid">
+        <div class="menu-item" onclick="window.location.href='{% url 'technician_dashboard' %}'">
+            <img src="{% static 'accounts/img/helpdesk.png' %}" alt="Dashboard Técnico">
+            <span>Sistema de Tickets</span>
+        </div>
+        <div class="menu-item" onclick="window.location.href='{% url 'inventory_dashboard' %}'">
+            <img src="{% static 'accounts/img/inventario.png' %}" alt="Inventario">
+            <span>Inventario</span>
+        </div>
+        <div class="menu-item" onclick="window.location.href='{% url 'maintenance_dashboard' %}'">
+            <img src="{% static 'accounts/img/mantenimiento.png' %}" alt="Ficha de Mantenimiento">
+            <span>Ficha de Mantenimiento</span>
+        </div>
+        <div class="menu-item" onclick="window.location.href='{% url 'dashboard_bl' %}'">
+            <img src="{% static 'accounts/img/cita.png' %}" alt="Citas BL">
+            <span>Citas BL</span>
+        </div>
+        <div class="menu-item" onclick="window.location.href='{% url 'dashboard_col' %}'">
+            <img src="{% static 'accounts/img/cita.png' %}" alt="Citas COL/VOC">
+            <span>Citas COL/VOC</span>
+        </div>
+        <div class="menu-item" onclick="window.location.href='{% url 'logout' %}'">
+            <img src="{% static 'accounts/img/cerrar-sesion.png' %}" alt="Cerrar Sesión">
+            <span>Cerrar Sesión</span>
+        </div>
+    </div>
+    
+    </div>
+    
+    <div class="logout-container">
+        <div class="spinner"></div>
+        <p class="message">Cerrando sesión...</p>
+    </div>
+
+    <div class="footer">
+        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+    </div>
+</body>
+</html>

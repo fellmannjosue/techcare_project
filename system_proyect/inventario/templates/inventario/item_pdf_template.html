@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Tarjeta de Inventario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 400px;
+            text-align: center;
+        }
+        .logo {
+            margin-bottom: 20px;
+        }
+        .logo img {
+            max-width: 100px;
+        }
+        .details p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="logo">
+            <img src="{% static 'inventory/img/ana-transformed.png' %}" alt="Logo">
+        </div>
+        <h2>Tarjeta de Inventario</h2>
+        <div class="details">
+            <p><strong>ID:</strong> {{ item.id }}</p>
+            <p><strong>Categoría:</strong> {{ item.category }}</p>
+            <p><strong>Detalles:</strong> {{ item.details }}</p>
+            <p><strong>Fecha:</strong> {{ item.created_at }}</p>
+        </div>
+    </div>
+</body>
+</html>
