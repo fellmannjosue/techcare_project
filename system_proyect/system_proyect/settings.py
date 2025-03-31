@@ -1,24 +1,23 @@
-
 import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-# Cargar las variables del archivo .env
+# 1. Cargar las variables del archivo .env
 load_dotenv()
 
-# Base directory path
+# 2. Paths y base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECRET_KEY y DEBUG con variables de entorno
+# 3. Django Secret Key & Debug
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-b(q9vw0wc#j2@pxe-kl4+(nbi0p4lth&t&nc7vy2a-*m01v!fq')
-DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = (os.getenv('DJANGO_DEBUG', 'True') == 'True')
 
+# 4. Hosts permitidos
 ALLOWED_HOSTS = []
 
-
-# Application definition
-
+# 5. Aplicaciones instaladas
 INSTALLED_APPS = [
+    # Apps de Django
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -26,16 +25,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-      # Apps personalizadas
+    # Apps personalizadas
     'accounts',
     'tickets',
     'inventario',
     'mantenimiento',
     'citas_billingue',
     'citas_colegio',
-    'sponsors'
+    'sponsors',
+    'menu',
 ]
 
+# 6. Middlewares
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -46,12 +47,15 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# 7. Root URL y WSGI
 ROOT_URLCONF = 'system_proyect.urls'
+WSGI_APPLICATION = 'system_proyect.wsgi.application'
 
+# 8. Configuración de plantillas
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],  # Plantillas globales
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,13 +68,15 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'system_proyect.wsgi.application'
+# 9. Ajustes de Admin
+ADMIN_SITE_URL = '/accounts/login/'
 
+# 10. Configuración de sesiones e inactividad
+SESSION_COOKIE_AGE = 600  # 10 minutos
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-
-# DATABASE
+# 11. Configuración de la base de datos (MySQL)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -81,12 +87,13 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT', '3306'),
     }
 }
-# LOGIN CONFIGURATION
+
+# 12. Configuración de login y logout
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/accounts/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# EMAIL CONFIGURATION
+# 13. Configuración de correo electrónico
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -95,9 +102,7 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'techcare.app2024@gmail.com')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'dvex nxbf quaj nxtc')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
-# Password validation
-# https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
-
+# 14. Validación de contraseñas
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -113,23 +118,13 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
-# Internationalization
-# https://docs.djangoproject.com/en/5.1/topics/i18n/
-
+# 15. Internacionalización
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
-# Archivos estáticos
+# 16. Archivos estáticos (CSS, JS, Imágenes)
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / "system_proyect/helpdesk/static",
@@ -138,7 +133,5 @@ STATICFILES_DIRS = [
     BASE_DIR / "system_proyect/static",
 ]
 
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
+# 17. Primary key por defecto
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

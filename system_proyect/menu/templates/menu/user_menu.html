@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Menú Principal</title>
+
+  <!-- Estilos base: fuente, colores, etc. -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f5f7fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h1 {
+      margin-bottom: 40px;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .menu-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Cada botón como una tarjeta */
+    .menu-button {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background-color: #ffffff;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 350px;
+      padding: 15px;
+      margin: 15px 0;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+      text-decoration: none;
+      justify-content: center;
+    }
+    .menu-button:hover {
+      transform: translateY(-3px);
+    }
+
+    /* Ícono dentro del botón */
+    .menu-button img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+    }
+
+    /* Diferentes colores para cada botón */
+    .ticket-btn {
+      background-color: #4f46e5;
+      color: #fff;
+    }
+    .cita-btn {
+      background-color: #16a34a;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h1>Menú Principal</h1>
+  <div class="menu-container">
+    <!-- Botón para crear Ticket -->
+    <button class="menu-button ticket-btn" onclick="handleCreateTicket()">
+      <img src="{% static 'menu/img/tickets.png' %}" alt="Icono Ticket">
+      <span>Crear Ticket</span>
+    </button>
+
+    <!-- Botón para crear Cita -->
+    <button class="menu-button cita-btn" onclick="handleCreateCita()">
+      <img src="{% static 'menu/img/cita.png' %}" alt="Icono Cita">
+      <span>Crear Cita</span>
+    </button>
+  </div>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script>
+    function handleCreateTicket() {
+      Swal.fire({
+        title: "¿Eres empleado de la asociación?",
+        showDenyButton: true,
+        confirmButtonText: "Sí",
+        denyButtonText: "No",
+        icon: "question"
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Si es empleado -> Login
+          window.location.href = "/accounts/user_login/";
+        } else if (result.isDenied) {
+          // Si no -> Abrir correo para pedir permisos
+          window.open("mailto:admin2@ana-hn.org?subject=Solicitud%20de%20Acceso%20para%20Crear%20Ticket");
+        }
+      });
+    }
+
+    function handleCreateCita() {
+      Swal.fire({
+        title: "¿De qué área es la cita?",
+        input: "select",
+        inputOptions: {
+          billingue: "Billingüe",
+          colegio: "Colegio/Vocacional"
+        },
+        inputPlaceholder: "Seleccione un área",
+        showCancelButton: true
+      }).then((result) => {
+        if (result.isConfirmed) {
+          if (result.value === "billingue") {
+            window.location.href = "/citas_billingue/user-data_bl/";
+          } else if (result.value === "colegio") {
+            window.location.href = "/citas_colegio/user-data_col/";
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

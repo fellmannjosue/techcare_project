@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 600px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            color: #007bff;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .content {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #777;
+            text-align: center;
+        }
+        .footer p {
+            margin: 0;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            Soporte Técnico de Nuevo Amanecer
+        </div>
+        <div class="content">
+            <p><strong>Estimado Usuario:</strong></p>
+            <p>Se ha recibido su solicitud de soporte con éxito. Pronto será atendido por nuestro equipo técnico.</p>
+            <p><strong>Nombre:</strong> {{ ticket.name }}</p>
+            <p><strong>Grado:</strong> {{ ticket.grade }}</p>
+            <p><strong>Descripción del Problema:</strong> {{ ticket.description }}</p>
+        </div>
+        <div class="footer">
+            <p>Atentamente,</p>
+            <p class="highlight">Equipo de Soporte Técnico de Nuevo Amanecer</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Nueva Cita Programada</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            background-color: #f9f9f9;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .signature {
+            margin-top: 30px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <p>Estimado/a Coordinador/a,</p>
+
+        <p>
+            Le informamos que el padre del estudiante <span class="highlight">{{ appointment.student_name }}</span>
+            del grado <span class="highlight">{{ appointment.grade }}</span> ha solicitado una cita con el maestro 
+            <span class="highlight">{{ appointment.teacher }}</span> de la clase de 
+            <span class="highlight">{{ appointment.subject }}</span>. La solicitud se realiza para conocer 
+            <span class="highlight">{{ appointment.reason }}</span>.
+        </p>
+
+        <p>
+            La cita está programada para el día <span class="highlight">{{ appointment.date }}</span> a las 
+            <span class="highlight">{{ appointment.time }}</span>.
+        </p>
+
+        <p class="signature">
+            Atentamente,<br>
+            {{ appointment.parent_name }}<br>
+            Tel: {{ appointment.phone }}
+        </p>
+    </div>
+</body>
+</html>

@@ -1,15 +1,40 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
     <title>Dashboard - Citas</title>
+    <style>
+        .delete-btn {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            transform: scale(1.3);
+            opacity: 0.8;
+        }
+
+        .delete-btn img {
+            width: 32px;
+            height: 32px;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
     <h2 class="text-center mb-4">Citas Registradas</h2>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
 
     {% if appointments %}
         <table class="table table-bordered table-hover">
@@ -25,6 +50,7 @@
                     <th>Teléfono</th>
                     <th>Fecha</th>
                     <th>Hora</th>
+                    <th>Eliminar</th>
                 </tr>
             </thead>
             <tbody>
@@ -40,6 +66,14 @@
                     <td>{{ appointment.phone }}</td>
                     <td>{{ appointment.date|date:"d/m/Y" }}</td>
                     <td>{{ appointment.time|time:"H:i" }}</td>
+                    <td class="text-center">
+                        <form method="POST" action="{% url 'delete_appointment_bl' appointment.id %}">
+                            {% csrf_token %}
+                            <button class="delete-btn" type="submit" onclick="return confirm('¿Estás seguro de eliminar esta cita?');">
+                                <img src="{% static 'citas_billingue/img/eliminar.png' %}" alt="Eliminar">
+                            </button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -50,14 +84,12 @@
         </div>
     {% endif %}
 
-    <div class="container mt-5">
-        <!-- Contenido del sistema de inventariado -->
-        <a href="{% url 'menu' %}" class="btn btn-secondary mt-3">
-            <img src="{% static 'citas_billingue/img/regresar.png' %}" alt="Regresar" style="width: 24px; height: 24px; margin-right: 5px;">
+    <div class="mt-4 text-center">
+        <a href="{% url 'menu' %}" class="btn btn-secondary">
+            <img src="{% static 'citas_billingue/img/regresar.png' %}" alt="Regresar" width="24" height="24" class="me-2">
             Regresar al Menú Principal
         </a>
     </div>
-
 </div>
 </body>
 </html>

@@ -1,9 +1,47 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import Appointment_col, Teacher_col, Grade_col, Subject_col, Relationship_col, Schedule_col
 from .forms import AppointmentForm
 from datetime import datetime, timedelta
+
+# 📬 IMPORTS PARA EL ENVÍO DE CORREOS
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+
+
+# ================================================
+# ============ FUNCIÓN DE NOTIFICACIÓN ===========
+# ================================================
+def enviar_notificacion_cita_col(appointment):
+    """
+    Envía un correo al coordinador con los detalles de la cita del colegio.
+    """
+    subject = "Nueva Cita Colegio Programada"
+    to_email = ["coordinacion_col@ana-hn.org"]  # Ajustar destinatarios reales
+
+    context = {
+        'appointment': appointment,
+    }
+
+    html_content = render_to_string("email/nueva_cita_col.html", context)
+    text_content = strip_tags(html_content)
+
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        from_email='coordinacion_col@ana-hn.org',  # Ajustar si es necesario
+        to=to_email
+    )
+    email.attach_alternative(html_content, "text/html")
+    email.send()
+
+
+# ================================================
+# ============= VISTAS PRINCIPALES ===============
+# ================================================
 
 def user_data_col(request):
     """Primera ventana: captura de datos del usuario."""
@@ -26,6 +64,7 @@ def user_data_col(request):
     return render(request, 'citas_colegio/user_data_col.html', {
         'relationships': Relationship_col.objects.all(),
     })
+
 
 def motivo_col(request):
     """Segunda ventana: selección del motivo y detalles."""
@@ -66,6 +105,7 @@ def motivo_col(request):
         'grades': Grade_col.objects.all(),
     })
 
+
 def select_date_col(request, appointment_id):
     """Tercera ventana: selección de fecha y hora."""
     appointment = get_object_or_404(Appointment_col, id=appointment_id)
@@ -82,6 +122,10 @@ def select_date_col(request, appointment_id):
             appointment.email = email
             appointment.phone = phone
             appointment.save()
+
+            # ✅ Enviar correo al coordinador
+            enviar_notificacion_cita_col(appointment)
+
             return redirect('dashboard_col')
         else:
             return render(request, 'citas_colegio/select-date_col.html', {
@@ -93,6 +137,7 @@ def select_date_col(request, appointment_id):
         'appointment': appointment,
     })
 
+
 def get_available_slots_col(request):
     """API para obtener horarios disponibles."""
     teacher_id = request.GET.get('teacher_id')
@@ -103,7 +148,18 @@ def get_available_slots_col(request):
 
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        day_of_week = selected_date.strftime('%A')
+
+        # Traducción al español para que coincida con los datos
+        dias_es = {
+            'Monday': 'lunes',
+            'Tuesday': 'martes',
+            'Wednesday': 'miércoles',
+            'Thursday': 'jueves',
+            'Friday': 'viernes',
+            'Saturday': 'sábado',
+            'Sunday': 'domingo'
+        }
+        day_of_week = dias_es[selected_date.strftime('%A')]
 
         schedules = Schedule_col.objects.filter(teacher_id=teacher_id, day_of_week=day_of_week)
         reserved_slots = Appointment_col.objects.filter(teacher_id=teacher_id, date=selected_date).values_list('time', flat=True)
@@ -124,6 +180,7 @@ def get_available_slots_col(request):
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
 
+
 @login_required
 def dashboard_col(request):
     """Vista del Dashboard para mostrar citas."""
@@ -131,6 +188,13 @@ def dashboard_col(request):
     return render(request, 'citas_colegio/dashboard_col.html', {
         'appointments': appointments,
     })
+@login_required
+def delete_appointment_col(request, appointment_id):
+    """Elimina una cita y notifica con un mensaje de éxito."""
+    cita = get_object_or_404(Appointment_col, id=appointment_id)
+    cita.delete()
+    messages.success(request, 'Cita eliminada exitosamente.')
+    return redirect('dashboard_col')
 
 def get_subjects_by_grade_col(request):
     """API para obtener las materias relacionadas con un grado."""
@@ -144,6 +208,7 @@ def get_subjects_by_grade_col(request):
         return JsonResponse({'subjects': data})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 def get_teacher_by_subject_col(request):
     """API para obtener el maestro y el área relacionada con una materia."""

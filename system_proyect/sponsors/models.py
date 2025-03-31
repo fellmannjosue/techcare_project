@@ -55,8 +55,6 @@ class Title(models.Model):
         return self.description
 
 # -------------------------- SPONSOR -------------------------- #
-from django.db import models
-
 class Sponsor(models.Model):
     id = models.AutoField(primary_key=True, db_column='spn_sponsors_id')
     title = models.ForeignKey("Title", on_delete=models.SET_NULL, null=True, db_column='gen_title_id', verbose_name="Título")
@@ -129,13 +127,48 @@ class Sponsor(models.Model):
     recog_2020_blanket = models.BooleanField(default=False, db_column='recog_2020_blanket', verbose_name="Recon 2020 Manta")
     recog_2020_plate = models.BooleanField(default=False, db_column='recog_2020_plate', verbose_name="Recon 2020 Plato")
 
+    
+    PADRINO_CHOICES = [
+         ("Alemania", "Alemania"),     # 1
+        ("Austria", "Austria"),       # 2
+        ("España", "España"),         # 3
+        ("Holanda", "Holanda"),       # 4
+        ("Portugal", "Portugal"),     # 5
+        ("Suiza", "Suiza"),           # 6
+        ("USA", "USA"),               # 7
+        ("Honduras", "Honduras"),     # 8
+        ("Guatemala", "Guatemala"),   # 9
+        ("Francia", "Francia"),       # 10
+        ("Canada", "Canada"),         # 11
+        ("Belgica", "Belgica"),       # 12
+        ("Suecia", "Suecia"),         # 13
+        ("Escocia", "Escocia"),       # 18
+        ("Colombia", "Colombia"),     # 19
+        ("Wales U.K.", "Wales U.K."), # 20
+        ("Costa Rica C.A.", "Costa Rica C.A."), # 23
+        ("Japon", "Japon"),           # 24
+        ("Italia", "Italia"),         # 25
+        ("n/d", "n/d"),               # 26
+        ("U.A.E.", "U.A.E."),         # 27
+        ("Mexico", "Mexico"),         # 28
+        ("Irlanda", "Irlanda"),  
+    ]
+
+    padrino_ch_d = models.CharField(
+        max_length=50,
+      blank=True,
+       null=True,
+      choices=PADRINO_CHOICES,
+      db_column='padrino_ch_d',
+    verbose_name="Padrino CH/D",
+    )
+
     class Meta:
         db_table = 'tbl_spn_sponsors'
         managed = False  
 
     def __str__(self):
         return f"{self.first_name_1} {self.last_name_1}"
-
 
 # -------------------------- GODFATHER -------------------------- #
 class Godfather(models.Model):

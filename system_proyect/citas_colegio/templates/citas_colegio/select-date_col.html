@@ -1,15 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar Fecha y Hora</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <title>Seleccionar Fecha y Hora</title>
+    <style>
+        .custom-header {
+            background-color: #febc34;
+            color: snow;
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0;
+        }
+        .selectable-date.highlighted {
+            background-color: #cce5ff;
+        }
+        .list-group-item.selected-time {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .list-group-item.unavailable {
+            background-color: #eee;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
-    <h2 class="mb-4 text-center">Seleccionar Fecha y Hora</h2>
+    <h2 class="mb-4 text-center custom-header">Seleccionar Fecha y Hora</h2>
+    <h3 id="monthLabel" class="text-center mb-3"></h3>
+
     <div class="row">
         <div class="col-md-6">
             <table class="table table-bordered text-center" id="calendar">
@@ -24,9 +46,7 @@
                         <th>Sáb</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <!-- Calendario generado dinámicamente -->
-                </tbody>
+                <tbody></tbody>
             </table>
         </div>
         <div class="col-md-6">
@@ -36,7 +56,8 @@
             </ul>
         </div>
     </div>
-    <form id="appointment-form" method="POST" action="{% url 'select_date' appointment.id %}">
+
+    <form id="appointment-form" method="POST" action="{% url 'select_date_col' appointment.id %}">
         {% csrf_token %}
         <div class="mb-3">
             <label for="email" class="form-label">Correo Electrónico</label>
@@ -53,142 +74,170 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const teacherId = "{{ appointment.teacher.id }}";
-        const calendar = document.querySelector('#calendar tbody');
-        const timeSlots = document.querySelector('#time-slots');
-        const form = document.querySelector('#appointment-form');
+document.addEventListener('DOMContentLoaded', function () {
+    const teacherId = "{{ appointment.teacher.id }}";
+    const calendar = document.querySelector('#calendar tbody');
+    const timeSlots = document.querySelector('#time-slots');
+    const form = document.querySelector('#appointment-form');
 
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth();
-        generateCalendar(currentYear, currentMonth);
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+    generateCalendar(currentYear, currentMonth);
 
-        function generateCalendar(year, month) {
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            let date = 1;
-            calendar.innerHTML = '';
+    function generateCalendar(year, month) {
+        const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+        document.getElementById("monthLabel").innerText = `${monthNames[month]} ${year}`;
 
-            for (let i = 0; i < 6; i++) {
-                const row = document.createElement('tr');
-                for (let j = 0; j < 7; j++) {
-                    const cell = document.createElement('td');
-                    if (i === 0 && j < firstDay) {
-                        cell.innerHTML = '';
-                    } else if (date > daysInMonth) {
-                        break;
-                    } else {
-                        const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
-                        cell.innerHTML = date;
-                        cell.classList.add('selectable-date');
-                        cell.style.cursor = 'pointer';
-                        cell.onclick = () => loadTimeSlots(fullDate);
-                        date++;
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        let date = 1;
+        calendar.innerHTML = '';
+
+        for (let i = 0; i < 6; i++) {
+            const row = document.createElement('tr');
+            for (let j = 0; j < 7; j++) {
+                const cell = document.createElement('td');
+                if (i === 0 && j < firstDay) {
+                    cell.innerHTML = '';
+                } else if (date > daysInMonth) {
+                    break;
+                } else {
+                    const fullDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                    cell.innerHTML = date;
+                    cell.classList.add('selectable-date');
+                    cell.style.cursor = 'pointer';
+
+                    if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date) {
+                        cell.style.backgroundColor = '#90caf9';
                     }
-                    row.appendChild(cell);
+
+                    cell.onclick = () => {
+                        clearSelection();
+                        cell.style.backgroundColor = '#4CAF50';
+                        cell.style.color = 'white';
+                        loadTimeSlots(fullDate);
+                    };
+
+                    date++;
                 }
-                calendar.appendChild(row);
+                row.appendChild(cell);
             }
+            calendar.appendChild(row);
         }
+    }
 
-        function loadTimeSlots(date) {
-            document.getElementById('selected-date').value = date;
-
-            fetch(`/citas_colegio/get-available-slots/?teacher_id=${teacherId}&date=${date}`)
-                .then(response => response.json())
-                .then(data => {
-                    timeSlots.innerHTML = '';
-                    if (data.slots && data.slots.length > 0) {
-                        data.slots.forEach(slot => {
-                            const li = document.createElement('li');
-                            li.textContent = slot.time;
-                            li.classList.add('list-group-item');
-
-                            if (slot.available) {
-                                li.style.cursor = 'pointer';
-                                li.classList.add('available');
-                                li.onclick = () => selectTime(date, slot.time);
-                            } else {
-                                li.style.cursor = 'not-allowed';
-                                li.classList.add('unavailable');
-                                li.onclick = () => {
-                                    Swal.fire({
-                                        title: 'Horario no disponible',
-                                        text: 'Este horario ya está reservado. Por favor, seleccione otro.',
-                                        icon: 'error',
-                                        confirmButtonText: 'Aceptar',
-                                    });
-                                };
-                            }
-                            timeSlots.appendChild(li);
-                        });
-                    } else {
-                        timeSlots.innerHTML = '<li class="list-group-item text-danger">No hay horarios disponibles</li>';
-                    }
-                })
-                .catch(() => {
-                    timeSlots.innerHTML = '<li class="list-group-item text-danger">Error al cargar los horarios</li>';
-                });
-        }
-
-        function selectTime(date, time) {
-            document.getElementById('selected-time').value = time;
-            Swal.fire({
-                title: 'Selección realizada',
-                html: `<p><strong>Fecha:</strong> ${date}</p><p><strong>Hora:</strong> ${time}</p>`,
-                icon: 'info',
-                confirmButtonText: 'Aceptar',
-            });
-        }
-
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const date = document.getElementById('selected-date').value;
-            const time = document.getElementById('selected-time').value;
-
-            if (!date || !time) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Seleccione una fecha y hora antes de continuar',
-                    icon: 'error',
-                    confirmButtonText: 'Aceptar',
-                });
-                return;
+    function clearSelection() {
+        document.querySelectorAll('.selectable-date').forEach(cell => {
+            cell.style.backgroundColor = '';
+            cell.style.color = '';
+            const cellDate = new Date(currentYear, currentMonth, parseInt(cell.innerHTML));
+            if (cellDate.toDateString() === today.toDateString()) {
+                cell.style.backgroundColor = '#90caf9';
             }
+        });
+    }
 
-            fetch(form.action, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                },
-            })
-            .then(response => {
-                if (response.ok) {
-                    Swal.fire({
-                        title: '¡Cita agendada!',
-                        html: `<p><strong>Fecha:</strong> ${date}</p><p><strong>Hora:</strong> ${time}
-                            <br> Esperar la confirmacion del encargado <br> GRACIAS POR ESPERAR </p>`,
-                        icon: 'success',
-                        confirmButtonText: 'Aceptar',
-                    }).then(() => {
-                        window.location.href = '/citas_colegio/user-data_col/';
+    function loadTimeSlots(date) {
+        document.getElementById('selected-date').value = date;
+
+        fetch(`/citas_colegio/get-available-slots_col/?teacher_id=${teacherId}&date=${date}`)  // <- CORREGIDO
+            .then(response => response.json())
+            .then(data => {
+                timeSlots.innerHTML = '';
+                if (data.slots && data.slots.length > 0) {
+                    data.slots.forEach(slot => {
+                        const li = document.createElement('li');
+                        li.textContent = slot.time;
+                        li.classList.add('list-group-item');
+
+                        if (slot.available) {
+                            li.style.cursor = 'pointer';
+                            li.classList.add('available');
+                            li.onclick = () => {
+                                document.querySelectorAll('#time-slots .selected-time')
+                                    .forEach(sel => sel.classList.remove('selected-time'));
+                                li.classList.add('selected-time');
+                                selectTime(date, slot.time);
+                            };
+                        } else {
+                            li.classList.add('unavailable');
+                            li.onclick = () => {
+                                Swal.fire({
+                                    title: 'Horario no disponible',
+                                    text: 'Este horario ya está reservado. Por favor, seleccione otro.',
+                                    icon: 'error',
+                                    confirmButtonText: 'Aceptar',
+                                });
+                            };
+                        }
+                        timeSlots.appendChild(li);
                     });
                 } else {
-                    throw new Error();
+                    timeSlots.innerHTML = '<li class="list-group-item text-danger">No hay horarios disponibles</li>';
                 }
             })
             .catch(() => {
+                timeSlots.innerHTML = '<li class="list-group-item text-danger">Error al cargar los horarios</li>';
+            });
+    }
+
+    function selectTime(date, time) {
+        document.getElementById('selected-time').value = time;
+        Swal.fire({
+            title: 'Selección realizada',
+            html: `<p><strong>Fecha:</strong> ${date}</p><p><strong>Hora:</strong> ${time}</p>`,
+            icon: 'info',
+            confirmButtonText: 'Aceptar',
+        });
+    }
+
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        const date = document.getElementById('selected-date').value;
+        const time = document.getElementById('selected-time').value;
+
+        if (!date || !time) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Seleccione una fecha y hora antes de continuar',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
+            });
+            return;
+        }
+
+        fetch(form.action, {
+            method: 'POST',
+            body: new FormData(form),
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
                 Swal.fire({
-                    title: 'Error',
-                    text: 'Ocurrió un error al agendar la cita. Por favor, inténtelo de nuevo.',
-                    icon: 'error',
+                    title: '¡Cita agendada!',
+                    html: `<p><strong>Fecha:</strong> ${date}</p><p><strong>Hora:</strong> ${time}<br>Esperar la confirmación del encargado<br>GRACIAS POR ESPERAR</p>`,
+                    icon: 'success',
                     confirmButtonText: 'Aceptar',
+                }).then(() => {
+                    window.location.href = '/citas_colegio/user-data_col/';
                 });
+            } else {
+                throw new Error();
+            }
+        })
+        .catch(() => {
+            Swal.fire({
+                title: 'Error',
+                text: 'Ocurrió un error al agendar la cita. Por favor, inténtelo de nuevo.',
+                icon: 'error',
+                confirmButtonText: 'Aceptar',
             });
         });
     });
+});
 </script>
 </body>
 </html>

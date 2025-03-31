@@ -23,10 +23,10 @@ class Teacher_col(models.Model):
     area = models.CharField(
         max_length=50,
         choices=[
-           ('Ingles de kinder a tecero 2', 'Ingles de kinder a tecero 2'),
-            ('Ingles de cuarto a noveno', 'Ingles de cuarto a noveno'),
-            ('Español', 'Español'),
-            ('Matematicas', 'Matematicas ')
+           ('Matematicas Bachillerato', 'Matematicas Bachillerato'),
+            ('Matematicas basica', 'Matematicas basica'),
+            ('Generales', 'Generales'),
+            ('Ingles Basico', 'Ingles Basico')
         ]
     )
     class_name = models.CharField(max_length=255, null=True, blank=True)
@@ -51,14 +51,12 @@ class Schedule_col(models.Model):
     day_of_week = models.CharField(
         max_length=10,
         choices=[
-            ('Monday', 'Lunes'),
-            ('Tuesday', 'Martes'),
-            ('Wednesday', 'Miércoles'),
-            ('Thursday', 'Jueves'),
-            ('Friday', 'Viernes'),
-            ('Saturday', 'Sábado'),
-            ('Sunday', 'Domingo'),
-        ]
+    ('lunes', 'Lunes'),
+    ('martes', 'Martes'),
+    ('miércoles', 'Miércoles'),
+    ('jueves', 'Jueves'),
+    ('viernes', 'Viernes'),
+]
     )
     start_time = models.TimeField()  # Hora de inicio
     end_time = models.TimeField()  # Hora de fin

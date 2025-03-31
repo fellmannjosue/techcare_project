@@ -1,187 +1,559 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Sponsors</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        .container {
-            max-width: 1200px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-        .form-group {
-            margin-bottom: 10px;
-        }
-        .checkbox-group label {
-            display: block;
-        }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h2 class="text-center">Formulario de Sponsors</h2>
-
-    <!-- Buscadores -->
-    <div class="row">
-        <div class="col-md-4">
-            <label for="search_lastname">Buscar por Apellido</label>
-            <select id="search_lastname" class="form-control">
-                <option value="">Seleccione un apellido</option>
-                {% for sponsor in sponsors %}
-                    <option value="{{ sponsor.id }}">{{ sponsor.last_name_1 }} {{ sponsor.last_name_2 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="search_name">Buscar por Nombre</label>
-            <select id="search_name" class="form-control">
-                <option value="">Seleccione un nombre</option>
-                {% for sponsor in sponsors %}
-                    <option value="{{ sponsor.id }}">{{ sponsor.first_name_1 }} {{ sponsor.first_name_2 }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-4">
-            <label for="search_id">Buscar por ID</label>
-            <select id="search_id" class="form-control">
-                <option value="">Seleccione un ID</option>
-                {% for sponsor in sponsors %}
-                    <option value="{{ sponsor.id }}">{{ sponsor.id }}</option>
-                {% endfor %}
-            </select>
-        </div>
-    </div>
-
-    <form method="post">
-        {% csrf_token %}
-        <div class="row">
-            <div class="col-md-4">
-                <label>Persona ID</label>
-                <input type="text" class="form-control" name="persona_id">
-            </div>
-            <div class="col-md-4">
-                <label>Título</label>
-                {{ form.title }}
-            </div>
-            <div class="col-md-4">
-                <label>Dirigido A</label>
-                {{ form.directed }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4">
-                <label>Apellido 1</label>
-                {{ form.last_name_1 }}
-            </div>
-            <div class="col-md-4">
-                <label>Apellido 2</label>
-                {{ form.last_name_2 }}
-            </div>
-            <div class="col-md-4">
-                <label>Nombre 1</label>
-                {{ form.first_name_1 }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4">
-                <label>Nombre 2</label>
-                {{ form.first_name_2 }}
-            </div>
-            <div class="col-md-4">
-                <label>Unión Libre</label>
-                {{ form.free_union }}
-            </div>
-            <div class="col-md-4">
-                <label>Contacto</label>
-                {{ form.contact }}
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-4">
-                <label>Ciudad</label>
-                <select id="city" name="city" class="form-control">
-                    <option value="">Seleccione una ciudad</option>
-                    {% for city in cities %}
-                        <option value="{{ city.id }}" data-zip="{{ city.zip_code }}" data-country="{{ city.country }}">{{ city.name }} ({{ city.zip_code }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label>Código Postal</label>
-                <input type="text" class="form-control" id="postal_code" readonly>
-            </div>
-            <div class="col-md-4">
-                <label>País</label>
-                <input type="text" class="form-control" id="country" readonly>
-            </div>
-        </div>
-
-        <!-- Checkboxes -->
-        <div class="row">
-            <div class="col-md-6 checkbox-group">
-                <label>{{ form.deceased }} Fallecido</label>
-                <label>{{ form.deactivated }} Desactivado</label>
-                <label>{{ form.bad_address }} Dirección Incorrecta</label>
-                <label>{{ form.private }} Privado</label>
-                <label>{{ form.godfather }} Bienhechor</label>
-                <label><input type="checkbox" id="padrino_checkbox"> Padrino</label>
-            </div>
-            <div class="col-md-6 checkbox-group">
-                <label>{{ form.member }} Miembro</label>
-                <label>{{ form.visitor }} Visitante</label>
-                <label>{{ form.former_volunteer }} Ex Voluntario</label>
-                <label>{{ form.member_jd }} Miembro JD</label>
-                <label>Puesto</label>
-            </div>
-        </div>
-
-        <!-- Botones -->
-        <div class="text-center mt-4">
-            <button type="button" id="godfatherBtn" class="btn btn-info" disabled onclick="redirectWithAlert('{% url 'sponsors:add_godfather' %}', 'Godfather')">Godfather</button>
-            <button type="button" class="btn btn-warning" onclick="redirectWithAlert('{% url 'sponsors:add_income' %}', 'Income')">Income</button>
-            <button type="button" class="btn btn-primary" onclick="redirectWithAlert('{% url 'sponsors:add_correspondence' %}', 'Correspondence')">Correspondence</button>
-            <button type="submit" class="btn btn-success">Guardar Sponsor</button>
-            <a href="{% url 'sponsors:sponsors_dashboard' %}" class="btn btn-secondary">Cancelar</a>
-        </div>
-    </form>
-</div>
-
-<script>
-    function redirectWithAlert(url, section) {
-        Swal.fire({
-            title: "Redirigiendo...",
-            text: "Cargando " + section,
-            icon: "info",
-            showConfirmButton: false,
-            timer: 1200
-        }).then(() => {
-            window.location.href = url;
-        });
+  <meta charset="UTF-8" />
+  <title>Formulario de Sponsors</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body {
+      background-color: #f8f9fa;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
     }
 
-    document.getElementById("padrino_checkbox").addEventListener("change", function() {
-        document.getElementById("godfatherBtn").disabled = !this.checked;
-    });
+    .form-container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 95%;
+      max-width: 1400px;
+    }
 
-    document.getElementById("city").addEventListener("change", function() {
-        let selected = this.options[this.selectedIndex];
-        document.getElementById("postal_code").value = selected.getAttribute("data-zip");
-        document.getElementById("country").value = selected.getAttribute("data-country");
-    });
-</script>
+    .box-bordered {
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 5px;
+      margin-bottom: 15px;
+    }
 
+    .checkbox-group .form-check {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="form-container">
+    <h2 class="text-center">Formulario de Sponsors</h2>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="row">
+        <!-- Columna 1 -->
+        <div class="col-md-4">
+          <!-- Cuadro de buscadores -->
+          <div class="box-bordered mb-3">
+            <h5>Buscadores</h5>
+          
+   <!-- Buscar por Apellido -->
+            <div class="mb-2">
+              <label for="search_lastname" class="form-label">Buscar por Apellido</label>
+              <select id="search_lastname" class="form-select">
+                <option value="">Seleccione un Apellido</option>
+                {% for sponsor in sponsors %}
+                  <option value="{{ sponsor.id }}">
+                    {{ sponsor.last_name_1 }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Buscar por Nombre -->
+            <div class="mb-2">
+              <label for="search_name" class="form-label">Buscar por Nombre</label>
+              <select id="search_name" class="form-select">
+                <option value="">Seleccione un Nombre</option>
+                {% for sponsor in sponsors %}
+                  <option value="{{ sponsor.id }}">
+                    {{ sponsor.first_name_1 }} {{ sponsor.last_name_1 }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          
+         
+          
+            <!-- Buscar por ID -->
+            <div>
+              <label for="search_id" class="form-label">Buscar por ID</label>
+              <select id="search_id" class="form-select">
+                <option value="">Seleccione un ID</option>
+                {% for sponsor in sponsors %}
+                  <option value="{{ sponsor.id }}">
+                    {{ sponsor.id }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          
+
+          <!-- Persona ID -->
+          <div class="mb-3">
+            <label class="form-label">Persona ID</label>
+            {{ form.id }}
+          </div>
+
+          <!-- Dirigido, Título -->
+          <div class="mb-3">
+            <label class="form-label">Dirigido</label>
+            {{ form.directed }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Título</label>
+            {{ form.title }}
+          </div>
+
+          <!-- Apellidos, Nombres -->
+          <div class="mb-3">
+            <label class="form-label">Primer Apellido</label>
+            {{ form.last_name_1 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Segundo Apellido</label>
+            {{ form.last_name_2 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Primer Nombre</label>
+            {{ form.first_name_1 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Segundo Nombre</label>
+            {{ form.first_name_2 }}
+          </div>
+
+          <!-- Unión Libre, Contacto, Anexo, Dirección Postal, Calle -->
+          <div class="form-check mb-3">
+            {{ form.free_union }}
+            <label class="form-check-label" for="id_free_union">Unión Libre</label>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Contacto</label>
+            {{ form.contact }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Anexo</label>
+            {{ form.annex }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Dirección Postal</label>
+            {{ form.address }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Calle</label>
+            {{ form.street }}
+          </div>
+
+ <!-- Ciudad -->
+<div class="mb-3">
+  <label class="form-label">Ciudad</label>
+  <select id="id_city" name="city_select" class="form-select">
+    <option value="">Selecciona una Ciudad</option>
+    {% for city in cities %}
+      <option
+        value="{{ city.id }}"
+        data-zip="{{ city.zip_code }}"
+        data-country="{{ city.country.name }}"
+        {% if sponsor and sponsor.city and sponsor.city.id == city.id %}selected{% endif %}
+      >
+        {{ city.name }} ({{ city.zip_code }})
+      </option>
+    {% endfor %}
+  </select>
+</div>
+
+<!-- Código Postal -->
+<div class="mb-3">
+  <label class="form-label">Código Postal</label>
+  <input
+    type="text"
+    id="postal_code"
+    class="form-control"
+    value="{% if sponsor and sponsor.city %}{{ sponsor.city.zip_code }}{% endif %}"
+    readonly
+  />
+</div>
+
+<!-- País -->
+<div class="mb-3">
+  <label class="form-label">País</label>
+  <input
+    type="text"
+    id="country"
+    class="form-control"
+    value="{% if sponsor and sponsor.city and sponsor.city.country %}{{ sponsor.city.country.name }}{% endif %}"
+    readonly
+  />
+</div>
+
+          <!-- Campo adicional -->
+          <div class="mb-3">
+            <label for="id_padrino_ch_d" class="form-label">{{ form.padrino_ch_d.label }}</label>
+            {{ form.padrino_ch_d }}
+          </div>
+
+        </div>
+
+        <!-- Columna 2 -->
+        <div class="col-md-4">
+          <!-- Teléfono, Fax, Email -->
+          <div class="mb-3">
+            <label class="form-label">Teléfono 1</label>
+            {{ form.phone_1 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Teléfono 2</label>
+            {{ form.phone_2 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fax</label>
+            {{ form.fax }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Correo Electrónico</label>
+            {{ form.email }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Correo Electrónico 2</label>
+            {{ form.email_2 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Correo Electrónico 3</label>
+            {{ form.email_3 }}
+          </div>
+
+          <!-- Checkboxes de Email/Reporte -->
+          <div class="form-check">
+            {{ form.report_email }}
+            <label class="form-check-label" for="id_report_email">Reporte Email</label>
+          </div>
+          <div class="form-check">
+            {{ form.only_email }}
+            <label class="form-check-label" for="id_only_email">Solo Recibe Email</label>
+          </div>
+          <div class="form-check">
+            {{ form.only_easter_rep }}
+            <label class="form-check-label" for="id_only_easter_rep">Solo Email OB</label>
+          </div>
+          <div class="form-check mb-3">
+            {{ form.financial_report }}
+            <label class="form-check-label" for="id_financial_report">Reporte Financiero</label>
+          </div>
+
+          <!-- Idioma, Profesión, Fechas Nac, Sexo, etc. -->
+          <div class="mb-3">
+            <label class="form-label">Idioma Reporte</label>
+            {{ form.language }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Profesión</label>
+            {{ form.profession }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Nacimiento 1</label>
+            {{ form.date_of_birth }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha Nacimiento 2</label>
+            {{ form.date_of_birth_2 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Sexo</label>
+            {{ form.gender }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Estado Civil
+            </label>
+            {{ form.civil_status }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">
+              Nacionalidad</label>
+            {{ form.nationality }}
+          </div>
+
+          <!-- Dirigido Carta, Primer Contacto, Último Contacto, Notas -->
+          <div class="mb-3">
+            <label class="form-label">Dirigido Carta</label>
+            {{ form.addressed_to }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Dirigido Carta Aled</label>
+            {{ form.addressed_to_2 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Primer Contacto</label>
+            {{ form.first_contact }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Último Contacto</label>
+            {{ form.last_contact }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nota 1</label>
+            {{ form.note_1 }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nota 2</label>
+            {{ form.note_2 }}
+          </div>
+        </div>
+
+        <!-- Columna 3 -->
+        <div class="col-md-4">
+          <!-- Grupo "3 checkboxes" en un cuadro -->
+          <div class="border p-2 mb-3">
+            <h5>Estado</h5>
+            <div class="form-check mb-1">
+              {{ form.deceased }}
+              <label class="form-check-label" for="id_deceased">Fallecido</label>
+            </div>
+            <div class="form-check mb-1">
+              {{ form.deactivated }}
+              <label class="form-check-label" for="id_deactivated">Desactivado</label>
+            </div>
+            <div class="form-check">
+              {{ form.bad_address }}
+              <label class="form-check-label" for="id_bad_address">Dirección Mala</label>
+            </div>
+          </div>
+
+          <!-- Resto de checkboxes -->
+          <div class="form-check mb-1">
+            {{ form.expect_reaction }}
+            <label class="form-check-label" for="id_expect_reaction">Esperar Reac.</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.no_correspondence }}
+            <label class="form-check-label" for="id_no_correspondence">No Corresp</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.deactivate_soon }}
+            <label class="form-check-label" for="id_deactivate_soon">Desact Prox</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.private }}
+            <label class="form-check-label" for="id_private">Privado</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.godfather }}
+            <label class="form-check-label" for="id_godfather">Bienhechor</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.sponsor }}
+            <label class="form-check-label" for="id_sponsor">Padrino</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.member }}
+            <label class="form-check-label" for="id_member">Miembro</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.visitor }}
+            <label class="form-check-label" for="id_visitor">Visitante</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.former_volunteer }}
+            <label class="form-check-label" for="id_former_volunteer">Ex Voluntario</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.member}}
+            <label class="form-check-label" for="id_member">Miembro JD</label>
+          </div>
+          <div class="form-check mb-3">
+            {{ form.member_asamblea }}
+            <label class="form-check-label" for="id_member_asamblea">Miembro Asamblea</label>
+          </div>
+
+          <!-- Puesto -->
+          <div class="mb-3">
+            <label class="form-label">Puesto</label>
+            <input type="text" class="form-control" placeholder="Puesto" name="puesto" />
+          </div>
+
+          <!-- Reconocimientos -->
+          <div class="form-check mb-1">
+            {{ form.recog_2010 }}
+            <label class="form-check-label" for="id_recog_2010">Recon 2010</label>
+          </div>
+          <div class="form-check mb-1">
+            {{ form.recog_2020_blanket }}
+            <label class="form-check-label" for="id_recog_2020_blanket">Recon 2020 Manta</label>
+          </div>
+          <div class="form-check mb-3">
+            {{ form.recog_2020_plate }}
+            <label class="form-check-label" for="id_recog_2020_plate">Recon 2020 Plato</label>
+          </div>
+
+          <!-- Fechas: Visita, Egr Vol -->
+          <div class="mb-3">
+            <label class="form-label" for="id_visitor_date">Fecha Visit</label>
+            {{ form.visitor_date }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="id_volunt_dep_date">Fecha Egr Vol</label>
+            {{ form.volunt_dep_date }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <div class="text-center mt-4">
+        <button type="button" id="godfather_button" class="btn btn-info"
+          onclick="redirectWithAlert('{% url 'sponsors:add_godfather' %}', 'Godfather')" disabled>
+          Godfather
+        </button>
+        <button type="button" class="btn btn-warning"
+          onclick="redirectWithAlert('{% url 'sponsors:add_income' %}', 'Income')">
+          Income
+        </button>
+        <button type="button" class="btn btn-primary"
+          onclick="redirectWithAlert('{% url 'sponsors:add_correspondence' %}', 'Correspondence')">
+          Correspondence
+        </button>
+        <button type="submit" class="btn btn-success">Guardar Sponsor</button>
+        <a href="{% url 'sponsors:sponsors_dashboard' %}" class="btn btn-secondary">
+          Cancelar
+        </a>
+        <!-- Botón Imprimir PDF -->
+        <button type="button" class="btn btn-dark" onclick="imprimirFormulario()">
+          Imprimir
+        </button>
+        <!-- Botón Enviar PDF Email -->
+        <button type="button" class="btn btn-outline-dark" onclick="enviarPdfEmail()">
+          Enviar PDF Email
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Lógica de redirección con alerta
+    function redirectWithAlert(url, section) {
+      Swal.fire({
+        title: "Redirigiendo...",
+        text: "Cargando " + section,
+        icon: "info",
+        showConfirmButton: false,
+        timer: 1200,
+      }).then(() => {
+        window.location.href = url;
+      });
+    }
+
+     // Botones imprimir/enviar email => placeholders
+     function imprimirFormulario() {
+      window.print();
+    }
+    function enviarPdfEmail() {
+      Swal.fire("PDF Email", "Se enviará el PDF por correo", "success");
+    }
+ 
+  const citySelect = document.getElementById("id_city");
+  const postalCodeInput = document.getElementById("postal_code");
+  const countryInput = document.getElementById("country");
+
+  citySelect.addEventListener("change", function () {
+    const opt = this.options[this.selectedIndex];
+    const zip = opt.getAttribute("data-zip");
+    const country = opt.getAttribute("data-country");
+
+    console.log("Ciudad seleccionada:", opt.text);
+    console.log("ZIP:", zip);
+    console.log("País:", country);
+
+    postalCodeInput.value = zip || "";
+    countryInput.value = country || "";
+  });
+
+  // Al cargar la página, si hay ciudad preseleccionada
+  document.addEventListener("DOMContentLoaded", function () {
+    const opt = citySelect.options[citySelect.selectedIndex];
+    postalCodeInput.value = opt.getAttribute("data-zip") || "";
+    countryInput.value = opt.getAttribute("data-country") || "";
+  });
+
+   // Función para activar/desactivar el botón de Godfather
+function toggleGodfatherButton() {
+  const isSponsor = document.querySelector('[name="sponsor"]').checked;
+  document.getElementById("godfather_button").disabled = !isSponsor;
+}
+
+// Evento que reacciona al cambio del checkbox
+document.querySelector('[name="sponsor"]').addEventListener("change", toggleGodfatherButton);
+
+// Ejecutar al cargar la página para reflejar estado inicial
+document.addEventListener("DOMContentLoaded", function () {
+  toggleGodfatherButton();
+});
+
+    const searchName = document.getElementById("search_name");
+  const searchLastName = document.getElementById("search_lastname");
+  const searchId = document.getElementById("search_id");
+
+  function loadSponsorData(sponsorId) {
+    if (!sponsorId) return;
+
+    fetch(`/sponsors/get-sponsor-data/?id=${sponsorId}`)
+      .then((resp) => resp.json())
+      .then((data) => {
+        if (data.error) {
+          Swal.fire("Error", data.error, "error");
+          return;
+        }
+
+        // Campos de texto
+        document.getElementById("id_first_name_1").value = data.first_name_1;
+        document.getElementById("id_last_name_1").value = data.last_name_1;
+        document.getElementById("id_email").value = data.email;
+        document.getElementById("id_profession").value = data.profession;
+        document.getElementById("id_street").value = data.street;
+        document.getElementById("id_address").value = data.address;
+        document.getElementById("id_phone_1").value = data.phone_1;
+
+        // Booleans (checkboxes)
+        document.getElementById("id_sponsor").checked = data.sponsor;
+        document.getElementById("id_godfather").checked = data.godfather;
+        document.getElementById("id_member").checked = data.member;
+
+        // Ciudad seleccionada (dropdown)
+        const citySelect = document.getElementById("id_city");
+        if (data.city_id) {
+          citySelect.value = data.city_id;
+
+          // Disparar el evento "change" para actualizar ZIP y país
+          const event = new Event("change");
+          citySelect.dispatchEvent(event);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        Swal.fire("Error", "Ocurrió un error al cargar el Sponsor", "error");
+      });
+  }
+
+  // Asignar listeners
+  searchName.addEventListener("change", function () {
+    loadSponsorData(this.value);
+  });
+
+  searchLastName.addEventListener("change", function () {
+    loadSponsorData(this.value);
+  });
+
+  searchId.addEventListener("change", function () {
+    loadSponsorData(this.value);
+  });
+
+   
+  </script>
 </body>
+
 </html>

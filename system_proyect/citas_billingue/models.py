@@ -49,16 +49,15 @@ class Schedule_bl(models.Model):
     """Horario del maestro."""
     teacher = models.ForeignKey(Teacher_bl, on_delete=models.CASCADE, related_name="schedules")
     day_of_week = models.CharField(
-        max_length=10,
-        choices=[
-            ('Monday', 'Lunes'),
-            ('Tuesday', 'Martes'),
-            ('Wednesday', 'Miércoles'),
-            ('Thursday', 'Jueves'),
-            ('Friday', 'Viernes'),
-            ('Saturday', 'Sábado'),
-            ('Sunday', 'Domingo'),
-        ]
+        max_length=30,
+       choices=[
+    ('lunes', 'Lunes'),
+    ('martes', 'Martes'),
+    ('miércoles', 'Miércoles'),
+    ('jueves', 'Jueves'),
+    ('viernes', 'Viernes'),
+]
+
     )
     start_time = models.TimeField()  # Hora de inicio
     end_time = models.TimeField()  # Hora de fin

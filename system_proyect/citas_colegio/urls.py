@@ -21,6 +21,8 @@ urlpatterns = [
     # Vista del Dashboard
     path('dashboard_col/', views.dashboard_col, name='dashboard_col'),
 
+    path('delete/<int:appointment_id>/', views.delete_appointment_col, name='delete_appointment_col'),
+
     # API: Obtener horarios disponibles
     path('get-available-slots_col/', views.get_available_slots_col, name='get_available_slots_col'),
 

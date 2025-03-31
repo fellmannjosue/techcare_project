@@ -1,10 +1,57 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from .models import Appointment_bl, Teacher_bl, Grade_bl, Subject_bl, Relationship_bl, Schedule_bl
+from django.contrib import messages
+from .models import (
+    Appointment_bl,
+    Teacher_bl,
+    Grade_bl,
+    Subject_bl,
+    Relationship_bl,
+    Schedule_bl
+)
 from .forms import AppointmentForm
 from datetime import datetime, timedelta
 
+# IMPORTS PARA EL ENVÍO DE CORREOS
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+
+# ================================================
+# ============ FUNCIÓN DE NOTIFICACIÓN ===========
+# ================================================
+def enviar_notificacion_cita_bl(appointment):
+    """
+    Envía un correo al coordinador con los detalles de la cita bilingüe creada.
+    Ajusta la plantilla y destinatarios de acuerdo a tu caso.
+    """
+    subject = "Nueva Cita Bilingüe Programada"
+    # Lista de destinatarios (ajusta según tus necesidades)
+    to_email = ["coordinacion_bl@ana-hn.org"]  
+    
+    # Diccionario con la info que usarás en la plantilla de correo
+    context = {
+        'appointment': appointment,
+    }
+
+    # Asegúrate de que existe la plantilla 'emails/nueva_cita.html'
+    html_content = render_to_string("email/nueva_cita_bl.html", context)
+    text_content = strip_tags(html_content)  # Versión texto plano
+
+    # Configura from_email de acuerdo a tu settings.py o alias que uses
+    email = EmailMultiAlternatives(
+        subject=subject,
+        body=text_content,
+        from_email='coordinacion_bl@ana-hn.org',  
+        to=to_email
+    )
+    email.attach_alternative(html_content, "text/html")
+    email.send()
+
+# ================================================
+# ============= VISTAS PRINCIPALES ==============
+# ================================================
 
 def user_data_bl(request):
     """Primera ventana: captura de datos del usuario."""
@@ -86,6 +133,12 @@ def select_date_bl(request, appointment_id):
             appointment.email = email
             appointment.phone = phone
             appointment.save()
+
+            # ================================================
+            # Llamada a la función que envía el correo
+            enviar_notificacion_cita_bl(appointment)
+            # ================================================
+
             return redirect('dashboard_bl')
         else:
             return render(request, 'citas_billingue/select-date_bl.html', {
@@ -108,7 +161,18 @@ def get_available_slots(request):
 
     try:
         selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        day_of_week = selected_date.strftime('%A')
+        
+        # Traducción al español
+        dias_es = {
+            'Monday': 'lunes',
+            'Tuesday': 'martes',
+            'Wednesday': 'miércoles',
+            'Thursday': 'jueves',
+            'Friday': 'viernes',
+            'Saturday': 'sábado',
+            'Sunday': 'domingo'
+        }
+        day_of_week = dias_es[selected_date.strftime('%A')]
 
         schedules = Schedule_bl.objects.filter(teacher_id=teacher_id, day_of_week=day_of_week)
         reserved_slots = Appointment_bl.objects.filter(teacher_id=teacher_id, date=selected_date).values_list('time', flat=True)
@@ -119,18 +183,23 @@ def get_available_slots(request):
             end_time = schedule.end_time
 
             while start_time < end_time:
-                next_time = (datetime.combine(datetime.today(), start_time) + timedelta(minutes=30)).time()
+                next_time = (
+                    datetime.combine(datetime.today(), start_time) + timedelta(minutes=30)
+                ).time()
                 slot_range = f"{start_time.strftime('%H:%M')}-{next_time.strftime('%H:%M')}"
+
                 if start_time not in reserved_slots:
                     available_slots.append({'time': slot_range, 'available': True})
                 else:
                     available_slots.append({'time': slot_range, 'available': False})
+
                 start_time = next_time
 
         return JsonResponse({'slots': available_slots})
 
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
 
 
 @login_required
@@ -140,6 +209,15 @@ def dashboard_bl(request):
     return render(request, 'citas_billingue/dashboard_bl.html', {
         'appointments': appointments,
     })
+
+
+@login_required
+def delete_appointment_bl(request, appointment_id):
+    """Elimina una cita y notifica con un mensaje de éxito."""
+    cita = get_object_or_404(Appointment_bl, id=appointment_id)
+    cita.delete()
+    messages.success(request, 'Cita eliminada exitosamente.')
+    return redirect('dashboard_bl')
 
 
 def get_subjects_by_grade(request):

@@ -9,7 +9,6 @@ class CountryForm(forms.ModelForm):
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el nombre del país'}),
         }
 
-
 class CityForm(forms.ModelForm):
     class Meta:
         model = City
@@ -36,24 +35,10 @@ class TitleForm(forms.ModelForm):
             'description': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingrese el título'}),
         }
 
-
-from django import forms
-from .models import Sponsor, Title, Directed, City
-
 class SponsorForm(forms.ModelForm):
     class Meta:
         model = Sponsor
-        fields = [
-            "title", "directed", "last_name_1", "last_name_2", "first_name_1", "first_name_2",
-            "free_union", "profession", "address", "street", "city", "phone_1", "phone_2", "fax",
-            "email", "email_2", "email_3", "report_email", "only_email", "only_easter_rep", "financial_report",
-            "language", "annex", "contact", "addressed_to", "addressed_to_2",
-            "visitor", "visitor_date", "sponsor", "godfather", "sponsorship", "member", "former_volunteer",
-            "volunt_dep_date", "no_correspondence", "deceased", "deactivated", "expect_reaction",
-            "bad_address", "private", "first_contact", "last_contact",
-            "note_1", "note_2", "date_of_birth", "date_of_birth_2", "gender", "civil_status", "nationality",
-            "imprimir", "deactivate_soon", "recog_2010", "recog_2020_blanket", "recog_2020_plate",
-        ]
+        exclude = ['city']  # ✅ EXCLUIMOS city para manejarlo manualmente en la vista
 
         widgets = {
             "title": forms.Select(attrs={"class": "form-control"}),
@@ -66,18 +51,23 @@ class SponsorForm(forms.ModelForm):
             "profession": forms.TextInput(attrs={"class": "form-control"}),
             "address": forms.TextInput(attrs={"class": "form-control"}),
             "street": forms.TextInput(attrs={"class": "form-control"}),
-            "city": forms.Select(attrs={"class": "form-control"}),
+
+            # "city" ya no está aquí 👇
+            # "city": forms.Select(attrs={"class": "form-control"}),
+
             "phone_1": forms.TextInput(attrs={"class": "form-control"}),
             "phone_2": forms.TextInput(attrs={"class": "form-control"}),
             "fax": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "email_2": forms.EmailInput(attrs={"class": "form-control"}),
             "email_3": forms.EmailInput(attrs={"class": "form-control"}),
+
             "language": forms.TextInput(attrs={"class": "form-control"}),
             "annex": forms.TextInput(attrs={"class": "form-control"}),
             "contact": forms.TextInput(attrs={"class": "form-control"}),
             "addressed_to": forms.TextInput(attrs={"class": "form-control"}),
             "addressed_to_2": forms.TextInput(attrs={"class": "form-control"}),
+            "padrino_ch_d": forms.Select(attrs={"class": "form-control"}),
 
             "visitor_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
             "volunt_dep_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
@@ -89,11 +79,31 @@ class SponsorForm(forms.ModelForm):
             "note_1": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
             "note_2": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
 
-            "gender": forms.Select(choices=[("M", "Masculino"), ("F", "Femenino"), ("NA", "No aplica")], attrs={"class": "form-control"}),
-            "civil_status": forms.Select(choices=[("Soltero", "Soltero"), ("Casado", "Casado"), ("Divorciado", "Divorciado"), ("Viudo", "Viudo"), ("No aplica", "No aplica")], attrs={"class": "form-control"}),
-            "nationality": forms.TextInput(attrs={"class": "form-control"}),
-
-            # Checkboxes alineados
+            "gender": forms.Select(choices=[
+                ("", "---------"),
+                ("M", "Masculino"),
+                ("F", "Femenino"), 
+                ("NA", "No aplica")],
+                  attrs={"class": "form-control"}),
+            "civil_status": forms.Select(choices=[
+                ("", "---------"),
+                ("Soltero", "Soltero"),
+                ("Casado", "Casado"),
+                ("Divorciado", "Divorciado"),
+                ("Viudo", "Viudo"),
+                ("No aplica", "No aplica")
+            ], attrs={"class": "form-control"}),
+            "nationality": forms.Select(choices=[
+                ("", "---------"),
+    ("Alemana", "Alemana"),
+    ("Suiza", "Suiza"),
+    ("Española", "Española"),
+    ("Austríaca", "Austríaca"),
+    ("Francesa", "Francesa"),
+    ("USA", "USA"),
+    ("Hondureña", "Hondureña"),
+    ("Guatemalteca", "Guatemalteca")
+            ], attrs={"class": "form-control"}),
             "report_email": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "only_email": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "only_easter_rep": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -125,7 +135,7 @@ class SponsorForm(forms.ModelForm):
             "profession": "Profesión",
             "address": "Dirección",
             "street": "Calle",
-            "city": "Ciudad",
+            # "city": "Ciudad",  # Ya no se muestra directamente desde el formulario
             "phone_1": "Teléfono 1",
             "phone_2": "Teléfono 2",
             "fax": "Fax",
@@ -147,7 +157,9 @@ class SponsorForm(forms.ModelForm):
             "gender": "Sexo",
             "civil_status": "Estado Civil",
             "nationality": "Nacionalidad",
+            "padrino_ch_d": "Padrino CH/D",
         }
+
 class GodfatherForm(forms.ModelForm):
     class Meta:
         model = Godfather
@@ -182,9 +194,6 @@ class CorrespondenceForm(forms.ModelForm):
             'date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'description': forms.TextInput(attrs={'class': 'form-control'}),
         }
-
-from django import forms
-from .models import Income
 
 class IncomeForm(forms.ModelForm):
     class Meta:

@@ -10,7 +10,6 @@ class CountryAdmin(admin.ModelAdmin):
 class CityAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'zip_code', 'country')  # 'zip_code' es el nombre correcto
 
-
 @admin.register(Directed)
 class DirectedAdmin(admin.ModelAdmin):
     list_display = ('id', 'description')

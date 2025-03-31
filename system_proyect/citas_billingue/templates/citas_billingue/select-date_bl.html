@@ -1,25 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar Fecha y Hora</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         .custom-header {
-    background-color: #febc34;  /* Azul */
-    color: snow;               /* Texto en blanco */
-    padding: 15px;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 5px 5px 0 0; /* Bordes redondeados en la parte superior */
-}
- </style>
-    <title>Seleccionar Fecha y Hora</title>
+            background-color: #febc34;  /* Amarillo */
+            color: snow;               /* Texto en blanco */
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 5px 5px 0 0; /* Bordes redondeados en la parte superior */
+        }
+        /* Destacar la fecha seleccionada en el calendario */
+        .selectable-date.highlighted {
+            background-color: #cce5ff; /* Celeste suave */
+        }
+        /* Destacar el horario seleccionado */
+        .list-group-item.selected-time {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .list-group-item.unavailable {
+            background-color: #eee;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
 <div class="container mt-5">
     <h2 class="mb-4 text-center custom-header">Seleccionar Fecha y Hora</h2>
+
+    <!-- Etiqueta para mostrar mes y año -->
+    <h3 id="monthLabel" class="text-center mb-3"></h3>
+
     <div class="row">
         <div class="col-md-6">
             <table class="table table-bordered text-center" id="calendar">
@@ -39,6 +56,7 @@
                 </tbody>
             </table>
         </div>
+
         <div class="col-md-6">
             <h4>Horarios Disponibles</h4>
             <ul class="list-group" id="time-slots">
@@ -46,7 +64,8 @@
             </ul>
         </div>
     </div>
-    <form id="appointment-form" method="POST" action="{% url 'select_date' appointment.id %}">
+
+    <form id="appointment-form" method="POST" action="{% url 'select_date_bl' appointment.id %}">
         {% csrf_token %}
         <div class="mb-3">
             <label for="email" class="form-label">Correo Electrónico</label>
@@ -56,8 +75,10 @@
             <label for="phone" class="form-label">Teléfono</label>
             <input type="tel" id="phone" name="phone" class="form-control" placeholder="Ingrese su teléfono" required>
         </div>
+
         <input type="hidden" id="selected-date" name="selected_date">
         <input type="hidden" id="selected-time" name="selected_time">
+
         <button type="submit" class="btn btn-primary w-100">Agendar Cita</button>
     </form>
 </div>
@@ -68,22 +89,30 @@
         const calendar = document.querySelector('#calendar tbody');
         const timeSlots = document.querySelector('#time-slots');
         const form = document.querySelector('#appointment-form');
-
+    
         const today = new Date();
         const currentYear = today.getFullYear();
         const currentMonth = today.getMonth();
         generateCalendar(currentYear, currentMonth);
-
+    
         function generateCalendar(year, month) {
+            const monthNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio",
+                                "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+    
+            document.getElementById("monthLabel").innerText = `${monthNames[month]} ${year}`;
+    
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
             let date = 1;
             calendar.innerHTML = '';
-
+    
             for (let i = 0; i < 6; i++) {
                 const row = document.createElement('tr');
+    
                 for (let j = 0; j < 7; j++) {
                     const cell = document.createElement('td');
+    
                     if (i === 0 && j < firstDay) {
                         cell.innerHTML = '';
                     } else if (date > daysInMonth) {
@@ -93,7 +122,20 @@
                         cell.innerHTML = date;
                         cell.classList.add('selectable-date');
                         cell.style.cursor = 'pointer';
-                        cell.onclick = () => loadTimeSlots(fullDate);
+    
+                        // Marcar día actual automáticamente
+                        if (today.getFullYear() === year && today.getMonth() === month && today.getDate() === date) {
+                            cell.style.backgroundColor = '#90caf9';
+                        }
+    
+                        // Al hacer click, resaltar y cargar slots
+                        cell.onclick = () => {
+                            clearSelection(); // Limpiar selección anterior
+                            cell.style.backgroundColor = '#4CAF50'; // Verde selección
+                            cell.style.color = 'white';
+                            loadTimeSlots(fullDate);
+                        };
+    
                         date++;
                     }
                     row.appendChild(cell);
@@ -101,10 +143,21 @@
                 calendar.appendChild(row);
             }
         }
-
+    
+        function clearSelection() {
+            document.querySelectorAll('.selectable-date').forEach(cell => {
+                cell.style.backgroundColor = '';
+                cell.style.color = '';
+                const cellDate = new Date(currentYear, currentMonth, parseInt(cell.innerHTML));
+                if (cellDate.toDateString() === today.toDateString()) {
+                    cell.style.backgroundColor = '#90caf9'; // Reestablecer día actual
+                }
+            });
+        }
+    
         function loadTimeSlots(date) {
             document.getElementById('selected-date').value = date;
-
+    
             fetch(`/citas_billingue/get-available-slots/?teacher_id=${teacherId}&date=${date}`)
                 .then(response => response.json())
                 .then(data => {
@@ -114,13 +167,19 @@
                             const li = document.createElement('li');
                             li.textContent = slot.time;
                             li.classList.add('list-group-item');
-
+    
                             if (slot.available) {
                                 li.style.cursor = 'pointer';
                                 li.classList.add('available');
-                                li.onclick = () => selectTime(date, slot.time);
+    
+                                li.onclick = () => {
+                                    document.querySelectorAll('#time-slots .selected-time')
+                                      .forEach(sel => sel.classList.remove('selected-time'));
+    
+                                    li.classList.add('selected-time');
+                                    selectTime(date, slot.time);
+                                };
                             } else {
-                                li.style.cursor = 'not-allowed';
                                 li.classList.add('unavailable');
                                 li.onclick = () => {
                                     Swal.fire({
@@ -141,7 +200,7 @@
                     timeSlots.innerHTML = '<li class="list-group-item text-danger">Error al cargar los horarios</li>';
                 });
         }
-
+    
         function selectTime(date, time) {
             document.getElementById('selected-time').value = time;
             Swal.fire({
@@ -151,12 +210,12 @@
                 confirmButtonText: 'Aceptar',
             });
         }
-
+    
         form.addEventListener('submit', function (e) {
             e.preventDefault();
             const date = document.getElementById('selected-date').value;
             const time = document.getElementById('selected-time').value;
-
+    
             if (!date || !time) {
                 Swal.fire({
                     title: 'Error',
@@ -166,7 +225,7 @@
                 });
                 return;
             }
-
+    
             fetch(form.action, {
                 method: 'POST',
                 body: new FormData(form),
@@ -178,8 +237,7 @@
                 if (response.ok) {
                     Swal.fire({
                         title: '¡Cita agendada!',
-                        html: `<p><strong>Fecha:</strong> ${date}</p><p><strong>Hora:</strong> ${time}
-                            <br> Esperar la confirmacion del encargado <br> GRACIAS POR ESPERAR </p>`,
+                        html: `<p><strong>Fecha:</strong> ${date}</p><p><strong>Hora:</strong> ${time}<br>Esperar la confirmación del encargado<br>GRACIAS POR ESPERAR</p>`,
                         icon: 'success',
                         confirmButtonText: 'Aceptar',
                     }).then(() => {
@@ -199,6 +257,7 @@
             });
         });
     });
-</script>
+    </script>
+    
 </body>
 </html>
