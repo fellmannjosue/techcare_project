@@ -119,19 +119,28 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # 15. Internacionalización
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ES-HN'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
 # 16. Archivos estáticos (CSS, JS, Imágenes)
 STATIC_URL = '/static/'
+
 STATICFILES_DIRS = [
-    BASE_DIR / "system_proyect/helpdesk/static",
-    BASE_DIR / "system_proyect/inventory/static",
-    BASE_DIR / "system_proyect/maintenance/static",
-    BASE_DIR / "system_proyect/static",
+    BASE_DIR / "system_proyect/tickets/static",
+    BASE_DIR / "system_proyect/inventario/static",
+    BASE_DIR / "system_proyect/mantenimiento/static",
+    BASE_DIR / "system_proyect/sponsors/static",
+    BASE_DIR / "system_proyect/menu/static",
+    BASE_DIR / "system_proyect/citas_billingue/static",
+    BASE_DIR / "system_proyect/citas_colegio/static",
+    BASE_DIR / "system_proyect/static",  # carpeta general
 ]
+
+# Ruta donde se almacenarán los archivos estáticos recolectados por collectstatic
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
 
 # 17. Primary key por defecto
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
