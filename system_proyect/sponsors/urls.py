@@ -19,10 +19,10 @@ urlpatterns = [
     path('add-directed/', views.add_directed, name='add_directed'),
     path('add-title/', views.add_title, name='add_title'),
     path('add-correspondence/', views.add_correspondence, name='add_correspondence'),
-    #path('add-descr-godfather/', views.add_descr_godfather, name='add_descr_godfather'),
+    path('add-descr-godfather/', views.add_descr_godfather, name='add_descr_godfather'),
     path('add-godfather/', views.add_godfather, name='add_godfather'),
     path('add-income/', views.add_income, name='add_income'),
-    #path('add-sponsored/', views.add_sponsored, name='add_sponsored'),
+    path('add-sponsored/', views.add_sponsored, name='add_sponsored'),
 
     path('search-name/', views.search_name, name='search_name'),
     path('search-lastname/', views.search_lastname, name='search_lastname'),

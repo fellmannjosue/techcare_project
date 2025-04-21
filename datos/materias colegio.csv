@@ -1,0 +1,130 @@
+"id";"name";"grade_id";"teacher_id"
+1;"Civica";1;1
+2;"Sociologia";8;1
+3;"Orientacion";5;1
+4;"Matematicas";1;3
+5;"Matematicas";3;3
+6;"Dibujo Tecnico";1;3
+7;"Matematicas";5;3
+8;"Matematicas";2;3
+9;"Matematicas";4;3
+10;"Dibujo Tecnico";2;3
+11;"Dibujo Tecnico";4;3
+12;"Dibujo Tecnico";3;3
+13;"Dibujo Tecnico";5;3
+14;"Informatica";6;3
+15;"Informatica";7;3
+16;"Informatica";8;3
+17;"Matematicas Avanzada";6;2
+18;"Matematicas Avanzada";7;2
+20;"Matematicas Avanzada";9;2
+21;"Matematicas Avanzada";10;2
+22;"Matematicas Avanzada";11;2
+23;"Fisica Elemental";6;2
+24;"Fisica Elemental";7;2
+25;"Fisica Elemental";8;10
+26;"Fisica Elemental";9;2
+27;"Fisica Elemental";10;2
+28;"Fisica Elemental";11;2
+29;"Robotica";6;2
+30;"Robotica";7;2
+31;"Robotica";8;2
+32;"Robotica";9;2
+33;"Robotica";10;2
+34;"Robotica";11;2
+35;"Dibujo Tecnico";9;2
+36;"Dibujo Tecnico";10;2
+37;"Dibujo Tecnico";11;2
+38;"Ciencias Naturales";3;4
+39;"Ciencias Naturales";5;4
+40;"Biologia";6;4
+41;"Biologia";7;4
+42;"Biologia";8;4
+43;"Biologia";9;4
+44;"Biologia";10;4
+45;"Biologia";11;4
+46;"Quimica";6;4
+47;"Quimica";7;4
+48;"Quimica";8;4
+49;"Quimica";9;4
+50;"Quimica";10;4
+51;"Quimica";11;4
+52;"Tecnologia";3;10
+53;"Matematicas Avanzada";8;10
+54;"Español";5;8
+55;"Tecnologia";2;10
+56;"Artistica";2;10
+57;"Tecnologia";5;10
+58;"Tecnologia";4;10
+59;"Tecnologia";3;10
+60;"Tecnologia";1;10
+61;"Artistica";1;10
+62;"Ingles Basico";1;6
+63;"Ingles Basico";2;6
+64;"Ingles Basico";3;6
+65;"Ingles Basico";4;6
+66;"Ingles Basico";5;6
+67;"Ingles Basico";6;6
+68;"Ingles Basico";7;6
+69;"Ingles Basico";8;6
+70;"Ingles Basico";9;6
+71;"Ingles Basico";10;6
+72;"Ingles Basico";11;6
+73;"Ingles Avanzado";6;7
+74;"Literatura Avanzada";6;7
+75;"Ingles Avanzada";9;7
+76;"Literatura Avanzada";9;7
+77;"Computacion";1;13
+78;"Computacion";2;13
+79;"Computacion";3;13
+80;"Computacion";4;13
+81;"Computacion";5;13
+82;"Español";1;8
+83;"Español";2;8
+84;"Español";3;8
+85;"Español";4;8
+86;"Español";6;8
+87;"Español";7;8
+88;"Español";8;8
+89;"Español";9;8
+90;"Español";10;8
+91;"Español";11;8
+92;"Estudios Sociales";1;9
+93;"Estudios Sociales";2;9
+94;"Estudios Sociales";3;9
+95;"Estudios Sociales";4;9
+96;"Estudios Sociales";5;9
+97;"Civica";5;9
+98;"Civica";2;9
+99;"Historia Universal";9;9
+100;"Historia Universal";10;9
+101;"Historia Universal";11;9
+102;"Introduccion a la Economia";9;9
+103;"Introduccion a la Economia";10;9
+104;"Introduccion a la Economia";11;9
+105;"Historia de Honduras";6;9
+106;"Historia de Honduras";7;9
+107;"Historia de Honduras";8;9
+108;"Artistica";3;11
+109;"Artistica";4;11
+110;"Ciencias Naturales";1;11
+111;"Ciencias Naturales";2;11
+112;"Artistica";5;11
+113;"Orientacion";3;11
+114;"Orientacion";4;11
+115;"Ciencias Naturales";4;11
+116;"Antropologia";9;11
+117;"Antropologia";11;11
+118;"Civica";3;12
+119;"Civica";4;12
+120;"Sociologia";6;12
+121;"Sociologia";7;12
+122;"Filosofia";9;12
+123;"Filosofia";10;12
+124;"Filosofia";11;12
+125;"Apreciación Artística";9;12
+126;"Apreciación Artística";10;12
+127;"Apreciación Artística";11;12
+128;"Fundamentos Psicologia";6;12
+129;"Fundamentos Psicologia";7;12
+130;"Fundamentos Psicologia";8;12

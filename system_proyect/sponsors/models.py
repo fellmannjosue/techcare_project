@@ -220,3 +220,32 @@ class Income(models.Model):
     class Meta:
         db_table = 'tbl_spn_income'
         managed = False  # 🔹 Evita que Django intente modificar la base de datos
+# -------------------------- SPONSORED -------------------------- #
+
+class Sponsored(models.Model):
+    id = models.AutoField(primary_key=True, db_column='spn_sponsored_id')
+    last_name_1 = models.CharField(max_length=100, db_column='last_name_1', verbose_name="Apellido 1", null=True, blank=True)
+    last_name_2 = models.CharField(max_length=100, db_column='last_name_2', verbose_name="Apellido 2", null=True, blank=True)
+    first_name_1 = models.CharField(max_length=100, db_column='first_name_1', verbose_name="Nombre 1", null=True, blank=True)
+    first_name_2 = models.CharField(max_length=100, db_column='first_name_2', verbose_name="Nombre 2", null=True, blank=True)
+    active = models.BooleanField(default=True, db_column='active', verbose_name="Activo")
+
+    class Meta:
+        db_table = 'tbl_spn_sponsored'
+        managed = False
+
+    def __str__(self):
+        return f"{self.first_name_1} {self.last_name_1}"
+
+# -------------------------- DESCR_GODFATHER -------------------------- #
+class Descr_Godfather(models.Model):
+    id = models.AutoField(primary_key=True, db_column='spn_descr_godfather_id')
+    name = models.CharField(max_length=10, db_column='name', verbose_name="Código")
+    description = models.CharField(max_length=100, db_column='description', verbose_name="Descripción")
+
+    class Meta:
+        db_table = 'tbl_spn_descr_godfather'
+        managed = False
+
+    def __str__(self):
+        return self.description

@@ -1,5 +1,5 @@
 from django import forms
-from .models import City, Country, Directed, Title, Sponsor, Godfather, Correspondence,Income
+from .models import City, Country, Directed, Title, Sponsor, Godfather, Correspondence,Income,Sponsored, Descr_Godfather
 
 class CountryForm(forms.ModelForm):
     class Meta:
@@ -38,9 +38,10 @@ class TitleForm(forms.ModelForm):
 class SponsorForm(forms.ModelForm):
     class Meta:
         model = Sponsor
-        exclude = ['city']  # ✅ EXCLUIMOS city para manejarlo manualmente en la vista
+        exclude = ['city']  # Manejamos 'city' manualmente
 
         widgets = {
+            "id": forms.TextInput(attrs={"class": "form-control", "readonly": "readonly"}),  # ID solo lectura
             "title": forms.Select(attrs={"class": "form-control"}),
             "directed": forms.Select(attrs={"class": "form-control"}),
             "last_name_1": forms.TextInput(attrs={"class": "form-control"}),
@@ -52,15 +53,12 @@ class SponsorForm(forms.ModelForm):
             "address": forms.TextInput(attrs={"class": "form-control"}),
             "street": forms.TextInput(attrs={"class": "form-control"}),
 
-            # "city" ya no está aquí 👇
-            # "city": forms.Select(attrs={"class": "form-control"}),
-
             "phone_1": forms.TextInput(attrs={"class": "form-control"}),
             "phone_2": forms.TextInput(attrs={"class": "form-control"}),
             "fax": forms.TextInput(attrs={"class": "form-control"}),
             "email": forms.EmailInput(attrs={"class": "form-control"}),
             "email_2": forms.EmailInput(attrs={"class": "form-control"}),
-            "email_3": forms.EmailInput(attrs={"class": "form-control"}),
+            "email_3": forms.EmailInput(attrs={"class": "form-control"}),  # ✅ agregado
 
             "language": forms.TextInput(attrs={"class": "form-control"}),
             "annex": forms.TextInput(attrs={"class": "form-control"}),
@@ -82,9 +80,10 @@ class SponsorForm(forms.ModelForm):
             "gender": forms.Select(choices=[
                 ("", "---------"),
                 ("M", "Masculino"),
-                ("F", "Femenino"), 
-                ("NA", "No aplica")],
-                  attrs={"class": "form-control"}),
+                ("F", "Femenino"),
+                ("NA", "No aplica")
+            ], attrs={"class": "form-control"}),
+
             "civil_status": forms.Select(choices=[
                 ("", "---------"),
                 ("Soltero", "Soltero"),
@@ -93,17 +92,19 @@ class SponsorForm(forms.ModelForm):
                 ("Viudo", "Viudo"),
                 ("No aplica", "No aplica")
             ], attrs={"class": "form-control"}),
+
             "nationality": forms.Select(choices=[
                 ("", "---------"),
-    ("Alemana", "Alemana"),
-    ("Suiza", "Suiza"),
-    ("Española", "Española"),
-    ("Austríaca", "Austríaca"),
-    ("Francesa", "Francesa"),
-    ("USA", "USA"),
-    ("Hondureña", "Hondureña"),
-    ("Guatemalteca", "Guatemalteca")
+                ("Alemana", "Alemana"),
+                ("Suiza", "Suiza"),
+                ("Española", "Española"),
+                ("Austríaca", "Austríaca"),
+                ("Francesa", "Francesa"),
+                ("USA", "USA"),
+                ("Hondureña", "Hondureña"),
+                ("Guatemalteca", "Guatemalteca")
             ], attrs={"class": "form-control"}),
+
             "report_email": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "only_email": forms.CheckboxInput(attrs={"class": "form-check-input"}),
             "only_easter_rep": forms.CheckboxInput(attrs={"class": "form-check-input"}),
@@ -127,6 +128,8 @@ class SponsorForm(forms.ModelForm):
         }
 
         labels = {
+            "id": "Personal ID",
+            "email_3": "Correo Electrónico 3",  # ✅ agregado
             "last_name_1": "Apellido 1",
             "last_name_2": "Apellido 2",
             "first_name_1": "Nombre 1",
@@ -135,13 +138,11 @@ class SponsorForm(forms.ModelForm):
             "profession": "Profesión",
             "address": "Dirección",
             "street": "Calle",
-            # "city": "Ciudad",  # Ya no se muestra directamente desde el formulario
             "phone_1": "Teléfono 1",
             "phone_2": "Teléfono 2",
             "fax": "Fax",
             "email": "Correo Electrónico",
             "email_2": "Correo Electrónico 2",
-            "email_3": "Correo Electrónico 3",
             "language": "Idioma",
             "contact": "Contacto",
             "addressed_to": "Dirigido Carta",
@@ -149,7 +150,6 @@ class SponsorForm(forms.ModelForm):
             "visitor": "Visitante",
             "sponsor": "Padrino",
             "godfather": "Bienhechor",
-            "sponsorship": "Padrinazgo",
             "member": "Miembro",
             "former_volunteer": "Ex Voluntario",
             "note_1": "Nota 1",
@@ -230,4 +230,36 @@ class IncomeForm(forms.ModelForm):
             'text2': forms.TextInput(attrs={'class': 'form-control'}),
             'receipt_number': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'payment_mail': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class SponsoredForm(forms.ModelForm):
+    class Meta:
+        model = Sponsored
+        fields = ['last_name_1', 'last_name_2', 'first_name_1', 'first_name_2', 'active']
+        labels = {
+            'last_name_1': 'Apellido 1',
+            'last_name_2': 'Apellido 2',
+            'first_name_1': 'Nombre 1',
+            'first_name_2': 'Nombre 2',
+            'active': 'Activo',
+        }
+        widgets = {
+            'last_name_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name_1': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name_2': forms.TextInput(attrs={'class': 'form-control'}),
+            'active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+class DescrGodfatherForm(forms.ModelForm):
+    class Meta:
+        model = Descr_Godfather
+        fields = ['name', 'description']
+        labels = {
+            'name': 'Código',
+            'description': 'Descripción',
+        }
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.TextInput(attrs={'class': 'form-control'}),
         }

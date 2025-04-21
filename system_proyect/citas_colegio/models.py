@@ -24,9 +24,16 @@ class Teacher_col(models.Model):
         max_length=50,
         choices=[
            ('Matematicas Bachillerato', 'Matematicas Bachillerato'),
-            ('Matematicas basica', 'Matematicas basica'),
-            ('Generales', 'Generales'),
-            ('Ingles Basico', 'Ingles Basico')
+            ('Matematicas Basica', 'Matematicas Basica'),
+            ('Generales Bachillerato', 'Generales Bachillerato'),
+            ('Español General ', 'Español General '),
+            ('Ciencias Sociales Basicas ', 'Ciencias Sociales Basicas '),
+            ('Ciencias Sociales Bachillerato ', 'Ciencias Sociales Bachillerato '),
+            ('Generales Basicas ', 'Generales Basicas '),
+            ('Ciencias Naturales Bachillerato', 'Ciencias Naturales Bachillerato'),
+            ('Ciencias Naturales Basica', 'Ciencias Naturales Basica'),
+            ('Artes', 'Artes'),
+            ('Ingles ', 'Ingles '),
         ]
     )
     class_name = models.CharField(max_length=255, null=True, blank=True)
