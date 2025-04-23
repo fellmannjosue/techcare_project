@@ -21,7 +21,7 @@
     <h1 class="mb-5">Enfermería</h1>
     <div class="row justify-content-center g-4">
       <div class="col-sm-6 col-md-4">
-        <a href="{% url 'enfermeria:atencion_list' %}" class="card-link">
+        <a href="{% url 'enfermeria:atencion_form' %}" class="card-link">
           <div class="card shadow-sm">
             <div class="card-body">
               <img src="{% static 'enfermeria/img/atencion-medica.png' %}" alt="Atención Médica" class="mb-3">
@@ -38,6 +38,17 @@
               <img src="{% static 'enfermeria/img/informe-medico.png' %}" alt="Inventario Medicamentos" class="mb-3">
               <h5 class="card-title">Inventario Medicamentos</h5>
               <p class="card-text text-muted">Ver existencias y movimientos.</p>
+            </div>
+          </div>
+        </a>
+      </div>
+      <div class="col-sm-6 col-md-4">
+        <a href="{% url 'menu' %}" class="card-link">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <img src="{% static 'enfermeria/img/hogar.png' %}" alt="Inventario Medicamentos" class="mb-3">
+              <h5 class="card-title">Regresar a menu Principal</h5>
+              <p class="card-text text-muted">Regresara dashboard</p>
             </div>
           </div>
         </a>
