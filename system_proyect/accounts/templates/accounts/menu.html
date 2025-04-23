@@ -170,35 +170,49 @@
 
     <!-- Menú Principal -->
     <div class="menu-grid">
-        <div class="menu-item" onclick="window.location.href='{% url 'technician_dashboard' %}'">
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'technician_dashboard' %}'">
             <img src="{% static 'accounts/img/helpdesk.png' %}" alt="Tickets">
             <span>Sistema de Tickets</span>
         </div>
-        <div class="menu-item" onclick="window.location.href='{% url 'inventory_dashboard' %}'">
+    
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'inventory_dashboard' %}'">
             <img src="{% static 'accounts/img/inventario.png' %}" alt="Inventario">
             <span>Inventario</span>
         </div>
-        <div class="menu-item" onclick="window.location.href='{% url 'maintenance_dashboard' %}'">
+    
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'mantenimiento:maintenance_dashboard' %}'">
             <img src="{% static 'accounts/img/mantenimiento.png' %}" alt="Mantenimiento">
             <span>Ficha de Mantenimiento</span>
         </div>
-        <div class="menu-item" onclick="window.location.href='{% url 'dashboard_bl' %}'">
+    
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'dashboard_bl' %}'">
             <img src="{% static 'accounts/img/cita.png' %}" alt="Citas BL">
             <span>Citas BL</span>
         </div>
-        <div class="menu-item" onclick="window.location.href='{% url 'dashboard_col' %}'">
+    
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'dashboard_col' %}'">
             <img src="{% static 'accounts/img/cita.png' %}" alt="Citas COL/VOC">
             <span>Citas COL/VOC</span>
         </div>
-        <div class="menu-item" onclick="window.location.href='{% url 'sponsors:sponsors_dashboard' %}'">
+    
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'sponsors:sponsors_dashboard' %}'">
             <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
             <span>Sponsors</span>
         </div>
-        <div class="menu-item" onclick="window.location.href='{% url 'logout' %}'">
+    
+        <div class="menu-item"
+             onclick="window.location.href='{% url 'logout' %}'">
             <img src="{% static 'accounts/img/cerrar-sesion.png' %}" alt="Cerrar Sesión">
             <span>Cerrar Sesión</span>
         </div>
     </div>
+    
 
     <div class="footer">
         <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>

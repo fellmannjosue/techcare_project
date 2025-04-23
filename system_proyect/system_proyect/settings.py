@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'citas_colegio',
     'sponsors',
     'menu',
+    'enfermeria',
 ]
 
 
