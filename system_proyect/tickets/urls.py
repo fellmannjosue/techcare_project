@@ -3,6 +3,8 @@ from . import views
 from django.contrib import admin
 from django.shortcuts import redirect
 
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('submit_ticket/', views.submit_ticket, name='submit_ticket'),
