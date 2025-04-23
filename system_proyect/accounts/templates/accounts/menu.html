@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>Dashboard Principal</title>
 
-    <!-- Bootstrap CSS -->
+    <!-- Bootstrap CSS & JS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -31,7 +31,6 @@
             align-items: center;
             gap: 20px;
         }
-        /* Campanita de notificaciones */
         .notification-icon {
             position: relative;
             cursor: pointer;
@@ -46,7 +45,6 @@
             border-radius: 50%;
             font-size: 12px;
         }
-        /* Info del usuario */
         .user-info {
             display: flex;
             align-items: center;
@@ -57,19 +55,16 @@
         .user-info img {
             border-radius: 50%;
         }
-        /* Logo */
         .logo img {
             width: 120px;
             margin-bottom: 20px;
         }
-        /* Título principal */
         .menu-title {
             font-size: 26px;
             color: #444;
             margin-bottom: 20px;
             font-weight: bold;
         }
-        /* Menú principal */
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -106,65 +101,81 @@
             color: #666;
             font-size: 14px;
         }
-        /* Dropdown notificaciones */
-        .dropdown-menu {
-            width: 280px;
-            padding: 10px;
-        }
-        .dropdown-header {
-            font-weight: bold;
-            color: #444;
-            border-bottom: 1px solid #ddd;
-            margin-bottom: 10px;
-        }
-        .dropdown-item {
-            font-size: 14px;
-        }
     </style>
 </head>
 
 <body>
 
-    <!-- Encabezado: Notificaciones y Usuario -->
+    <!-- Encabezado: Notificaciones -->
     <div class="header-container">
         <div class="dropdown notification-icon">
-            <img src="{% static 'accounts/img/bell.png' %}" width="32" height="32" data-bs-toggle="dropdown" alt="Notificaciones">
+            <img src="{% static 'accounts/img/bell.png' %}"
+                 width="32" height="32"
+                 data-bs-toggle="dropdown"
+                 alt="Notificaciones">
             {% if citas_pendientes or tickets_pendientes %}
-                <span class="notification-count">{{ citas_pendientes|add:tickets_pendientes }}</span>
-            {% else %}
-                <span class="notification-count" style="display:none;">0</span>
+                <span class="notification-count">
+                  {{ citas_pendientes|add:tickets_pendientes }}
+                </span>
             {% endif %}
             <ul class="dropdown-menu dropdown-menu-end">
                 <li class="dropdown-header">Notificaciones recientes</li>
                 {% if citas_pendientes %}
-                    <li>
-                        <a class="dropdown-item" href="{% url 'dashboard_bl' %}">
-                            📅 Tienes {{ citas_pendientes }} cita(s) pendiente(s)
-                        </a>
-                    </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'dashboard_bl' %}">
+                      📅 Tienes {{ citas_pendientes }} cita(s) pendiente(s)
+                    </a>
+                  </li>
                 {% endif %}
                 {% if tickets_pendientes %}
-                    <li>
-                        <a class="dropdown-item" href="{% url 'technician_dashboard' %}">
-                            🎟️ Tienes {{ tickets_pendientes }} ticket(s) pendiente(s)
-                        </a>
-                    </li>
+                  <li>
+                    <a class="dropdown-item" href="{% url 'technician_dashboard' %}">
+                      🎟️ Tienes {{ tickets_pendientes }} ticket(s) pendiente(s)
+                    </a>
+                  </li>
                 {% endif %}
                 {% if not citas_pendientes and not tickets_pendientes %}
-                    <li class="dropdown-item text-muted">Sin nuevas notificaciones.</li>
+                  <li class="dropdown-item text-muted">
+                    Sin nuevas notificaciones.
+                  </li>
                 {% endif %}
             </ul>
         </div>
 
-        <div class="user-info">
-            <img src="{% static 'accounts/img/user.png' %}" alt="Usuario" width="32" height="32">
+        <!-- Usuario / Admin / Cerrar Sesión -->
+        <div class="dropdown">
+          <button class="btn btn-light dropdown-toggle user-info"
+                  type="button" id="userMenu"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            <img src="{% static 'accounts/img/user.png' %}"
+                 alt="Usuario" width="32" height="32">
             {{ request.user.username }}
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+            <li>
+              <a class="dropdown-item" href="{% url 'admin:index' %}">
+                <img src="{% static 'accounts/img/admin-panel.png' %}"
+                     alt="Admin" width="16" class="me-2">
+                Panel Admin
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'logout' %}">
+                <img src="{% static 'accounts/img/cerrar-sesion.png' %}"
+                     alt="Cerrar Sesión" width="16" class="me-2">
+                Cerrar Sesión
+              </a>
+            </li>
+          </ul>
         </div>
     </div>
 
     <!-- Logo y Título -->
     <div class="logo">
-        <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo">
+        <img src="{% static 'accounts/img/ana-transformed.png' %}"
+             alt="Logo">
     </div>
     <h2 class="menu-title">Dashboard Principal</h2>
 
@@ -172,97 +183,87 @@
     <div class="menu-grid">
         <div class="menu-item"
              onclick="window.location.href='{% url 'technician_dashboard' %}'">
-            <img src="{% static 'accounts/img/helpdesk.png' %}" alt="Tickets">
+            <img src="{% static 'accounts/img/helpdesk.png' %}"
+                 alt="Tickets">
             <span>Sistema de Tickets</span>
         </div>
-    
+
         <div class="menu-item"
              onclick="window.location.href='{% url 'inventory_dashboard' %}'">
-            <img src="{% static 'accounts/img/inventario.png' %}" alt="Inventario">
+            <img src="{% static 'accounts/img/inventario.png' %}"
+                 alt="Inventario">
             <span>Inventario</span>
         </div>
-    
+
         <div class="menu-item"
              onclick="window.location.href='{% url 'mantenimiento:maintenance_dashboard' %}'">
-            <img src="{% static 'accounts/img/mantenimiento.png' %}" alt="Mantenimiento">
+            <img src="{% static 'accounts/img/mantenimiento.png' %}"
+                 alt="Mantenimiento">
             <span>Ficha de Mantenimiento</span>
         </div>
-    
+
         <div class="menu-item"
              onclick="window.location.href='{% url 'dashboard_bl' %}'">
-            <img src="{% static 'accounts/img/cita.png' %}" alt="Citas BL">
+            <img src="{% static 'accounts/img/cita.png' %}"
+                 alt="Citas BL">
             <span>Citas BL</span>
         </div>
-    
+
         <div class="menu-item"
              onclick="window.location.href='{% url 'dashboard_col' %}'">
-            <img src="{% static 'accounts/img/cita.png' %}" alt="Citas COL/VOC">
+            <img src="{% static 'accounts/img/cita.png' %}"
+                 alt="Citas COL/VOC">
             <span>Citas COL/VOC</span>
         </div>
-    
+
         <div class="menu-item"
              onclick="window.location.href='{% url 'sponsors:sponsors_dashboard' %}'">
-            <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
+            <img src="{% static 'accounts/img/sponsors.png' %}"
+                 alt="Sponsors">
             <span>Sponsors</span>
         </div>
-    
+
         <div class="menu-item"
-             onclick="window.location.href='{% url 'logout' %}'">
-            <img src="{% static 'accounts/img/cerrar-sesion.png' %}" alt="Cerrar Sesión">
-            <span>Cerrar Sesión</span>
+             onclick="window.location.href='{% url 'enfermeria:enfermeria_dashboard' %}'">
+            <img src="{% static 'accounts/img/enfermeria.png' %}"
+                 alt="Enfermería">
+            <span>Enfermería</span>
         </div>
     </div>
-    
 
     <div class="footer">
         <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
     </div>
 
-    <!-- Script para polling de notificaciones -->
+    <!-- Polling de notificaciones -->
     <script>
-        // Variable para recordar el número de notificaciones previamente mostradas
         let lastTotal = 0;
-
         function checkNotifications() {
             fetch("{% url 'check_new_notifications' %}")
-                .then(response => {
-                    console.log("Status de la respuesta:", response.status);
-                    return response.json();
-                })
-                .then(data => {
-                    console.log("Datos recibidos:", data);
-                    const totalNuevas = data.citas_pendientes + data.tickets_pendientes;
-                    console.log("Total de notificaciones:", totalNuevas);
-                    const notifCount = document.querySelector('.notification-count');
-
-                    if (totalNuevas > 0) {
-                        notifCount.textContent = totalNuevas;
-                        notifCount.style.display = 'inline-block';
-
-                        // Mostrar el popup solo si el número de notificaciones aumentó
-                        if (totalNuevas > lastTotal) {
-                            Swal.fire({
-                                title: '¡HEY coordinador Tienes notificaciones nuevas!',
-                                text: `Citas: ${data.citas_pendientes}, Tickets: ${data.tickets_pendientes}`,
-                                icon: 'info',
-                                confirmButtonText: 'OK'
-                            });
-                        }
-                    } else {
-                        notifCount.style.display = 'none';
-                    }
-
-                    lastTotal = totalNuevas;  // Actualiza el contador para la próxima comprobación
-                })
-                .catch(error => {
-                    console.error("Error al verificar notificaciones:", error);
-                });
+              .then(r => r.json())
+              .then(data => {
+                const total = data.citas_pendientes + data.tickets_pendientes;
+                const el = document.querySelector('.notification-count');
+                if (total > 0) {
+                  el.textContent = total;
+                  el.style.display = 'inline-block';
+                  if (total > lastTotal) {
+                    Swal.fire({
+                      title: '¡Tienes notificaciones nuevas!',
+                      text: `Citas: ${data.citas_pendientes}, Tickets: ${data.tickets_pendientes}`,
+                      icon: 'info',
+                      confirmButtonText: 'OK'
+                    });
+                  }
+                } else {
+                  el.style.display = 'none';
+                }
+                lastTotal = total;
+              })
+              .catch(console.error);
         }
-
-        // Ejecutar al cargar la página y luego cada 30 segundos (30000 ms)
         checkNotifications();
         setInterval(checkNotifications, 60000);
     </script>
-
 </body>
 </html>
