@@ -10,10 +10,12 @@ class GradoAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
     search_fields = ('nombre',)
 
+
 @admin.register(Medico)
 class MedicoAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
     search_fields = ('nombre',)
+
 
 @admin.register(AtencionMedica)
 class AtencionMedicaAdmin(admin.ModelAdmin):
@@ -28,6 +30,7 @@ class ProveedorAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
     search_fields = ('nombre',)
 
+
 @admin.register(Responsable)
 class ResponsableAdmin(admin.ModelAdmin):
     list_display = ('nombre',)
@@ -36,9 +39,10 @@ class ResponsableAdmin(admin.ModelAdmin):
 
 @admin.register(InventarioMedicamento)
 class InventarioMedicamentoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'fecha_ingreso', 'proveedor', 'cantidad_existente')
+    list_display = ('nombre', 'fecha_ingreso', 'proveedor', 'cantidad_existente', 'modificado_por')
     list_filter = ('proveedor', 'fecha_ingreso')
     search_fields = ('nombre',)
+
 
 @admin.register(UsoMedicamento)
 class UsoMedicamentoAdmin(admin.ModelAdmin):

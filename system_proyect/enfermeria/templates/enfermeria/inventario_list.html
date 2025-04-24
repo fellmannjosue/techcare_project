@@ -4,74 +4,87 @@
 <head>
   <meta charset="UTF-8">
   <title>Inventario de Medicamentos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .btn-icon {
-      padding: 6px 10px;
-      font-size: 14px;
-    }
-    .btn-icon img {
-      width: 20px;
-      height: 20px;
-      margin-right: 5px;
-    }
-  </style>
 </head>
-<body>
-<div class="container py-4">
+<body class="bg-light">
+<div class="container py-5">
+  <!-- Encabezado -->
   <div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+      ← Volver al Dashboard
+    </a>
     <h2 class="mb-0">Inventario de Medicamentos</h2>
   </div>
 
-  <!-- BOTONES SUPERIORES -->
-  <div class="mb-3 d-flex gap-2 flex-wrap">
-    <a href="{% url 'enfermeria:inventario_create' %}" class="btn btn-success btn-icon">
-      <img src="{% static 'enfermeria/img/agregar.png' %}" alt="Agregar"> 
-    </a>
-    <a href="{% url 'enfermeria:uso_create' %}" class="btn btn-warning btn-icon">
-      <img src="{% static 'enfermeria/img/pildora.png' %}" alt="Uso"> 
-    </a>
-    <a href="{% url 'enfermeria:inventario_list' %}" class="btn btn-secondary btn-icon">
-      <img src="{% static 'enfermeria/img/lapiz.png' %}" alt="Editar"> 
-    </a>
-    <a href="#" onclick="alert('Selecciona un medicamento para ver su PDF');" class="btn btn-info btn-icon">
-      <img src="{% static 'enfermeria/img/pdf.png' %}" alt="PDF"> 
-    </a>
-    <a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="btn btn-secondary btn-icon">
-      <img src="{% static 'enfermeria/img/hogar.png' %}" alt="Editar"> 
-    </a>
-  </div>
-
-  <!-- TABLA -->
-  <table class="table table-striped table-hover">
-    <thead class="table-dark">
-      <tr>
-        <th>Nombre</th>
-        <th>Fecha Ingreso</th>
-        <th>Proveedor</th>
-        <th>Cantidad</th>
-        <th style="width: 160px;">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for item in items %}
-      <tr>
-        <td>{{ item.nombre }}</td>
-        <td>{{ item.fecha_ingreso }}</td>
-        <td>{{ item.proveedor }}</td>
-        <td>{{ item.cantidad_existente }}</td>
-        <td>
-          <a href="{% url 'enfermeria:inventario_edit' item.pk %}" class="btn btn-sm btn-primary" title="Editar cantidad">✏️</a>
-          <a href="{% url 'enfermeria:inventario_pdf' item.pk %}" class="btn btn-sm btn-secondary" title="Ver PDF">📄</a>
-        </td>
-      </tr>
-      {% empty %}
-      <tr>
-        <td colspan="5" class="text-center text-muted">No hay medicamentos registrados.</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <!-- Botones de acción -->
+<div class="mb-3 d-flex gap-2 flex-wrap">
+  <a href="{% url 'enfermeria:inventario_create' %}" class="btn btn-success btn-sm">
+    ➕ Agregar Medicamento
+  </a>
+  <a href="{% url 'enfermeria:uso_create' %}" class="btn btn-warning btn-sm">
+    💊 Registrar Uso
+  </a>
+  <a href="{% url 'enfermeria:historial_uso' items.0.pk %}" class="btn btn-info btn-sm" title="Ver historial del primer medicamento">
+    📋 Ver Historial
+  </a>
 </div>
+
+
+  <!-- Tabla -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover bg-white">
+      <thead class="table-dark">
+        <tr>
+          <th>Nombre</th>
+          <th>Fecha Ingreso</th>
+          <th>Proveedor</th>
+          <th>Cantidad</th>
+          <th>Modificado por</th>
+          <th style="width: 180px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.nombre }}</td>
+          <td>{{ item.fecha_ingreso }}</td>
+          <td>{{ item.proveedor }}</td>
+          <td>
+            {% if item.cantidad_existente <= 5 %}
+              <span class="badge bg-danger">{{ item.cantidad_existente }}</span>
+            {% else %}
+              {{ item.cantidad_existente }}
+            {% endif %}
+          </td>
+          <td>{{ item.modificado_por.username|default:"—" }}</td>
+          <td>
+            <a href="{% url 'enfermeria:inventario_edit' item.pk %}" class="btn btn-sm btn-primary">✏️</a>
+            <a href="{% url 'enfermeria:inventario_pdf' item.pk %}" class="btn btn-sm btn-secondary">📄</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center text-muted">No hay medicamentos registrados.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- SweetAlert de éxito -->
+{% if request.session.mensaje_exito %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+Swal.fire({
+  icon: 'success',
+  title: '¡Éxito!',
+  text: '{{ request.session.mensaje_exito }}',
+  timer: 2000,
+  showConfirmButton: false
+});
+</script>
+{% endif %}
 </body>
 </html>

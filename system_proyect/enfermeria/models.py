@@ -1,24 +1,21 @@
 from django.db import models
+from django.conf import settings  # Para AUTH_USER_MODEL
 
 class Grado(models.Model):
     nombre = models.CharField("Grado", max_length=50)
-
-    def __str__(self):
-        return self.nombre
+    def __str__(self): return self.nombre
 
 
 class Medico(models.Model):
     nombre = models.CharField("Nombre del Profesional", max_length=100)
-
-    def __str__(self):
-        return self.nombre
+    def __str__(self): return self.nombre
 
 
 class AtencionMedica(models.Model):
     estudiante     = models.CharField("Nombre del Estudiante", max_length=100)
-    grado          = models.ForeignKey(Grado, on_delete=models.PROTECT, verbose_name="Grado")
+    grado          = models.ForeignKey(Grado,    on_delete=models.PROTECT, verbose_name="Grado")
     fecha_hora     = models.DateTimeField("Fecha y Hora")
-    atendido_por   = models.ForeignKey(Medico, on_delete=models.PROTECT, verbose_name="Atendido por")
+    atendido_por   = models.ForeignKey(Medico,   on_delete=models.PROTECT, verbose_name="Atendido por")
     motivo         = models.TextField("Motivo")
     tratamiento    = models.TextField("Tratamiento")
     creado         = models.DateTimeField(auto_now_add=True)
@@ -58,6 +55,13 @@ class InventarioMedicamento(models.Model):
     fecha_ingreso = models.DateField("Fecha de Ingreso")
     proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, verbose_name="Proveedor")
     cantidad_existente = models.PositiveIntegerField("Cantidad Existente")
+    modificado_por = models.ForeignKey(  # << NUEVO CAMPO
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name="Modificado por"
+    )
 
     class Meta:
         verbose_name = "Medicamento"

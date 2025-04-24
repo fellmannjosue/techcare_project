@@ -1,11 +1,6 @@
 from django import forms
-from .models import (
-    AtencionMedica,
-    InventarioMedicamento,
-    UsoMedicamento
-)
+from .models import AtencionMedica, InventarioMedicamento, UsoMedicamento
 
-# Formulario para Atención Médica
 class AtencionMedicaForm(forms.ModelForm):
     class Meta:
         model = AtencionMedica
@@ -13,21 +8,17 @@ class AtencionMedicaForm(forms.ModelForm):
         widgets = {
             'estudiante':   forms.TextInput(attrs={'class': 'form-control'}),
             'grado':        forms.Select(attrs={'class': 'form-select'}),
-            'fecha_hora':   forms.DateTimeInput(attrs={
-                                'type': 'datetime-local',
-                                'class': 'form-control'
-                            }),
+            'fecha_hora':   forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
             'atendido_por': forms.Select(attrs={'class': 'form-select'}),
             'motivo':       forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'tratamiento':  forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
 
 
-# Formulario para agregar nuevo Medicamento
 class InventarioMedicamentoForm(forms.ModelForm):
     class Meta:
         model = InventarioMedicamento
-        fields = ['nombre', 'fecha_ingreso', 'proveedor', 'cantidad_existente']
+        exclude = ['modificado_por']  # << importante
         widgets = {
             'nombre':             forms.TextInput(attrs={'class': 'form-control'}),
             'fecha_ingreso':      forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
@@ -36,7 +27,6 @@ class InventarioMedicamentoForm(forms.ModelForm):
         }
 
 
-# Formulario para registrar uso de medicamento ("Se Usó")
 class UsoMedicamentoForm(forms.ModelForm):
     class Meta:
         model = UsoMedicamento
