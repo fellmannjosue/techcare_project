@@ -24,10 +24,12 @@ DEBUG = (os.getenv('DJANGO_DEBUG', 'False') == 'True')
 ALLOWED_HOSTS = [
     '192.168.10.6',
     'localhost',
+    '127.0.0.1',
     'servicios_ana.ana-hn.org',
     'www.servicios_ana.ana-hn.org',
-    '127.0.0.1'
 ]
+
+
 
 
 # ─────────────────────────────────────────────────────────────
