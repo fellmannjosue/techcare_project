@@ -19,15 +19,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 3. SEGURIDAD
 # ─────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-b(q9vw0wc#j2@pxe-kl4+(nbi0p4lth&t&nc7vy2a-*m01v!fq')
-DEBUG = (os.getenv('DJANGO_DEBUG', 'True') == 'False')
+DEBUG = (os.getenv('DJANGO_DEBUG', 'False') == 'True')
 
-ALLOWED_HOSTS = [
-    '192.168.10.6',
-    'localhost',
-    '127.0.0.1',
-    'servicios_ana.ana-hn.org',
-    'www.servicios_ana.ana-hn.org',
-]
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+
 
 
 
@@ -192,3 +187,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # 15. URL PARA ADMIN (opcional, por si quieres moverla)
 # ─────────────────────────────────────────────────────────────
 ADMIN_SITE_URL = '/accounts/login/'
+
+print("DEBUG =", DEBUG)
+print("ALLOWED_HOSTS =", ALLOWED_HOSTS)
