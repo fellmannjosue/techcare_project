@@ -9,39 +9,18 @@ urlpatterns = [
     # Dashboard principal
     path('', views.dashboard, name='dashboard'),
 
-    # Inventario de cámaras
-    path(
-        'inventario/',
-        views.inventario_list,
-        name='inventario_list'
-    ),
-    path(
-        'inventario/nuevo/',
-        views.inventario_create,
-        name='inventario_create'
-    ),
+    # Inventario de Cámaras (listado + creación vía POST)
+    path('inventario/', views.inventario_list, name='inventario_list'),
+    path('inventario/<int:pk>/editar/', views.inventario_update, name='inventario_update'),
+    path('inventario/<int:pk>/eliminar/', views.inventario_delete, name='inventario_delete'),
 
-    # Sistema contable de cámaras
-    path(
-        'contable/',
-        views.contable_list,
-        name='contable_list'
-    ),
-    path(
-        'contable/nuevo/',
-        views.contable_create,
-        name='contable_create'
-    ),
+    # Sistema Contable de Cámaras (listado + creación vía POST)
+    path('contable/', views.contable_list, name='contable_list'),
+    path('contable/<int:pk>/editar/', views.contable_update, name='contable_update'),
+    path('contable/<int:pk>/eliminar/', views.contable_delete, name='contable_delete'),
 
-    # Identificación de cámaras y gabinetes
-    path(
-        'identificacion/',
-        views.identificacion_list,
-        name='identificacion_list'
-    ),
-    path(
-        'identificacion/nuevo/',
-        views.identificacion_create,
-        name='identificacion_create'
-    ),
+    # Identificación de Cámaras y Gabinetes (listado + creación vía POST)
+    path('identificacion/', views.identificacion_list, name='identificacion_list'),
+    path('identificacion/<int:pk>/editar/', views.identificacion_update, name='identificacion_update'),
+    path('identificacion/<int:pk>/eliminar/', views.identificacion_delete, name='identificacion_delete'),
 ]
