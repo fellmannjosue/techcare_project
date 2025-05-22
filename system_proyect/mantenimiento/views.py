@@ -1,10 +1,12 @@
 import os
-from django.conf import settings
+import textwrap
+from io import BytesIO
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
 from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter
+
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 
@@ -15,105 +17,116 @@ from .forms import MaintenanceRecordForm
 @login_required
 def maintenance_dashboard(request):
     """
-    Vista unificada para listar registros de mantenimiento y crear nuevos.
+    Vista unificada para listar y crear registros de mantenimiento.
     """
-    # 1. (Mejora) Considerar uso de mensajes de Django en lugar de print para errores de formulario.
     if request.method == 'POST':
         form = MaintenanceRecordForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('maintenance_dashboard')
+            # ← redirige usando el namespace 'mantenimiento'
+            return redirect('mantenimiento:maintenance_dashboard')
     else:
         form = MaintenanceRecordForm()
 
-    # 2. (Optimización) Si la tabla crece mucho, paginar 'records' en lugar de cargar todo.
     records = MaintenanceRecord.objects.all().order_by('-date')
-
     return render(request, 'mantenimiento/maintenance_dashboard.html', {
         'form': form,
         'records': records,
     })
 
+
 @login_required
 def download_maintenance_pdf(request, record_id):
     """
-    Genera un PDF con los detalles de un MaintenanceRecord específico,
-    cargando el logo desde archivos estáticos con django.contrib.staticfiles.finders.
+    Genera un PDF tamaño 16×5.5 cm con logo, campos multilinea
+    para 'Solución' y 'Observaciones' y línea de firma.
     """
     record = get_object_or_404(MaintenanceRecord, id=record_id)
 
-    # Preparamos la respuesta HTTP
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = (
-        f'attachment; filename="maintenance_record_{record.id}.pdf"'
-    )
+    # 1) Buffer en memoria
+    buffer = BytesIO()
+    card_w = 160 * 2.83465  # 16 cm
+    card_h =  55 * 2.83465  # 5.5 cm
 
-    # Dimensiones de la tarjeta (20cm x 20cm en puntos)
-    card_width  = 20 * 28.35
-    card_height = 20 * 28.35
-    pdf = canvas.Canvas(response, pagesize=(card_width, card_height))
+    # 2) Canvas apuntando al buffer
+    pdf = canvas.Canvas(buffer, pagesize=(card_w, card_h))
     pdf.setTitle(f"Ficha de Mantenimiento - ID {record.id}")
 
-    # Fondo
+    # Fondo claro
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
-    pdf.rect(0, 0, card_width, card_height, fill=1)
+    pdf.rect(0, 0, card_w, card_h, fill=1)
 
-    # Intentamos cargar el logo desde staticfiles
+    # Logo en esquina superior
     logo_path = finders.find('mantenimiento/img/ana.jpg')
     if logo_path:
-        logo_w, logo_h = 60, 60
-        logo_x = (card_width - logo_w) / 2
-        logo_y = card_height - logo_h - 30
+        pdf.drawImage(logo_path, 10, card_h - 40, width=30, height=30)
 
-        # Fondo blanco tras el logo
-        pdf.setFillColor(colors.white)
-        pdf.rect(logo_x - 5, logo_y - 5, logo_w + 10, logo_h + 10, fill=1)
+    # Variables de layout
+    margin, line_h = 10, 12
+    col1, col2 = margin + 40, card_w/2 + 10
+    y1 = y2 = card_h - 20
 
-        # Dibujamos el logo
-        pdf.drawImage(logo_path, logo_x, logo_y, width=logo_w, height=logo_h)
-
-    # Título centrado
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.setFillColor(colors.HexColor("#007bff"))
-    pdf.drawCentredString(card_width / 2, logo_y - 20, "Ficha de Mantenimiento")
-
-    # Posiciones y estilo
-    margin = 20
-    line_h = 20
-    col1_x = margin
-    col2_x = card_width / 2 + margin
-    y1 = logo_y - 60
-    y2 = logo_y - 60
-
-    def draw_field(x, y, label, value):
-        pdf.setFont("Helvetica-Bold", 12)
+    def draw_field(x, y, label, val):
+        pdf.setFont("Helvetica-Bold", 9)
         pdf.setFillColor(colors.black)
         pdf.drawString(x, y, label)
-        pdf.setFont("Helvetica", 12)
-        pdf.drawString(x + 100, y, str(value))
+        pdf.setFont("Helvetica", 9)
+        pdf.drawString(x + 60, y, str(val))
+        return y - line_h
 
     # Columna izquierda
-    draw_field(col1_x, y1, "Equipo:",      record.equipment_id);   y1 -= line_h
-    draw_field(col1_x, y1, "Modelo:",      record.model);          y1 -= line_h
-    draw_field(col1_x, y1, "Serie:",       record.serie);          y1 -= line_h
-    draw_field(col1_x, y1, "Maestro:",     record.teacher_name);   y1 -= line_h
-    draw_field(col1_x, y1, "Grado:",       record.grade)
+    y1 = draw_field(col1, y1, "Equipo:",  record.equipment_id)
+    y1 = draw_field(col1, y1, "Modelo:",  record.model)
+    y1 = draw_field(col1, y1, "Serie:",   record.serie)
+    y1 = draw_field(col1, y1, "Maestro:", record.teacher_name)
+    y1 = draw_field(col1, y1, "Grado:",   record.grade)
 
-    # Columna derecha
-    draw_field(col2_x, y2, "Fecha:",       record.date.strftime('%d-%m-%Y'));   y2 -= line_h
-    draw_field(col2_x, y2, "Estado:",      record.status);                      y2 -= line_h
-    draw_field(col2_x, y2, "Solución:",    record.solucion or "-");             y2 -= line_h
-    draw_field(col2_x, y2, "Observaciones:", record.observaciones or "-")
+    # Columna derecha básica
+    y2 = draw_field(col2, y2, "Fecha:",  record.date.strftime('%d-%m-%Y'))
+    y2 = draw_field(col2, y2, "Estado:", record.status)
+
+    # Solución multilinea
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawString(col2, y2, "Solución:")
+    pdf.setFont("Helvetica", 9)
+    wrap_w = int((card_w - col2 - margin) / 6)
+    for line in textwrap.wrap(record.solucion or "-", wrap_w):
+        y2 -= line_h
+        pdf.drawString(col2 + 60, y2, line)
+    y2 -= line_h  # espacio extra
+
+    # Observaciones multilinea
+    pdf.setFont("Helvetica-Bold", 9)
+    pdf.drawString(col2, y2, "Observaciones:")
+    pdf.setFont("Helvetica", 9)
+    for line in textwrap.wrap(record.observaciones or "-", wrap_w):
+        y2 -= line_h
+        pdf.drawString(col2 + 60, y2, line)
+
+    # Línea de firma centrada, un poco más arriba
+    sign_y = margin + 40
+    pdf.setLineWidth(1)
+    pdf.line(card_w/2 - 50, sign_y, card_w/2 + 50, sign_y)
+    pdf.setFont("Helvetica", 9)
+    pdf.drawCentredString(card_w/2, sign_y - 12, "Firma:")
 
     # Pie de página
-    pdf.setFont("Helvetica-Oblique", 10)
+    pdf.setFont("Helvetica-Oblique", 8)
     pdf.setFillColor(colors.gray)
     pdf.drawCentredString(
-        card_width / 2,
+        card_w/2,
         margin,
         "Sistema de Mantenimiento - Asociación Nuevo Amanecer"
     )
 
+    # 3) Terminar PDF y volcar al buffer
     pdf.showPage()
     pdf.save()
+    buffer.seek(0)
+
+    # 4) Enviar respuesta completa
+    response = HttpResponse(buffer.read(), content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="maintenance_record_{record.id}.pdf"'
+    )
     return response

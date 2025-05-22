@@ -8,7 +8,6 @@ from dotenv import load_dotenv
 # Cargar las variables desde el archivo .env
 load_dotenv()
 
-
 # ─────────────────────────────────────────────────────────────
 # 2. DIRECTORIO BASE DEL PROYECTO
 # ─────────────────────────────────────────────────────────────
@@ -19,13 +18,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 3. SEGURIDAD
 # ─────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-b(q9vw0wc#j2@pxe-kl4+(nbi0p4lth&t&nc7vy2a-*m01v!fq')
-DEBUG = (os.getenv('DJANGO_DEBUG', 'False') == 'True')
-
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+DEBUG = (os.getenv('DJANGO_DEBUG', 'false') == 'true')
 
 
+ALLOWED_HOSTS = [
+    'servicios.ana-hn.org',
+    'www.servicios.ana-hn.org',
+    '192.168.10.6',
+    '127.0.0.1',
+    'localhost',
+]
 
-
+CSRF_TRUSTED_ORIGINS = [
+    'https://servicios.ana-hn.org:437',
+    'https://192.168.10.6:437',
+]
 
 # ─────────────────────────────────────────────────────────────
 # 4. APLICACIONES INSTALADAS
@@ -49,6 +56,7 @@ INSTALLED_APPS = [
     'sponsors',
     'menu',
     'enfermeria',
+    'seguridad', 
 ]
 
 
