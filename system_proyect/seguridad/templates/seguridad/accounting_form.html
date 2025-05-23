@@ -1,0 +1,185 @@
+{# templates/seguridad/accounting_form.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>
+    {% if form.instance.pk %}Editar Registro Contable{% else %}Nuevo Registro Contable{% endif %}
+  </title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    /* Estilos básicos */
+    body {
+      background-color: #eef2f7;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      margin: 1.5rem auto;
+      max-width: 960px;
+    }
+    .card {
+      border-radius: 0.75rem;
+    }
+    .form-control, .form-select {
+      border-radius: 0.375rem;
+    }
+    .table thead th {
+      background-color: #f8f9fa;
+      font-weight: 600;
+    }
+    .table tbody tr:hover {
+      background-color: rgba(0, 0, 0, 0.03);
+    }
+    .btn-link {
+      text-decoration: none;
+    }
+    .btn-sm img {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Mensajes de Django convertidos a SweetAlert2 -->
+    {% if messages %}
+      <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        {% for msg in messages %}
+          Swal.fire({
+            icon: '{{ msg.tags }}' === 'success' ? 'success' : 'error',
+            title: "{{ msg|escapejs }}",
+            timer: 2000,
+            showConfirmButton: false
+          });
+        {% endfor %}
+      });
+      </script>
+    {% endif %}
+
+    <!-- Volver al Dashboard -->
+    <a href="{% url 'seguridad:dashboard' %}" class="btn btn-link mb-3">← Regresar al Dashboard</a>
+
+    <!-- Formulario Contable -->
+    <div class="card shadow-sm mb-5">
+      <div class="card-body">
+        <h3 class="card-title mb-4">
+          {% if form.instance.pk %}Editar Registro Contable{% else %}Nuevo Registro Contable{% endif %}
+        </h3>
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="row">
+            {% for field in form %}
+              <div class="col-md-6 mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% for err in field.errors %}
+                  <div class="text-danger small">{{ err }}</div>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="mt-3">
+            <button type="submit" class="btn btn-primary">Guardar</button>
+            <button type="button" id="btn-refresh" class="btn btn-secondary">Listar / Refrescar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tabla Contable -->
+    <h3 class="mb-3">Listado Contable de Cámaras</h3>
+    <table class="table table-bordered table-hover bg-white">
+      <thead class="table-light">
+        <tr>
+          <th>Modelo</th>
+          <th>Nombre</th>
+          <th>Cantidad</th>
+          <th>Total</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+          <tr>
+            <td>{{ item.modelo }}</td>
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.cantidad_modelo }}</td>
+            <td>{{ item.total }}</td>
+            <td class="text-center">
+              <button
+                class="btn btn-sm border-0 bg-transparent btn-edit"
+                data-url="{% url 'seguridad:contable_update' item.pk %}"
+                title="Editar">
+                <img
+                  src="{% static 'seguridad/img/edit-favicon.png' %}"
+                  alt="Editar"
+                  width="20" height="20">
+              </button>
+              <button
+                class="btn btn-sm border-0 bg-transparent btn-delete"
+                data-url="{% url 'seguridad:contable_delete' item.pk %}"
+                title="Eliminar">
+                <img
+                  src="{% static 'seguridad/img/delete-favicon.png' %}"
+                  alt="Eliminar"
+                  width="20" height="20">
+              </button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" class="text-center text-muted">No hay registros contables.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Refrescar tabla
+      document.getElementById('btn-refresh').addEventListener('click', function() {
+        window.location.reload();
+      });
+
+      // Editar
+      document.querySelectorAll('.btn-edit').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          window.location.href = btn.dataset.url;
+        });
+      });
+
+      // Eliminar con confirmación SweetAlert2
+      document.querySelectorAll('.btn-delete').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          Swal.fire({
+            title: '¿Eliminar este registro contable?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = btn.dataset.url;
+            }
+          });
+        });
+      });
+    });
+  </script>
+</body>
+</html>
