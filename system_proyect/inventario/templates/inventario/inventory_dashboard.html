@@ -34,6 +34,12 @@
             max-width: 800px;
             margin: 30px auto;
         }
+               .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -100,8 +106,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            
-        </div>
+
 
         <div class="container mt-5">
             <!-- Contenido del sistema de inventariado -->
@@ -109,6 +114,10 @@
                 <img src="{% static 'inventario/img/regresar.png' %}" alt="Regresar" style="width: 24px; height: 24px; margin-right: 5px;">
                 Regresar al Menú Principal
             </a>
+        </div>
+                      <div class="footer">
+        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+    </div>
         </div>
     </div>
 </body>

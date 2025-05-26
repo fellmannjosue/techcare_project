@@ -38,6 +38,10 @@ CSRF_TRUSTED_ORIGINS = [
 # 4. APLICACIONES INSTALADAS
 # ─────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
+    # Paquetes para personalizar el Admin
+    'colorfield',
+    'admin_interface',
+
     # Apps de Django
     'django.contrib.admin',
     'django.contrib.auth',
@@ -56,7 +60,7 @@ INSTALLED_APPS = [
     'sponsors',
     'menu',
     'enfermeria',
-    'seguridad', 
+    'seguridad',
 ]
 
 
