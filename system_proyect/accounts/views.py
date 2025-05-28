@@ -49,43 +49,50 @@ def user_login_view(request):
 def menu_view(request):
     """
     Dashboard principal:
-    - Superuser ve todos los módulos.
-    - 'citas bilingue' ve Citas BL y Enfermería.
-    - 'citas colegio' ve Citas COL/VOC.
-    - 'enfermeria' ve Enfermería.
+      - superuser ve todo.
+      - 'citas bilingue' ve Citas BL + Enfermería.
+      - 'citas colegio' ve Citas COL/VOC.
+      - 'enfermeria' ve Enfermería.
+      - permisos individuales controlan Inventario, Mantenimiento, Tickets, Sponsors y Seguridad.
     """
     user = request.user
     year = datetime.datetime.now().year
 
-    # Contadores de notificaciones pendientes
+    # Notificaciones
     citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
     tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
 
-    # Roles / permisos
+    # Roles por grupo
     is_admin       = user.is_superuser
     is_citas_bl    = user.groups.filter(name='citas bilingue').exists()
     is_citas_col   = user.groups.filter(name='citas colegio').exists()
     is_enfermeria  = user.groups.filter(name='enfermeria').exists()
 
+    # Permisos individuales (añádelos en Admin → Users → User permissions)
+    is_inventory    = user.has_perm('inventario.view_inventariomedicamento')
+    is_maintenance  = user.has_perm('mantenimiento.view_mantenimiento')
+    is_tickets_mod  = user.has_perm('tickets.view_ticket')
+    is_sponsors     = user.has_perm('sponsors.view_sponsor')
+    is_seguridad    = user.has_perm('seguridad.view_seguridad')
+
     context = {
-        'year':              year,
+        'year':               year,
         'citas_pendientes':   citas_pendientes,
         'tickets_pendientes': tickets_pendientes,
 
-        # Módulos solo para administrador
-        'show_inventory':    is_admin,
-        'show_maintenance':  is_admin,
-        'show_sponsors':     is_admin,
-        'show_seguridad':    is_admin,
+        # módulos por permiso o superuser
+        'show_inventory':   is_admin or is_inventory,
+        'show_maintenance': is_admin or is_maintenance,
+        'show_tickets':     is_admin or is_tickets_mod,
+        'show_sponsors':    is_admin or is_sponsors,
+        'show_seguridad':   is_admin or is_seguridad,
 
-        # Módulos según rol (o admin)
-        'show_tickets':     is_admin,
+        # módulos por rol/grupo (o admin)
         'show_citas_bl':    is_admin or is_citas_bl,
         'show_citas_col':   is_admin or is_citas_col,
         'show_enfermeria':  is_admin or is_citas_bl or is_enfermeria,
     }
     return render(request, 'accounts/menu.html', context)
-
 
 @login_required
 def check_new_notifications(request):

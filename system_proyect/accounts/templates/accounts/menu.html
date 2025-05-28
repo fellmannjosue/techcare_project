@@ -226,12 +226,12 @@
     </div>
     {% endif %}
 
-    {% if show_sponsors %}
-    <div class="menu-item" onclick="location.href='{% url 'sponsors:sponsors_dashboard' %}'">
-      <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
-      <span>Sponsors</span>
-    </div>
-    {% endif %}
+  {% if show_sponsors %}
+  <div class="menu-item" onclick="location.href='{% url 'sponsors:sponsors_dashboard' %}'">
+    <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
+    <span>Sponsors</span>
+  </div>
+{% endif %}
 
     {% if show_enfermeria %}
     <div class="menu-item" onclick="location.href='{% url 'enfermeria:enfermeria_dashboard' %}'">
