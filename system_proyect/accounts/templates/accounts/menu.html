@@ -2,112 +2,141 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Principal</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Principal</title>
 
-    <!-- Bootstrap CSS -->
-    <link 
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-      rel="stylesheet" />
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <style>
-        body {
-            background-color: #eef2f7;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            min-height: 100vh;
-        }
-        .header-container {
-            position: absolute;
-            top: 15px;
-            right: 25px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-        .notification-icon { position: relative; cursor: pointer; }
-        .notification-count {
-            position: absolute;
-            top: -5px; right: -8px;
-            background-color: #dc3545;
-            color: #fff;
-            padding: 2px 6px;
-            border-radius: 50%;
-            font-size: 12px;
-        }
-        .user-info { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #333; }
-        .user-info img { border-radius: 50%; }
-        .logo img { width: 120px; margin: 40px 0 20px; }
-        .menu-title { font-size: 26px; color: #444; font-weight: bold; }
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 20px;
-            width: 80%;
-            max-width: 700px;
-            margin: 20px 0;
-        }
-        .menu-item {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .menu-item:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-        }
-        .menu-item img { width: 60px; margin-bottom: 8px; }
-        .menu-item span { display: block; font-weight: bold; color: #555; }
-        .footer { margin: auto 0 20px; text-align: center; color: #666; font-size: 14px; }
-    </style>
+  <style>
+    body {
+      background-color: #eef2f7;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      min-height: 100vh;
+    }
+    .header-container {
+      position: absolute;
+      top: 15px;
+      right: 25px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .notification-icon {
+      position: relative;
+      cursor: pointer;
+    }
+    .notification-count {
+      position: absolute;
+      top: -5px;
+      right: -8px;
+      background-color: #dc3545;
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 50%;
+      font-size: 12px;
+    }
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #333;
+    }
+    .user-info img {
+      border-radius: 50%;
+    }
+    .logo img {
+      width: 120px;
+      margin: 40px 0 20px;
+    }
+    .menu-title {
+      font-size: 26px;
+      color: #444;
+      font-weight: bold;
+    }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 20px;
+      width: 80%;
+      max-width: 700px;
+      margin: 20px 0;
+    }
+    .menu-item {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .menu-item:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    .menu-item img {
+      width: 60px;
+      margin-bottom: 8px;
+    }
+    .menu-item span {
+      display: block;
+      font-weight: bold;
+      color: #555;
+    }
+    .footer {
+      margin: auto 0 20px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
 
-    <!-- Bootstrap JS & SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Bootstrap JS & SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-      let lastTotal = 0;
-      function checkNotifications() {
-        fetch("{% url 'check_new_notifications' %}")
-          .then(r => r.json())
-          .then(data => {
-            const total = data.citas_pendientes + data.tickets_pendientes;
-            const badge = document.querySelector('.notification-count');
-            if (total > 0) {
-              badge.textContent = total;
-              badge.style.display = 'inline-block';
-              if (total > lastTotal) {
-                Swal.fire({
-                  title: '¡Tienes notificaciones nuevas!',
-                  text: `Citas: ${data.citas_pendientes}, Tickets: ${data.tickets_pendientes}`,
-                  icon: 'info',
-                  confirmButtonText: 'OK'
-                });
-              }
-            } else {
-              badge.style.display = 'none';
+  <script>
+    let lastTotal = 0;
+    function checkNotifications() {
+      fetch("{% url 'check_new_notifications' %}")
+        .then(r => r.json())
+        .then(data => {
+          const total = data.citas_pendientes + data.tickets_pendientes;
+          const badge = document.querySelector('.notification-count');
+          if (total > 0) {
+            badge.textContent = total;
+            badge.style.display = 'inline-block';
+            if (total > lastTotal) {
+              Swal.fire({
+                title: '¡Tienes notificaciones nuevas!',
+                text: `Citas: ${data.citas_pendientes}, Tickets: ${data.tickets_pendientes}`,
+                icon: 'info',
+                confirmButtonText: 'OK'
+              });
             }
-            lastTotal = total;
-          })
-          .catch(console.error);
-      }
-      document.addEventListener('DOMContentLoaded', () => {
-        checkNotifications();
-        setInterval(checkNotifications, 60000);
-      });
-    </script>
+          } else {
+            badge.style.display = 'none';
+          }
+          lastTotal = total;
+        })
+        .catch(console.error);
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      checkNotifications();
+      setInterval(checkNotifications, 60000);
+    });
+  </script>
 </head>
 <body>
 
-  <!-- Encabezado: Notificaciones y Usuario -->
+  <!-- Header: Notifications & User -->
   <div class="header-container">
     <div class="dropdown notification-icon">
       <img src="{% static 'accounts/img/bell.png' %}" width="32" height="32" data-bs-toggle="dropdown" alt="Notificaciones">
@@ -117,10 +146,18 @@
       <ul class="dropdown-menu dropdown-menu-end">
         <li class="dropdown-header">Notificaciones recientes</li>
         {% if citas_pendientes %}
-          <li><a class="dropdown-item" href="{% url 'dashboard_bl' %}">📅 Tienes {{ citas_pendientes }} cita(s) pendiente(s)</a></li>
+          <li>
+            <a class="dropdown-item" href="{% url 'dashboard_bl' %}">
+              📅 Tienes {{ citas_pendientes }} cita(s) pendiente(s)
+            </a>
+          </li>
         {% endif %}
         {% if tickets_pendientes %}
-          <li><a class="dropdown-item" href="{% url 'technician_dashboard' %}">🎟️ Tienes {{ tickets_pendientes }} ticket(s) pendiente(s)</a></li>
+          <li>
+            <a class="dropdown-item" href="{% url 'technician_dashboard' %}">
+              🎟️ Tienes {{ tickets_pendientes }} ticket(s) pendiente(s)
+            </a>
+          </li>
         {% endif %}
         {% if not citas_pendientes and not tickets_pendientes %}
           <li class="dropdown-item text-muted">Sin nuevas notificaciones.</li>
@@ -134,20 +171,24 @@
         {{ request.user.username }}
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
-        <li><a class="dropdown-item" href="{% url 'admin:index' %}">🔧 Panel Admin</a></li>
+        <li>
+          <a class="dropdown-item" href="{% url 'admin:index' %}">🔧 Panel Admin</a>
+        </li>
         <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="{% url 'logout' %}">🚪 Cerrar Sesión</a></li>
+        <li>
+          <a class="dropdown-item" href="{% url 'logout' %}">🚪 Cerrar Sesión</a>
+        </li>
       </ul>
     </div>
   </div>
 
-  <!-- Logo y Título -->
+  <!-- Logo & Title -->
   <div class="logo">
     <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo">
   </div>
   <h2 class="menu-title">Dashboard Principal</h2>
 
-  <!-- Menú Principal -->
+  <!-- Main Menu -->
   <div class="menu-grid">
 
     {% if show_tickets %}
@@ -157,17 +198,19 @@
     </div>
     {% endif %}
 
-    <!-- Inventario: siempre -->
+    {% if show_inventory %}
     <div class="menu-item" onclick="location.href='{% url 'inventory_dashboard' %}'">
       <img src="{% static 'accounts/img/inventario.png' %}" alt="Inventario">
       <span>Inventario</span>
     </div>
+    {% endif %}
 
-    <!-- Mantenimiento: siempre -->
+    {% if show_maintenance %}
     <div class="menu-item" onclick="location.href='{% url 'mantenimiento:maintenance_dashboard' %}'">
       <img src="{% static 'accounts/img/mantenimiento.png' %}" alt="Mantenimiento">
       <span>Ficha de Mantenimiento</span>
     </div>
+    {% endif %}
 
     {% if show_citas_bl %}
     <div class="menu-item" onclick="location.href='{% url 'dashboard_bl' %}'">
@@ -183,11 +226,12 @@
     </div>
     {% endif %}
 
-    <!-- Sponsors: siempre -->
+    {% if show_sponsors %}
     <div class="menu-item" onclick="location.href='{% url 'sponsors:sponsors_dashboard' %}'">
       <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
       <span>Sponsors</span>
     </div>
+    {% endif %}
 
     {% if show_enfermeria %}
     <div class="menu-item" onclick="location.href='{% url 'enfermeria:enfermeria_dashboard' %}'">
@@ -196,11 +240,12 @@
     </div>
     {% endif %}
 
-    <!-- Seguridad: siempre -->
+    {% if show_seguridad %}
     <div class="menu-item" onclick="location.href='{% url 'seguridad:dashboard' %}'">
       <img src="{% static 'accounts/img/camara.png' %}" alt="Seguridad">
       <span>Seguridad</span>
     </div>
+    {% endif %}
 
   </div>
 
