@@ -27,7 +27,7 @@ def login_view(request):
 
 def user_login_view(request):
     """
-    NUEVA vista de login para usuarios específicos que deben ir directamente a tickets.
+    Vista de login para usuarios que van directamente a tickets.
     """
     if request.method == 'POST':
         username = request.POST['username']
@@ -45,26 +45,38 @@ def user_login_view(request):
 def menu_view(request):
     """
     Vista del menú principal después de iniciar sesión.
-    Incluye notificaciones y nombre del usuario.
+    Cada usuario ve sólo los botones de su rol.
     """
+    user = request.user
     year = datetime.datetime.now().year
 
     # Contadores de notificaciones pendientes
-    citas_pendientes = Appointment_bl.objects.filter(status='pendiente').count()
+    citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
     tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
+
+    # Roles según grupos (y superuser = acceso total)
+    is_admin       = user.is_superuser
+    is_citas_bl    = user.groups.filter(name='citas bilingue').exists()
+    is_citas_col   = user.groups.filter(name='citas colegio').exists()
+    is_enfermeria  = user.groups.filter(name='enfermeria').exists()
 
     context = {
         'year': year,
-        'user': request.user,
+        'user': user,
         'citas_pendientes': citas_pendientes,
         'tickets_pendientes': tickets_pendientes,
+        # Flags para el template
+        'show_tickets':     is_admin,
+        'show_citas_bl':    is_admin or is_citas_bl,
+        'show_citas_col':   is_admin or is_citas_col,
+        'show_enfermeria':  is_admin or is_citas_bl or is_enfermeria,
     }
 
     return render(request, 'accounts/menu.html', context)
 
 @login_required
 def check_new_notifications(request):
-    citas_pendientes = Appointment_bl.objects.filter(status='pendiente').count()
+    citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
     tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
 
     return JsonResponse({
