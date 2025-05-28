@@ -1,17 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.db.models import Sum
 from reportlab.lib import colors
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Paragraph, Frame, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-
-from .models import AtencionMedica, InventarioMedicamento, UsoMedicamento
-from .forms import AtencionMedicaForm, InventarioMedicamentoForm, UsoMedicamentoForm
+from reportlab.lib.styles import ParagraphStyle
 import io
+
+from .models import (
+    AtencionMedica,
+    InventarioMedicamento,
+    UsoMedicamento,
+)
+from .forms import (
+    AtencionMedicaForm,
+    InventarioMedicamentoForm,
+    UsoMedicamentoForm,
+)
 
 
 @login_required
@@ -24,17 +32,16 @@ def enfermeria_dashboard(request):
 @login_required
 def atencion_form(request):
     delete_id = request.GET.get('delete')
-    edit_id = request.GET.get('edit')
+    edit_id   = request.GET.get('edit')
     if delete_id:
         get_object_or_404(AtencionMedica, pk=delete_id).delete()
         return redirect('enfermeria:atencion_form')
 
-    form = None
     if request.method == 'POST':
         pk = request.POST.get('pk')
         if pk:
-            instance = get_object_or_404(AtencionMedica, pk=pk)
-            form = AtencionMedicaForm(request.POST, instance=instance)
+            instancia = get_object_or_404(AtencionMedica, pk=pk)
+            form = AtencionMedicaForm(request.POST, instance=instancia)
         else:
             form = AtencionMedicaForm(request.POST)
         if form.is_valid():
@@ -42,13 +49,13 @@ def atencion_form(request):
             request.session['mensaje_exito'] = 'Ficha guardada correctamente'
             return redirect('enfermeria:atencion_form')
     else:
-        instance = get_object_or_404(AtencionMedica, pk=edit_id) if edit_id else None
-        form = AtencionMedicaForm(instance=instance)
+        instancia = get_object_or_404(AtencionMedica, pk=edit_id) if edit_id else None
+        form = AtencionMedicaForm(instance=instancia)
 
-    records = AtencionMedica.objects.order_by('-fecha_hora')
+    registros = AtencionMedica.objects.order_by('-fecha_hora')
     return render(request, 'enfermeria/atencion_form.html', {
         'form': form,
-        'records': records,
+        'records': registros,
         'edit_id': edit_id or ''
     })
 
@@ -63,42 +70,37 @@ def atencion_download_pdf(request, pk):
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
     pdf.rect(0, 0, w, h, fill=1, stroke=0)
 
-    # Logo
     logo = finders.find('accounts/img/ana-transformed.png')
     if logo:
         pdf.drawImage(logo, 15 * mm, h - 45 * mm, width=30 * mm, height=30 * mm)
 
-    # Título
     pdf.setFont("Helvetica-Bold", 18)
     pdf.setFillColor(colors.HexColor("#007bff"))
     pdf.drawCentredString(w / 2, h - 25 * mm, "Ficha de Atención Médica")
 
-    # Datos en tabla
     tabla_data = [
-        ["ID:", f"ANA-{rec.pk:03d}"],
-        ["Estudiante:", rec.estudiante],
-        ["Grado:", rec.grado.nombre],
+        ["Estudiante:",  rec.estudiante],
+        ["Grado:",       rec.grado.nombre],
         ["Fecha y Hora:", rec.fecha_hora.strftime("%d-%m-%Y %H:%M")],
         ["Atendido por:", rec.atendido_por.nombre],
-        ["Motivo:", rec.motivo],
+        ["Motivo:",      rec.motivo],
         ["Tratamiento:", rec.tratamiento],
     ]
-    tabla = Table(tabla_data, colWidths=[60 * mm, 110 * mm])
+    tabla = Table(tabla_data, colWidths=[50 * mm, 120 * mm])
     tabla.setStyle(TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.25, colors.grey),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+        ('GRID',         (0, 0), (-1, -1), 0.25, colors.grey),
+        ('FONTSIZE',     (0, 0), (-1, -1), 12),
+        ('FONTNAME',     (0, 0), (-1, -1), 'Helvetica'),
+        ('BOTTOMPADDING',(0, 0), (-1, -1), 6),
     ]))
     tabla.wrapOn(pdf, w, h)
     tabla.drawOn(pdf, 20 * mm, h - 160 * mm)
 
-    # Texto descriptivo
     texto = (
         f"El estudiante <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> fue atendido "
         f"el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> "
-        f"por el profesional <b>{rec.atendido_por.nombre}</b>. Se le brindó el <b>tratamiento</b> "
-        f"porque: <b>{rec.motivo}</b>. El tratamiento aplicado fue: <b>{rec.tratamiento}</b>."
+        f"por el profesional <b>{rec.atendido_por.nombre}</b>. Motivo: <b>{rec.motivo}</b>. "
+        f"Tratamiento: <b>{rec.tratamiento}</b>."
     )
     style = ParagraphStyle('custom', fontSize=13, leading=18)
     paragraph = Paragraph(texto, style)
@@ -140,7 +142,7 @@ def inventario_edit_cantidad(request, pk):
     form = InventarioMedicamentoForm(request.POST or None, instance=item)
     if form.is_valid():
         item = form.save(commit=False)
-        item.modificado_por = request.user  # ✅ AQUÍ SE ASIGNA
+        item.modificado_por = request.user
         item.save()
         request.session['mensaje_exito'] = 'Cantidad actualizada correctamente'
         return redirect('enfermeria:inventario_list')
@@ -148,7 +150,6 @@ def inventario_edit_cantidad(request, pk):
         'form': form,
         'title': f'Editar Cantidad – {item.nombre}'
     })
-
 
 
 @login_required
@@ -163,8 +164,7 @@ def uso_create(request):
             uso.save()
             request.session['mensaje_exito'] = 'Uso registrado correctamente'
             return redirect('enfermeria:inventario_list')
-        else:
-            form.add_error('cantidad_usada', 'Cantidad excede lo disponible.')
+        form.add_error('cantidad_usada', 'Cantidad excede lo disponible.')
     return render(request, 'enfermeria/uso_form.html', {
         'form': form,
         'title': 'Registrar Uso de Medicamento'
@@ -194,15 +194,14 @@ def inventario_pdf(request, pk):
 
     y = h - 60 * mm
     for label, val in [
-        ("Nombre:", med.nombre),
-        ("Proveedor:", med.proveedor.nombre),
+        ("Nombre:",           med.nombre),
+        ("Proveedor:",        med.proveedor.nombre),
         ("Fecha de Ingreso:", med.fecha_ingreso.strftime("%d-%m-%Y")),
-        ("Cantidad Disponible:", med.cantidad_existente),
-        ("Total Usado:", total_usado),
-        ("Modificado por:", med.modificado_por.username if med.modificado_por else "—"),
+        ("Disponible:",       med.cantidad_existente),
+        ("Total Usado:",      total_usado),
+        ("Modificado por:",   med.modificado_por.username if med.modificado_por else "—"),
     ]:
         pdf.setFont("Helvetica-Bold", 12)
-        pdf.setFillColor(colors.black)
         pdf.drawString(20 * mm, y, label)
         pdf.setFont("Helvetica", 12)
         pdf.drawString(65 * mm, y, str(val))
@@ -214,8 +213,6 @@ def inventario_pdf(request, pk):
     return HttpResponse(buf, content_type='application/pdf')
 
 
-# ============ HISTORIAL DE USOS ============
-
 @login_required
 def historial_uso(request, pk):
     med = get_object_or_404(InventarioMedicamento, pk=pk)
@@ -223,4 +220,44 @@ def historial_uso(request, pk):
     return render(request, 'enfermeria/historial_uso.html', {
         'medicamento': med,
         'usos': usos
+    })
+
+
+# ============ HISTORIAL MÉDICO ============
+
+@login_required
+def medical_history(request):
+    # sacamos la lista de nombres únicos de estudiante
+    students = (
+        AtencionMedica.objects
+        .values_list('estudiante', flat=True)
+        .distinct()
+        .order_by('estudiante')
+    )
+    return render(request, 'enfermeria/medical_history.html', {
+        'students': students
+    })
+
+
+@login_required
+def get_medical_history_data(request):
+    student_name = request.GET.get('student')
+    if not student_name:
+        return JsonResponse({'error': 'Falta student'}, status=400)
+
+    history = (
+        AtencionMedica.objects
+        .filter(estudiante=student_name)
+        .order_by('-fecha_hora')
+        .first()
+    )
+    if not history:
+        return JsonResponse({}, status=204)
+
+    return JsonResponse({
+        'grade':     history.grado.nombre,
+        'date_time': history.fecha_hora.strftime('%Y-%m-%d %H:%M'),
+        'reason':    history.motivo,
+        'treatment': history.tratamiento,
+        'attendant': history.atendido_por.nombre,
     })
