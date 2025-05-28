@@ -3,6 +3,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agregar Descripción de Padrino</title>
     <link rel="stylesheet" href="{% static 'sponsors/css/bootstrap.min.css' %}">
     <style>
@@ -19,6 +20,12 @@
         .btn-primary {
             width: 100%;
         }
+        .footer {
+      margin: auto 0 20px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
     </style>
 </head>
 <body>
@@ -42,6 +49,9 @@
         <a href="{% url 'sponsors:sponsors_dashboard' %}" class="btn btn-secondary">Volver al Dashboard</a>
     </div>
 </div>
+  <div class="footer">
+    © {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.
+  </div>
 
 </body>
 </html>
