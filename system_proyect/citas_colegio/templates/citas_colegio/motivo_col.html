@@ -1,27 +1,24 @@
+{# templates/citas_colegio/motivo_col.html #}
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <title>Motivo de la Cita</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-       <style>
-        .custom-header {
-    background-color: royalblue;  /* Azul */
-    color: snow;               /* Texto en blanco */
-    padding: 15px;
-    font-size: 20px;
-    font-weight: bold;
-    border-radius: 5px 5px 0 0; /* Bordes redondeados en la parte superior */
-}
-         .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
- </style>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    >
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+    <!-- CSS separado -->
+    <link
+      rel="stylesheet"
+      href="{% static 'citas_colegio/css/motivo_col.css' %}"
+    >
 </head>
 <body>
 <div class="container mt-5">
@@ -32,7 +29,6 @@
         <div class="card-body">
             <form id="motivo-form">
                 {% csrf_token %}
-
                 <!-- Grado -->
                 <div class="mb-3">
                     <label for="grade" class="form-label">Grado</label>
@@ -43,7 +39,6 @@
                         {% endfor %}
                     </select>
                 </div>
-
                 <!-- Materia -->
                 <div class="mb-3">
                     <label for="subject" class="form-label">Materia</label>
@@ -51,170 +46,37 @@
                         <option value="">Seleccione la materia</option>
                     </select>
                 </div>
-
                 <!-- Maestro -->
                 <div class="mb-3">
                     <label for="teacher" class="form-label">Maestro</label>
                     <input type="text" id="teacher" name="teacher" class="form-control" readonly>
                 </div>
-
                 <!-- Área -->
                 <div class="mb-3">
                     <label for="area" class="form-label">Área</label>
                     <input type="text" id="area" name="area" class="form-control" readonly>
                 </div>
-
                 <!-- Razón -->
                 <div class="mb-3">
                     <label for="reason" class="form-label">Razón o Motivo</label>
-                    <textarea id="reason" name="reason" class="form-control" rows="4" placeholder="Escriba el motivo de la cita" required></textarea>
+                    <textarea id="reason" name="reason"
+                              class="form-control" rows="4"
+                              placeholder="Escriba el motivo de la cita" required></textarea>
                 </div>
-
                 <!-- Botón Siguiente -->
-                <button type="button" class="btn btn-primary w-100" id="next-motivo">Siguiente</button>
+                <button type="button" class="btn btn-primary w-100" id="next-motivo">
+                    Siguiente
+                </button>
             </form>
         </div>
     </div>
-    <div class="footer">
+    <div class="footer mt-4 text-center">
         <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const gradeSelect = document.getElementById('grade');
-    const subjectSelect = document.getElementById('subject');
-    const teacherField = document.getElementById('teacher');
-    const areaField = document.getElementById('area');
-    const reasonInput = document.getElementById('reason');
-    const nextButton = document.getElementById('next-motivo');
+<div id="js-data" data-csrf-token="{{ csrf_token }}"></div>
 
-    // Cargar materias según grado
-    gradeSelect.addEventListener('change', function () {
-        const gradeId = this.value;
-
-        if (gradeId) {
-            fetch(`/citas_colegio/get-subjects-by-grade_col/?grade_id=${gradeId}`)
-                .then(response => response.json())
-                .then(data => {
-                    subjectSelect.innerHTML = '<option value="">Seleccione la materia</option>';
-                    if (data.subjects) {
-                        data.subjects.forEach(subject => {
-                            const option = document.createElement('option');
-                            option.value = subject.id;
-                            option.textContent = subject.name;
-                            subjectSelect.appendChild(option);
-                        });
-                    } else {
-                        subjectSelect.innerHTML = '<option value="">No hay materias disponibles</option>';
-                    }
-                    teacherField.value = '';
-                    areaField.value = '';
-                })
-                .catch(() => {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'No se pudieron cargar las materias. Inténtelo nuevamente.',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar',
-                    });
-                });
-        } else {
-            subjectSelect.innerHTML = '<option value="">Seleccione la materia</option>';
-            teacherField.value = '';
-            areaField.value = '';
-        }
-    });
-
-    // Cargar maestro y área según materia
-    subjectSelect.addEventListener('change', function () {
-        const subjectId = this.value;
-
-        if (subjectId) {
-            fetch(`/citas_colegio/get-teacher-by-subject_col/?subject_id=${subjectId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.teacher) {
-                        teacherField.value = data.teacher.name;
-                        areaField.value = data.teacher.area;
-                    } else {
-                        teacherField.value = '';
-                        areaField.value = '';
-                    }
-                })
-                .catch(() => {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'No se pudo cargar la información del maestro.',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar',
-                    });
-                });
-        } else {
-            teacherField.value = '';
-            areaField.value = '';
-        }
-    });
-
-    // Enviar formulario
-    nextButton.addEventListener('click', function () {
-        const gradeValue = gradeSelect.value;
-        const subjectValue = subjectSelect.value;
-        const reasonValue = reasonInput.value;
-
-        if (gradeValue && subjectValue && reasonValue) {
-            fetch('/citas_colegio/motivo_col/', {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': '{{ csrf_token }}',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    grade: gradeValue,
-                    subject: subjectValue,
-                    reason: reasonValue,
-                }),
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.appointment_id) {
-                        Swal.fire({
-                            title: 'Datos guardados',
-                            text: 'Redirigiendo a la selección de fecha...',
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false,
-                        }).then(() => {
-                            window.location.href = `/citas_colegio/select-date_col/${data.appointment_id}/`;
-                        });
-                    } else {
-                        Swal.fire({
-                            title: 'Error',
-                            text: data.error || 'No se pudo obtener el ID de la cita.',
-                            icon: 'error',
-                            confirmButtonText: 'Aceptar',
-                        });
-                    }
-                })
-                .catch(() => {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Error al guardar los datos. Inténtelo nuevamente.',
-                        icon: 'error',
-                        confirmButtonText: 'Aceptar',
-                    });
-                });
-        } else {
-            Swal.fire({
-                title: 'Error',
-                text: 'Por favor complete todos los campos antes de continuar.',
-                icon: 'error',
-                confirmButtonText: 'Aceptar',
-            });
-        }
-    });
-});
-</script>
-
+<script src="{% static 'citas_colegio/js/motivo_col.js' %}" defer></script>
 </body>
 </html>

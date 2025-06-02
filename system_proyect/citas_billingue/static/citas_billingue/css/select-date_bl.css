@@ -1,0 +1,30 @@
+/* static/citas_billingue/css/select-date_bl.css */
+.custom-header {
+    background-color: #febc34;
+    color: snow;
+    padding: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;
+}
+
+.selectable-date.highlighted {
+    background-color: #cce5ff;
+}
+
+.list-group-item.selected-time {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.list-group-item.unavailable {
+    background-color: #eee;
+    cursor: not-allowed;
+}
+
+.footer {
+    margin-top: 30px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}

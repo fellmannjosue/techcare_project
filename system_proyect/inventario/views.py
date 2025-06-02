@@ -1,93 +1,222 @@
-import os
-from django.conf import settings
+import datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
 from django.http import HttpResponse
-from reportlab.lib.pagesizes import letter
+
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
-from .models import InventoryItem
-from .forms import InventoryItemForm
 
+from .models import (
+    InventoryItem,
+    Computadora,
+    Televisor,
+    Impresora,
+    Router,
+    DataShow,
+)
+from .forms import (
+    InventoryItemForm,
+    ComputadoraForm,
+    TelevisorForm,
+    ImpresoraForm,
+    RouterForm,
+    DataShowForm,
+)
 
 @login_required
-def inventory_dashboard(request):
+def dashboard(request):
+    """Dashboard con los 8 botones de inventario."""
+    year = datetime.datetime.now().year
+    return render(request, 'inventario/dashboard.html', {
+        'year': year,
+    })
+
+@login_required
+def inventario_por_categoria(request):
+    """Formulario y lista de InventoryItem (categorías genéricas)."""
+    year = datetime.datetime.now().year
+
     if request.method == 'POST':
         form = InventoryItemForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventory_dashboard')
-        else:
-            print(form.errors)
+            return redirect('inventario:inventario_por_categoria')
     else:
         form = InventoryItemForm()
 
-    items = InventoryItem.objects.all()
-    return render(request, 'inventario/inventory_dashboard.html', {'form': form, 'items': items})
+    items = InventoryItem.objects.order_by('-created_at')
+    return render(request, 'inventario/inventario_por_categoria.html', {
+        'form':  form,
+        'items': items,
+        'year':  year,
+    })
 
 @login_required
 def download_item_pdf(request, item_id):
-    """
-    Genera un PDF para un InventoryItem, cargando el logo
-    desde los archivos estáticos con django.contrib.staticfiles.finders.
-    """
+    """Genera la ficha PDF de un InventoryItem."""
     item = get_object_or_404(InventoryItem, id=item_id)
-
-    # Preparamos la respuesta PDF
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename="item_{item.id}.pdf"'
 
-    # Dimensiones (15 cm x 15 cm)
-    card_w  = 15 * 28.35
-    card_h  = 15 * 28.35
-    pdf     = canvas.Canvas(response, pagesize=(card_w, card_h))
-    pdf.setTitle(f"Ficha de Inventario - ID {item.id}")
+    cm = 28.35
+    w, h = 15*cm, 15*cm
+    pdf = canvas.Canvas(response, pagesize=(w, h))
+    pdf.setTitle(f"Ficha Inventario – ID {item.id}")
 
-    # Fondo claro
+    # Fondo
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
-    pdf.rect(0, 0, card_w, card_h, fill=1)
+    pdf.rect(0, 0, w, h, fill=1)
 
-    # --- Logo estático ---
+    # Logo
     logo_path = finders.find('inventario/img/ana.jpg')
     if logo_path:
-        logo_w, logo_h = 60, 60
-        logo_x = (card_w - logo_w) / 2
-        logo_y = card_h - logo_h - 30
-
-        # Fondo blanco tras el logo
+        logo_w = logo_h = 60
+        x = (w - logo_w) / 2
+        y = h - logo_h - 30
         pdf.setFillColor(colors.white)
-        pdf.rect(logo_x - 5, logo_y - 5, logo_w + 10, logo_h + 10, fill=1)
+        pdf.rect(x-5, y-5, logo_w+10, logo_h+10, fill=1)
+        pdf.drawImage(logo_path, x, y, width=logo_w, height=logo_h)
 
-        # Dibujamos el logo desde ruta local
-        pdf.drawImage(logo_path, logo_x, logo_y, width=logo_w, height=logo_h)
-
-    # Título centrado
+    # Título
     pdf.setFont("Helvetica-Bold", 16)
     pdf.setFillColor(colors.HexColor("#007bff"))
-    pdf.drawCentredString(card_w / 2, logo_y - 20, "Ficha de Inventario")
+    pdf.drawCentredString(w/2, y-20, "Ficha de Inventario")
 
-    # Contenido
+    # Datos
     pdf.setFont("Helvetica-Bold", 14)
     pdf.setFillColor(colors.black)
-    y0 = logo_y - 50
-
-    def draw_centered(label, value, y_offset):
+    y0 = y - 50
+    def draw(label, val, offset):
         pdf.setFont("Helvetica-Bold", 14)
-        pdf.drawCentredString(card_w/2, y0 - y_offset, label)
+        pdf.drawCentredString(w/2, y0 - offset, label)
         pdf.setFont("Helvetica", 12)
-        pdf.drawCentredString(card_w/2, y0 - y_offset - 15, str(value))
+        pdf.drawCentredString(w/2, y0 - offset - 15, str(val))
 
-    draw_centered("ID:",        item.id,              0)
-    draw_centered("Categoría:", item.category,       60)
-    draw_centered("Detalles:",  item.details,        120)
-    draw_centered("Fecha:",     item.created_at.strftime('%d-%m-%Y'), 180)
+    draw("ID:",        item.id,           0)
+    draw("Categoría:", item.category,    60)
+    draw("Detalles:",  item.details,     120)
+    draw("Fecha:",     item.created_at.strftime('%d-%m-%Y'), 180)
 
     # Pie
     pdf.setFont("Helvetica-Oblique", 10)
     pdf.setFillColor(colors.gray)
-    pdf.drawCentredString(card_w/2, 20, "Sistema de Inventariado - Asociación Nuevo Amanecer")
+    pdf.drawCentredString(w/2, 20, "Sistema de Inventariado – Asociación Nuevo Amanecer")
 
     pdf.showPage()
     pdf.save()
     return response
+
+# views.py
+@login_required
+def inventario_computadoras(request):
+    year = datetime.datetime.now().year
+    computadoras = Computadora.objects.order_by('-id')  # renombrado
+
+    if request.method == 'POST':
+        form = ComputadoraForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('inventario:inventario_computadoras')
+    else:
+        form = ComputadoraForm()
+
+    return render(request, 'inventario/inventario_computadoras.html', {
+        'form':         form,
+        'year':         year,
+        'computadoras': computadoras,  # aquí también
+    })
+
+
+
+@login_required
+def inventario_televisores(request):
+    """Formulario para Televisores."""
+    year = datetime.datetime.now().year
+    if request.method == 'POST':
+        form = TelevisorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('inventario:dashboard')
+    else:
+        form = TelevisorForm()
+    return render(request, 'inventario/inventario_televisores.html', {
+        'form': form,
+        'year': year,
+    })
+
+@login_required
+def inventario_impresoras(request):
+    """Formulario para Impresoras."""
+    year = datetime.datetime.now().year
+    if request.method == 'POST':
+        form = ImpresoraForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('inventario:dashboard')
+    else:
+        form = ImpresoraForm()
+    return render(request, 'inventario/inventario_impresoras.html', {
+        'form': form,
+        'year': year,
+    })
+
+@login_required
+def inventario_routers(request):
+    """Formulario para Routers."""
+    year = datetime.datetime.now().year
+    if request.method == 'POST':
+        form = RouterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('inventario:dashboard')
+    else:
+        form = RouterForm()
+    return render(request, 'inventario/inventario_routers.html', {
+        'form': form,
+        'year': year,
+    })
+
+@login_required
+def inventario_datashows(request):
+    """Formulario para DataShows."""
+    year = datetime.datetime.now().year
+    if request.method == 'POST':
+        form = DataShowForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('inventario:dashboard')
+    else:
+        form = DataShowForm()
+    return render(request, 'inventario/inventario_datashows.html', {
+        'form': form,
+        'year': year,
+    })
+
+@login_required
+def inventario_registros(request):
+    """
+    Ver registros: tabla desplegable según la categoría seleccionada.
+    Pasa 'year' para el footer y asegura que 'cat' no sea None.
+    """
+    year = datetime.datetime.now().year
+    cat  = request.GET.get('cat', '')  # valor por defecto vacío
+
+    if cat == 'computadoras':
+        qs = Computadora.objects.all()
+    elif cat == 'televisores':
+        qs = Televisor.objects.all()
+    elif cat == 'impresoras':
+        qs = Impresora.objects.all()
+    elif cat == 'routers':
+        qs = Router.objects.all()
+    elif cat == 'datashows':
+        qs = DataShow.objects.all()
+    else:
+        qs = []
+
+    return render(request, 'inventario/inventario_registros.html', {
+        'queryset': qs,
+        'category': cat,
+        'year':     year,
+    })

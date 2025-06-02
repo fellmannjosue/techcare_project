@@ -1,149 +1,57 @@
+{# accounts/templates/accounts/menu.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Dashboard Principal</title>
 
   <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
 
-  <style>
-    body {
-      background-color: #eef2f7;
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      min-height: 100vh;
-    }
-    .header-container {
-      position: absolute;
-      top: 15px;
-      right: 25px;
-      display: flex;
-      align-items: center;
-      gap: 20px;
-    }
-    .notification-icon {
-      position: relative;
-      cursor: pointer;
-    }
-    .notification-count {
-      position: absolute;
-      top: -5px;
-      right: -8px;
-      background-color: #dc3545;
-      color: #fff;
-      padding: 2px 6px;
-      border-radius: 50%;
-      font-size: 12px;
-    }
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 600;
-      color: #333;
-    }
-    .user-info img {
-      border-radius: 50%;
-    }
-    .logo img {
-      width: 120px;
-      margin: 40px 0 20px;
-    }
-    .menu-title {
-      font-size: 26px;
-      color: #444;
-      font-weight: bold;
-    }
-    .menu-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-      gap: 20px;
-      width: 80%;
-      max-width: 700px;
-      margin: 20px 0;
-    }
-    .menu-item {
-      background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      padding: 15px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-    .menu-item:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
-    }
-    .menu-item img {
-      width: 60px;
-      margin-bottom: 8px;
-    }
-    .menu-item span {
-      display: block;
-      font-weight: bold;
-      color: #555;
-    }
-    .footer {
-      margin: auto 0 20px;
-      text-align: center;
-      color: #666;
-      font-size: 14px;
-    }
-  </style>
+  <!-- SweetAlert2 CSS (opcional) -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    rel="stylesheet"
+  >
 
-  <!-- Bootstrap JS & SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-  <script>
-    let lastTotal = 0;
-    function checkNotifications() {
-      fetch("{% url 'check_new_notifications' %}")
-        .then(r => r.json())
-        .then(data => {
-          const total = data.citas_pendientes + data.tickets_pendientes;
-          const badge = document.querySelector('.notification-count');
-          if (total > 0) {
-            badge.textContent = total;
-            badge.style.display = 'inline-block';
-            if (total > lastTotal) {
-              Swal.fire({
-                title: '¡Tienes notificaciones nuevas!',
-                text: `Citas: ${data.citas_pendientes}, Tickets: ${data.tickets_pendientes}`,
-                icon: 'info',
-                confirmButtonText: 'OK'
-              });
-            }
-          } else {
-            badge.style.display = 'none';
-          }
-          lastTotal = total;
-        })
-        .catch(console.error);
-    }
-    document.addEventListener('DOMContentLoaded', () => {
-      checkNotifications();
-      setInterval(checkNotifications, 60000);
-    });
-  </script>
+  <!-- Tu CSS personalizado -->
+  <link
+    rel="stylesheet"
+    href="{% static 'accounts/css/menu.css' %}"
+  >
 </head>
 <body>
 
-  <!-- Header: Notifications & User -->
-  <div class="header-container">
-    <div class="dropdown notification-icon">
-      <img src="{% static 'accounts/img/bell.png' %}" width="32" height="32" data-bs-toggle="dropdown" alt="Notificaciones">
-      {% if citas_pendientes or tickets_pendientes %}
-        <span class="notification-count">{{ citas_pendientes|add:tickets_pendientes }}</span>
-      {% endif %}
-      <ul class="dropdown-menu dropdown-menu-end">
+  <!-- Header: Notificaciones & Usuario -->
+  <div class="header-container d-flex align-items-center">
+    <!-- Dropdown de Notificaciones -->
+    <div class="dropdown me-3">
+      <a
+        href="#"
+        class="text-decoration-none position-relative"
+        id="notifDropdownToggle"
+        role="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <img
+          src="{% static 'accounts/img/bell.png' %}"
+          width="32" height="32"
+          alt="Notificaciones"
+        >
+        {% if citas_pendientes or tickets_pendientes %}
+          <span class="notification-count">
+            {{ citas_pendientes|add:tickets_pendientes }}
+          </span>
+        {% endif %}
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdownToggle">
         <li class="dropdown-header">Notificaciones recientes</li>
         {% if citas_pendientes %}
           <li>
@@ -160,17 +68,32 @@
           </li>
         {% endif %}
         {% if not citas_pendientes and not tickets_pendientes %}
-          <li class="dropdown-item text-muted">Sin nuevas notificaciones.</li>
+          <li>
+            <span class="dropdown-item text-muted">Sin nuevas notificaciones.</span>
+          </li>
         {% endif %}
       </ul>
     </div>
 
+    <!-- Dropdown de Usuario -->
     <div class="dropdown">
-      <button class="btn btn-light dropdown-toggle user-info" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-        <img src="{% static 'accounts/img/user.png' %}" width="32" height="32" alt="Usuario">
+      <a
+        href="#"
+        class="btn btn-light dropdown-toggle d-flex align-items-center user-info"
+        id="userDropdownToggle"
+        role="button"
+        data-bs-toggle="dropdown"
+        aria-expanded="false"
+      >
+        <img
+          src="{% static 'accounts/img/user.png' %}"
+          width="32" height="32"
+          alt="Usuario"
+          class="rounded-circle me-2"
+        >
         {{ request.user.username }}
-      </button>
-      <ul class="dropdown-menu dropdown-menu-end">
+      </a>
+      <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdownToggle">
         <li>
           <a class="dropdown-item" href="{% url 'admin:index' %}">🔧 Panel Admin</a>
         </li>
@@ -182,76 +105,106 @@
     </div>
   </div>
 
-  <!-- Logo & Title -->
-  <div class="logo">
-    <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo">
+  <!-- Logo & Título -->
+  <div class="logo text-center my-4">
+    <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:120px;">
   </div>
-  <h2 class="menu-title">Dashboard Principal</h2>
+  <h2 class="menu-title text-center mb-4">Dashboard Principal</h2>
 
-  <!-- Main Menu -->
-  <div class="menu-grid">
-
-    {% if show_tickets %}
-    <div class="menu-item" onclick="location.href='{% url 'technician_dashboard' %}'">
-      <img src="{% static 'accounts/img/helpdesk.png' %}" alt="Tickets">
-      <span>Sistema de Tickets</span>
+  <!-- Menú Principal -->
+  <div class="container menu-grid">
+    <div class="row g-3 justify-content-center">
+      {% if show_tickets %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'technician_dashboard' %}'">
+            <img src="{% static 'accounts/img/helpdesk.png' %}" alt="Tickets">
+            <span>Sistema de Tickets</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_inventory %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'inventario:dashboard' %}'">
+            <img src="{% static 'accounts/img/inventario.png' %}" alt="Inventario">
+            <span>Inventario</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_maintenance %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'mantenimiento:maintenance_dashboard' %}'">
+            <img src="{% static 'accounts/img/mantenimiento.png' %}" alt="Mantenimiento">
+            <span>Ficha de Mantenimiento</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_citas_bl %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'dashboard_bl' %}'">
+            <img src="{% static 'accounts/img/cita.png' %}" alt="Citas BL">
+            <span>Citas BL</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_citas_col %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'dashboard_col' %}'">
+            <img src="{% static 'accounts/img/cita.png' %}" alt="Citas COL/VOC">
+            <span>Citas COL/VOC</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_sponsors %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'sponsors:sponsors_dashboard' %}'">
+            <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
+            <span>Sponsors</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_enfermeria %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'enfermeria:enfermeria_dashboard' %}'">
+            <img src="{% static 'accounts/img/pediatria.png' %}" alt="Enfermería">
+            <span>Enfermería</span>
+          </div>
+        </div>
+      {% endif %}
+      {% if show_seguridad %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item" onclick="window.location='{% url 'seguridad:dashboard' %}'">
+            <img src="{% static 'accounts/img/camara.png' %}" alt="Seguridad">
+            <span>Seguridad</span>
+          </div>
+        </div>
+      {% endif %}
     </div>
-    {% endif %}
-
-    {% if show_inventory %}
-    <div class="menu-item" onclick="location.href='{% url 'inventory_dashboard' %}'">
-      <img src="{% static 'accounts/img/inventario.png' %}" alt="Inventario">
-      <span>Inventario</span>
-    </div>
-    {% endif %}
-
-    {% if show_maintenance %}
-    <div class="menu-item" onclick="location.href='{% url 'mantenimiento:maintenance_dashboard' %}'">
-      <img src="{% static 'accounts/img/mantenimiento.png' %}" alt="Mantenimiento">
-      <span>Ficha de Mantenimiento</span>
-    </div>
-    {% endif %}
-
-    {% if show_citas_bl %}
-    <div class="menu-item" onclick="location.href='{% url 'dashboard_bl' %}'">
-      <img src="{% static 'accounts/img/cita.png' %}" alt="Citas BL">
-      <span>Citas BL</span>
-    </div>
-    {% endif %}
-
-    {% if show_citas_col %}
-    <div class="menu-item" onclick="location.href='{% url 'dashboard_col' %}'">
-      <img src="{% static 'accounts/img/cita.png' %}" alt="Citas COL/VOC">
-      <span>Citas COL/VOC</span>
-    </div>
-    {% endif %}
-
-  {% if show_sponsors %}
-  <div class="menu-item" onclick="location.href='{% url 'sponsors:sponsors_dashboard' %}'">
-    <img src="{% static 'accounts/img/sponsors.png' %}" alt="Sponsors">
-    <span>Sponsors</span>
   </div>
-{% endif %}
 
-    {% if show_enfermeria %}
-    <div class="menu-item" onclick="location.href='{% url 'enfermeria:enfermeria_dashboard' %}'">
-      <img src="{% static 'accounts/img/pediatria.png' %}" alt="Enfermería">
-      <span>Enfermería</span>
-    </div>
-    {% endif %}
-
-    {% if show_seguridad %}
-    <div class="menu-item" onclick="location.href='{% url 'seguridad:dashboard' %}'">
-      <img src="{% static 'accounts/img/camara.png' %}" alt="Seguridad">
-      <span>Seguridad</span>
-    </div>
-    {% endif %}
-
+  <div class="footer text-center mt-auto mb-4">
+    © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.
   </div>
 
-  <div class="footer">
-    © {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.
-  </div>
+  <!-- Bootstrap JS Bundle -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    defer
+  ></script>
+  <!-- SweetAlert2 JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/sweetalert2@11"
+    defer
+  ></script>
 
+  <!-- Definir la URL para check_new_notifications (para usar en menu.js) -->
+  <script>
+    const NOTIFICATIONS_URL = "{% url 'check_new_notifications' %}";
+  </script>
+
+  <!-- Tu JS personalizado -->
+  <script
+    src="{% static 'accounts/js/menu.js' %}"
+    defer
+  ></script>
 </body>
 </html>

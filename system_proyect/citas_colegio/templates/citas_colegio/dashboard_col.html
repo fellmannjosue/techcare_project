@@ -1,3 +1,4 @@
+{# templates/citas_colegio/dashboard_col.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -6,30 +7,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Citas Colegio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .delete-btn {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.3s ease, opacity 0.3s ease;
-        }
-
-        .delete-btn:hover {
-            transform: scale(1.3);
-            opacity: 0.8;
-        }
-
-        .delete-btn img {
-            width: 32px;
-            height: 32px;
-        }
-                 .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-    </style>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- CSS separado -->
+    <link rel="stylesheet" href="{% static 'citas_colegio/css/dashboard.css' %}">
 </head>
 <body>
 <div class="container mt-5">
@@ -72,10 +53,13 @@
                     <td>{{ appointment.date|date:"d/m/Y" }}</td>
                     <td>{{ appointment.time|time:"H:i" }}</td>
                     <td class="text-center">
-                        <form method="POST" action="{% url 'delete_appointment_col' appointment.id %}">
+                        <form method="POST"
+                              class="delete-form"
+                              action="{% url 'delete_appointment_col' appointment.id %}">
                             {% csrf_token %}
-                            <button class="delete-btn" type="submit" onclick="return confirm('¿Estás seguro de eliminar esta cita?');">
-                                <img src="{% static 'citas_colegio/img/eliminar.png' %}" alt="Eliminar">
+                            <button class="delete-btn" type="button">
+                                <img src="{% static 'citas_colegio/img/eliminar.png' %}"
+                                     alt="Eliminar">
                             </button>
                         </form>
                     </td>
@@ -91,13 +75,18 @@
 
     <div class="mt-4 text-center">
         <a href="{% url 'menu' %}" class="btn btn-secondary">
-            <img src="{% static 'citas_colegio/img/regresar.png' %}" alt="Regresar" width="24" height="24" class="me-2">
+            <img src="{% static 'citas_colegio/img/regresar.png' %}"
+                 alt="Regresar"
+                 width="24" height="24" class="me-2">
             Regresar al Menú Principal
         </a>
     </div>
-    <div class="footer">
+
+    <div class="footer mt-4 text-center">
         <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
     </div>
 </div>
+
+<script src="{% static 'citas_colegio/js/dashboard.js' %}"></script>
 </body>
 </html>

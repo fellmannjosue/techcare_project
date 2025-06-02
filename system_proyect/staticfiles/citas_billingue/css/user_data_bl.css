@@ -1,0 +1,19 @@
+/* static/citas_billingue/css/user_data_bl.css */
+
+/* Cabecera personalizada */
+.custom-header {
+  background-color: #febc34;  /* Amarillo */
+  color: snow;                /* Texto en blanco */
+  padding: 15px;
+  font-size: 20px;
+  font-weight: bold;
+  border-radius: 5px 5px 0 0; /* Bordes redondeados en la parte superior */
+}
+
+/* Estilos para el footer */
+.footer {
+  margin-top: 30px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}

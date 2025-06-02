@@ -1,0 +1,194 @@
+{# inventario/templates/inventario/inventario_routers.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventario – Routers</title>
+
+  <!-- Bootstrap CSS -->
+  <link 
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+    rel="stylesheet">
+
+  <style>
+    body {
+      background: #eef2f7;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+    }
+    .card-container {
+      max-width: 600px;
+      margin: 0 auto 40px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+    .card-container h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #444;
+    }
+    .footer {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  {# Mensajes de Django #}
+  <div class="container">
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show" role="alert">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <div class="card-container">
+    <h2>Inventario de Routers</h2>
+    <form method="post" action="{% url 'inventario:inventario_routers' %}">
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label for="id_asset_id" class="form-label">{{ form.asset_id.label }}</label>
+          <input type="text"
+                 name="asset_id"
+                 id="id_asset_id"
+                 class="form-control"
+                 value="{{ form.asset_id.value|default_if_none:'' }}">
+          {% for e in form.asset_id.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_modelo" class="form-label">{{ form.modelo.label }}</label>
+          <input type="text"
+                 name="modelo"
+                 id="id_modelo"
+                 class="form-control"
+                 value="{{ form.modelo.value|default_if_none:'' }}">
+          {% for e in form.modelo.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_serie" class="form-label">{{ form.serie.label }}</label>
+          <input type="text"
+                 name="serie"
+                 id="id_serie"
+                 class="form-control"
+                 value="{{ form.serie.value|default_if_none:'' }}">
+          {% for e in form.serie.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_nombre_router" class="form-label">{{ form.nombre_router.label }}</label>
+          <input type="text"
+                 name="nombre_router"
+                 id="id_nombre_router"
+                 class="form-control"
+                 value="{{ form.nombre_router.value|default_if_none:'' }}">
+          {% for e in form.nombre_router.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_clave_router" class="form-label">{{ form.clave_router.label }}</label>
+          <input type="text"
+                 name="clave_router"
+                 id="id_clave_router"
+                 class="form-control"
+                 value="{{ form.clave_router.value|default_if_none:'' }}">
+          {% for e in form.clave_router.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_ip_asignada" class="form-label">{{ form.ip_asignada.label }}</label>
+          <input type="text"
+                 name="ip_asignada"
+                 id="id_ip_asignada"
+                 class="form-control"
+                 value="{{ form.ip_asignada.value|default_if_none:'' }}">
+          {% for e in form.ip_asignada.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_ip_uso" class="form-label">{{ form.ip_uso.label }}</label>
+          <input type="text"
+                 name="ip_uso"
+                 id="id_ip_uso"
+                 class="form-control"
+                 value="{{ form.ip_uso.value|default_if_none:'' }}">
+          {% for e in form.ip_uso.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-md-6">
+          <label for="id_ubicado" class="form-label">{{ form.ubicado.label }}</label>
+          <input type="text"
+                 name="ubicado"
+                 id="id_ubicado"
+                 class="form-control"
+                 value="{{ form.ubicado.value|default_if_none:'' }}">
+          {% for e in form.ubicado.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="col-12">
+          <label for="id_observaciones" class="form-label">{{ form.observaciones.label }}</label>
+          <textarea name="observaciones"
+                    id="id_observaciones"
+                    class="form-control"
+                    rows="3">{{ form.observaciones.value|default_if_none:'' }}</textarea>
+          {% for e in form.observaciones.errors %}
+            <div class="text-danger small mt-1">{{ e }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 mt-4">
+        Guardar Router
+      </button>
+    </form>
+  </div>
+
+  <div class="container text-center">
+    <a href="{% url 'inventario:dashboard' %}" class="btn btn-secondary">
+      <img src="{% static 'inventario/img/volver.png' %}"
+           alt="Volver"
+           style="width:20px; margin-right:5px;">
+      Volver al Dashboard
+    </a>
+  </div>
+
+  <div class="footer">© {{ year }} Soporte Técnico – Asociación Nuevo Amanecer</div>
+
+  <!-- Bootstrap JS Bundle -->
+  <script 
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+</body>
+</html>

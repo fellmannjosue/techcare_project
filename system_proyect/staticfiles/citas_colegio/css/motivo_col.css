@@ -1,0 +1,16 @@
+/* static/citas_colegio/css/motivo_col.css */
+.custom-header {
+    background-color: royalblue;  /* Azul */
+    color: snow;                  /* Texto en blanco */
+    padding: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    border-radius: 5px 5px 0 0;   /* Bordes redondeados en la parte superior */
+}
+
+.footer {
+    margin-top: 30px;
+    text-align: center;
+    color: #666;
+    font-size: 14px;
+}

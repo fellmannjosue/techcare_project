@@ -1,0 +1,169 @@
+/* static/accounts/css/menu.css */
+
+body {
+  background-color: #eef2f7;
+  font-family: 'Segoe UI', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  min-height: 100vh;
+}
+
+/* Encabezado */
+.header-container {
+  position: absolute;
+  top: 15px;
+  right: 25px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Icono de notificaciones */
+.notification-icon img {
+  cursor: pointer;
+}
+
+.notification-count {
+  position: absolute;
+  top: -5px;
+  right: -8px;
+  background-color: #dc3545;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+/* Dropdown de notificaciones */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 45px;
+  right: 0;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  z-index: 1000;
+  min-width: 220px;
+}
+
+.notification-icon:hover .dropdown-menu {
+  display: block;
+}
+
+.dropdown-header {
+  padding: 8px 12px;
+  font-weight: bold;
+  border-bottom: 1px solid #ddd;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  color: #333;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Usuario */
+.user-dropdown {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+}
+
+.user-dropdown img {
+  border-radius: 50%;
+}
+
+.user-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 45px;
+  right: 0;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  z-index: 1000;
+  min-width: 180px;
+}
+
+.user-dropdown:hover .user-dropdown-menu {
+  display: block;
+}
+
+.user-dropdown-menu .dropdown-item {
+  padding: 8px 12px;
+  color: #333;
+  text-decoration: none;
+  display: block;
+}
+
+.dropdown-divider {
+  margin: 4px 0;
+  border-top: 1px solid #ddd;
+}
+
+/* Logo & Título */
+.logo img {
+  width: 120px;
+  margin: 40px 0 20px;
+}
+
+.menu-title {
+  font-size: 26px;
+  color: #444;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+/* Grilla del menú */
+.menu-grid {
+  width: 80%;
+  max-width: 700px;
+  margin-bottom: 20px;
+}
+
+.menu-item {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  padding: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+.menu-item img {
+  width: 60px;
+  margin-bottom: 8px;
+}
+
+.menu-item span {
+  display: block;
+  font-weight: bold;
+  color: #555;
+}
+
+/* Footer */
+.footer {
+  margin-top: auto;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #666;
+  font-size: 14px;
+}
