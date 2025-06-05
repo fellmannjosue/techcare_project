@@ -34,6 +34,13 @@ CSRF_TRUSTED_ORIGINS = [
     'https://192.168.10.6:437',
 ]
 
+# Reforzar cabeceras de seguridad para proteger el contenido JavaScript
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
 # ─────────────────────────────────────────────────────────────
 # 4. APLICACIONES INSTALADAS
 # ─────────────────────────────────────────────────────────────
