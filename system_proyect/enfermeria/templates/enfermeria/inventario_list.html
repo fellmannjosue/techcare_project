@@ -37,10 +37,7 @@
          class="btn btn-success btn-sm">
         ➕ Agregar Medicamento
       </a>
-      <a href="{% url 'enfermeria:uso_create' %}" 
-         class="btn btn-warning btn-sm">
-        💊 Registrar Uso
-      </a>
+
       {# Botón “Ver Historial del primer medicamento” siempre visible pero deshabilitado si no hay items #}
       <a href="{% if items %}{% url 'enfermeria:historial_uso' items.0.pk %}{% else %}#{% endif %}"
          class="btn btn-info btn-sm {% if not items %}disabled{% endif %}"

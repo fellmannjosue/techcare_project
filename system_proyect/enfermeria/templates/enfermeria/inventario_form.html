@@ -19,12 +19,12 @@
       font-size: 24px;
       margin-bottom: 20px;
     }
-               .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -53,7 +53,13 @@
           {{ form.proveedor }}
         </div>
 
-        <div class="col-12">
+        {# ← Nuevo bloque para “presentación” #}
+        <div class="col-md-6">
+          {{ form.presentacion.label_tag }}
+          {{ form.presentacion }}
+        </div>
+
+        <div class="col-md-6">
           {{ form.cantidad_existente.label_tag }}
           {{ form.cantidad_existente }}
         </div>
@@ -70,9 +76,11 @@
         </div>
       </form>
     </div>
-      <div class="footer">
-        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+
+    <div class="footer">
+      <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
     </div>
   </div>
 </body>
 </html>
+ 
