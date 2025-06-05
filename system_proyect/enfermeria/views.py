@@ -70,51 +70,151 @@ def atencion_form(request):
 
 @login_required
 def atencion_download_pdf(request, pk):
+    # 1) Recuperar el registro de Atención Médica y preparar el buffer para el PDF
     rec = get_object_or_404(AtencionMedica, pk=pk)
     buf = io.BytesIO()
-    w, h = 210 * mm, 297 * mm
+    w, h = 210 * mm, 297 * mm                    # dimenciones A4 en milímetros
     pdf = canvas.Canvas(buf, pagesize=(w, h))
-    pdf.setTitle(f"Atencion_{rec.pk}")
+    pdf.setTitle(f"ficha_de_atencion_medica_{rec.pk}")
+    
+    # ———————————————————————————————————————————————
+    # 2) Fondo claro de toda la página
+    # Pintamos un rectángulo que cubre todo el PDF con color #f8f9fa
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
     pdf.rect(0, 0, w, h, fill=1, stroke=0)
-
-    logo = finders.find('')
-    if logo:
-        pdf.drawImage(logo, 15 * mm, h - 45 * mm, width=30 * mm, height=30 * mm)
-
-    pdf.setFont("Helvetica-Bold", 18)
-    pdf.setFillColor(colors.HexColor("#007bff"))
-    pdf.drawCentredString(w / 2, h - 25 * mm, "Ficha de Atención Médica")
-
+    
+    # ———————————————————————————————————————————————
+    # 3) Encabezado superior (mensaje informativo en gris)
+    # Usamos Helvetica-Oblique, tamaño 12, color gris oscuro.
+    pdf.setFont("Helvetica-Oblique", 12)
+    pdf.setFillColor(colors.darkgray)
+    pdf.drawCentredString(
+        w / 2,
+        h - 10 * mm,  # 10 mm por debajo del borde superior
+        "Este es un mensaje de nuestro departamento de enfermería"
+    )
+    
+    # ———————————————————————————————————————————————
+    # 4) Título principal (centrado justo debajo del encabezado)
+    # Usamos Helvetica-Bold, tamaño 20, color negro.
+    pdf.setFont("Helvetica-Bold", 20)
+    pdf.setFillColor(colors.black)
+    pdf.drawCentredString(
+        w / 2,
+        h - 20 * mm,  # 20 mm por debajo del borde superior (10 mm para el encabezado + 10 mm extra)
+        "Ficha de Atención Médica"
+    )
+    
+    # ———————————————————————————————————————————————
+    # 5) TEXTO PRINCIPAL (párrafo informativo)
+    # Se define el contenido en HTML básico (<br/> para saltos de línea, <b> para negrita).
+    texto = (
+        "Estimado padre / madre de familia:<br/>"
+        "El motivo de la ficha es para notificarle que su hij@ fue atendido en el departamento de enfermería.<br/><br/>"
+        f"Se le brindó a su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> "
+        f"quien fue atendido el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> "
+        f"a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador "
+        f"<b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: "
+        f"<b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>."
+    )
+    
+    # Definimos un estilo para el párrafo (fuente, tamaño, interlineado, color)
+    style = ParagraphStyle(
+        'texto_principal',
+        fontName='Helvetica',
+        fontSize=14,
+        leading=18,             # espacio entre líneas
+        textColor=colors.black
+    )
+    
+    # Calcular la coordenada “y” para que el texto quede a 50 mm bajo el título
+    #   • El título está en y = h - 20 mm
+    #   • Queremos 50 mm de espacio libre justo debajo del título
+    #   • El propio párrafo ocupa 50 mm de alto
+    #   → Entonces: y_frame = h - 20 mm - 50 mm - 50 mm = h - 120 mm
+    y_frame = h - (20 * mm) - (50 * mm) - (50 * mm)
+    
+    # Creamos un Frame que contendrá el párrafo. 
+    frame_texto = Frame(
+        20 * mm,      # x = 20 mm desde borde izquierdo
+        y_frame,      # y = calculado arriba (h - 120 mm)
+        w - 40 * mm,  # ancho total menos márgenes (20 mm a cada lado)
+        50 * mm,      # alto = 50 mm (espacio dedicado al párrafo)
+        showBoundary=0
+    )
+    
+    paragraph = Paragraph(texto, style)
+    # Insertamos el párrafo dentro del Frame
+    frame_texto.addFromList([paragraph], pdf)
+    
+    # ———————————————————————————————————————————————
+    # 6) Subtítulo (detalle de la tabla)
+    # Lo ubicamos 10 mm por debajo del párrafo. 
+    #   • El párrafo ocupa 50 mm de alto y arrancó en y_frame
+    #   → Línea base del párrafo está en y_frame
+    #   → Subtítulo en y_subtitulo = y_frame - 10 mm
+    y_subtitulo = y_frame - (10 * mm)
+    
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.setFillColor(colors.black)
+    pdf.drawCentredString(
+        w / 2,
+        y_subtitulo,
+        "Detalle de la atención que se brindó en el departamento de enfermería"
+    )
+    
+    # ———————————————————————————————————————————————
+    # 7) Tabla con datos de la atención
     tabla_data = [
-        ["Estudiante:",  rec.estudiante],
-        ["Grado:",       rec.grado.nombre],
-        ["Fecha y Hora:", rec.fecha_hora.strftime("%d-%m-%Y %H:%M")],
-        ["Atendido por:", rec.atendido_por.nombre],
-        ["Motivo:",      rec.motivo],
-        ["Tratamiento:", rec.tratamiento],
+        ["Estudiante:",    rec.estudiante],
+        ["Grado:",         rec.grado.nombre],
+        ["Fecha y Hora:",  rec.fecha_hora.strftime("%d-%m-%Y %H:%M")],
+        ["Atendido por:",  rec.atendido_por.nombre],
+        ["Motivo:",        rec.motivo],
+        ["Tratamiento:",   rec.tratamiento],
     ]
     tabla = Table(tabla_data, colWidths=[50 * mm, 120 * mm])
     tabla.setStyle(TableStyle([
-        ('GRID',         (0, 0), (-1, -1), 0.25, colors.grey),
-        ('FONTSIZE',     (0, 0), (-1, -1), 12),
-        ('FONTNAME',     (0, 0), (-1, -1), 'Helvetica'),
-        ('BOTTOMPADDING',(0, 0), (-1, -1), 6),
+        ('GRID',          (0, 0), (-1, -1), 0.25, colors.grey),
+        ('FONTSIZE',      (0, 0), (-1, -1), 14),
+        ('FONTNAME',      (0, 0), (-1, -1), 'Helvetica'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
+    
+    # Calculamos la altura aproximada de la tabla:
+    #   • 6 filas × ~8 mm por fila = ~48 mm
+    altura_tabla_aprox = len(tabla_data) * 8 * mm
+    
+    # Ubicamos la tabla 10 mm por debajo del subtítulo:
+    #   • subtítulo está en y_subtitulo
+    #   → tope de la tabla (arriba) = y_subtitulo - 10 mm
+    y_arriba_tabla = y_subtitulo - (10 * mm)
+    
+    # Dibujamos la tabla de modo que su base quede en (y_arriba_tabla - altura_tabla_aprox)
     tabla.wrapOn(pdf, w, h)
-    tabla.drawOn(pdf, 20 * mm, h - 160 * mm)
-
-    texto = (
-        f"El estudiante <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> fue atendido "
-        f"el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> "
-        f"por el profesional <b>{rec.atendido_por.nombre}</b>. Motivo: <b>{rec.motivo}</b>. "
-        f"Tratamiento: <b>{rec.tratamiento}</b>."
-    )
-    style = ParagraphStyle('custom', fontSize=13, leading=18)
-    paragraph = Paragraph(texto, style)
-    frame = Frame(20 * mm, h - 250 * mm, w - 40 * mm, 80 * mm, showBoundary=0)
-    frame.addFromList([paragraph], pdf)
-
+    tabla.drawOn(pdf, 20 * mm, y_arriba_tabla - altura_tabla_aprox)
+    
+    # ———————————————————————————————————————————————
+    # 8) Línea de firma (80 mm por debajo del final de la tabla)
+    #   • Base de la tabla está en y_base_tabla = y_arriba_tabla - altura_tabla_aprox
+    #   → Queremos 80 mm por debajo de esa base para la línea
+    y_base_tabla = y_arriba_tabla - altura_tabla_aprox
+    y_firma = y_base_tabla - (80 * mm)
+    
+    # Dibujar la palabra “Firma:” 2 mm por encima de la línea, al inicio de la misma
+    x_inicio = (w / 2) - (50 * mm)  # coordenada X inicial: 50 mm a izquierda del centro
+    pdf.setFont("Helvetica", 12)
+    pdf.setFillColor(colors.black)
+    pdf.drawString(x_inicio, y_firma + (2 * mm), "Firma:")
+    
+    # Dibujar la línea de 100 mm de largo, centrada horizontalmente
+    x_fin = (w / 2) + (50 * mm)     # 50 mm a derecha del centro
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.5)
+    pdf.line(x_inicio, y_firma, x_fin, y_firma)
+    
+    # ———————————————————————————————————————————————
+    # 9) Finalizamos el PDF y regresamos la respuesta HTTP
     pdf.showPage()
     pdf.save()
     buf.seek(0)
