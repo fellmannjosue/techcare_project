@@ -33,7 +33,7 @@
 
       <!-- Atención Médica -->
       <div class="col-sm-6 col-md-4">
-        <a href="{% url 'enfermeria:atencion_form' %}" class="card-link">
+        <a href="{% url 'enfermeria2:atencion_form' %}" class="card-link">
           <div class="card shadow-sm">
             <div class="card-body">
               <img src="{% static 'enfermeria/img/atencion-medica.png' %}" alt="Atención Médica" class="mb-3">
@@ -46,7 +46,7 @@
 
       <!-- Inventario Medicamentos -->
       <div class="col-sm-6 col-md-4">
-        <a href="{% url 'enfermeria:inventario_list' %}" class="card-link">
+        <a href="{% url 'enfermeria2:inventario_list' %}" class="card-link">
           <div class="card shadow-sm">
             <div class="card-body">
               <img src="{% static 'enfermeria/img/informe-medico.png' %}" alt="Inventario Medicamentos" class="mb-3">
@@ -59,7 +59,7 @@
 
       <!-- Historial Médico -->
       <div class="col-sm-6 col-md-4">
-        <a href="{% url 'enfermeria:medical_history' %}" class="card-link">
+        <a href="{% url 'enfermeria2:medical_history' %}" class="card-link">
           <div class="card shadow-sm">
             <div class="card-body">
               <img src="{% static 'enfermeria/img/journal-medical.png' %}" alt="Historial Médico" class="mb-3">
@@ -70,18 +70,7 @@
         </a>
       </div>
 
-      <!-- Regresar a Menú Principal -->
-      <div class="col-sm-6 col-md-4">
-        <a href="{% url 'menu' %}" class="card-link">
-          <div class="card shadow-sm">
-            <div class="card-body">
-              <img src="{% static 'enfermeria/img/hogar.png' %}" alt="Regresar a Menú" class="mb-3">
-              <h5 class="card-title">Regresar a Menú Principal</h5>
-              <p class="card-text text-muted">Volver al dashboard general.</p>
-            </div>
-          </div>
-        </a>
-      </div>
+    
 
     </div>
 

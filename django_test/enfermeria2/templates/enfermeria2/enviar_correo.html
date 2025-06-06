@@ -1,0 +1,111 @@
+{# templates/enfermeria2/enviar_correo.html #}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enviar Correo – {{ atencion.estudiante }}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    form { margin-bottom: 2em; }
+    label { display: block; margin-top: 1em; font-weight: bold; }
+    select, input[type="text"], textarea {
+      width: 100%;
+      padding: 0.5em;
+      margin-top: 0.3em;
+      box-sizing: border-box;
+    }
+    button { margin-top: 1em; padding: 0.7em 1.5em; }
+    .preview { margin-top: 2em; }
+    iframe { border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <h1>Enviar Correo para: {{ atencion.estudiante }}</h1>
+
+  <form method="post">
+    {% csrf_token %}
+
+    {# Muestra el nombre del estudiante (viene de MySQL sponsors3) #}
+    <label>Estudiante:</label>
+    <div>{{ atencion.estudiante }}</div>
+
+    {# Label para el select de Persona (viene de SQL Server) #}
+    <label for="email">Selecciona el correo del estudiante:</label>
+    <select name="email" id="email" required>
+      <option value="">-- Elige un correo --</option>
+      {% for p in personas %}
+        {# Concatenar nombres y apellidos #}
+        {% with
+            nombre_completo=(
+              (p.Nombre1|stringformat:"s")|default_if_none:""
+              ~ " "
+              ~ (p.Nombre2|stringformat:"s")|default_if_none:""
+              ~ " "
+              ~ (p.Apellido1|stringformat:"s")|default_if_none:""
+              ~ " "
+              ~ (p.Apellido2|stringformat:"s")|default_if_none:""
+            )
+        %}
+          {# Opción para Email #}
+          {% if p.Email %}
+            <option value="{{ p.Email }}">
+              {{ nombre_completo }}___{{ p.Email }}
+            </option>
+          {% endif %}
+          {# Opción para Email2 #}
+          {% if p.Email2 %}
+            <option value="{{ p.Email2 }}">
+              {{ nombre_completo }}___{{ p.Email2 }}
+            </option>
+          {% endif %}
+          {# Opción para Email3 (si existe) #}
+          {% if p.Email3 %}
+            <option value="{{ p.Email3 }}">
+              {{ nombre_completo }}___{{ p.Email3 }}
+            </option>
+          {% endif %}
+        {% endwith %}
+      {% empty %}
+        <option value="">No se encontraron registros en SQL Server</option>
+      {% endfor %}
+    </select>
+
+    {# Campo de asunto (editable) #}
+    <label for="asunto">Asunto:</label>
+    <input
+      type="text"
+      id="asunto"
+      name="asunto"
+      value="Ficha médica de {{ atencion.estudiante }}"
+      required
+    />
+
+    {# Campo de mensaje (editable) #}
+    <label for="mensaje">Mensaje:</label>
+    <textarea id="mensaje" name="mensaje" rows="5" required>
+Estimado/a padre/madre de {{ atencion.estudiante }},
+
+Adjunto encontrará la ficha médica de su hijo(a). Por favor, revise el documento y contáctenos si tiene alguna duda.
+
+Saludos cordiales,
+[Nombre de la Enfermería]
+    </textarea>
+
+    <button type="submit">Enviar Correo</button>
+    <a href="{% url 'enfermeria2:lista_prsdtos' %}" style="margin-left: 1em;">Cancelar</a>
+  </form>
+
+  {# Vista previa del PDF, si existe #}
+  <div class="preview">
+    <h2>Vista previa del PDF</h2>
+    {% if pdf_url %}
+      <iframe src="{{ pdf_url }}" width="100%" height="600px">
+        Su navegador no soporta iframes.
+        <a href="{{ pdf_url }}">Ver PDF</a>
+      </iframe>
+    {% else %}
+      <p>No se encontró el PDF para este registro.</p>
+    {% endif %}
+  </div>
+</body>
+</html>

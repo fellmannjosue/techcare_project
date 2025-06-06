@@ -43,10 +43,10 @@
         <button type="submit" class="btn btn-primary">
           {% if edit_pk %}Actualizar{% else %}Guardar{% endif %}
         </button>
-        <a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="btn btn-secondary ms-2">
+        <a href="{% url 'enfermeria2:enfermeria_dashboard' %}" class="btn btn-secondary ms-2">
           dashboard de enfermeria
         </a>
-        <a href="{% url 'enfermeria:uso_create' %}" class="btn btn-warning ms-2">
+        <a href="{% url 'enfermeria2:uso_create' %}" class="btn btn-warning ms-2">
           Registro Uso de Medicamento
         </a>
       </div>
@@ -73,7 +73,7 @@
                     onclick="location.href='?edit={{ r.pk }}'">✎</button>
             <button class="btn btn-sm btn-danger"
                     onclick="confirmDelete({{ r.pk }})">🗑</button>
-            <a href="{% url 'enfermeria:atencion_pdf' r.pk %}"
+            <a href="{% url 'enfermeria2:atencion_pdf' r.pk %}"
                class="btn btn-sm btn-secondary">📄</a>
           </td>
         </tr>

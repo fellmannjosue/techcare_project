@@ -3,4 +3,4 @@ from django.apps import AppConfig
 
 class EnfermeriaConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'enfermeria'
+    name = 'enfermeria2'

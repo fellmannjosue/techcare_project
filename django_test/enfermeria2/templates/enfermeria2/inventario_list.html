@@ -24,7 +24,7 @@
   <div class="container py-5">
     <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-      <a href="{% url 'enfermeria:enfermeria_dashboard' %}" 
+      <a href="{% url 'enfermeria2:enfermeria_dashboard' %}" 
          class="btn btn-sm btn-outline-secondary">
         ← Volver al Dashboard
       </a>
@@ -33,13 +33,13 @@
 
     <!-- Botones de acción -->
     <div class="mb-3 d-flex gap-2 flex-wrap">
-      <a href="{% url 'enfermeria:inventario_create' %}" 
+      <a href="{% url 'enfermeria2:inventario_create' %}" 
          class="btn btn-success btn-sm">
         ➕ Agregar Medicamento
       </a>
 
       {# Botón “Ver Historial del primer medicamento” siempre visible pero deshabilitado si no hay items #}
-      <a href="{% if items %}{% url 'enfermeria:historial_uso' items.0.pk %}{% else %}#{% endif %}"
+      <a href="{% if items %}{% url 'enfermeria2:historial_uso' items.0.pk %}{% else %}#{% endif %}"
          class="btn btn-info btn-sm {% if not items %}disabled{% endif %}"
          {% if not items %}tabindex="-1" aria-disabled="true"{% endif %}
          title="Ver historial del primer medicamento">
@@ -75,11 +75,11 @@
             </td>
             <td>{{ item.modificado_por.username|default:"—" }}</td>
             <td>
-              <a href="{% url 'enfermeria:inventario_edit' item.pk %}" 
+              <a href="{% url 'enfermeria2:inventario_edit' item.pk %}" 
                  class="btn btn-sm btn-primary" title="Editar">✏️</a>
-              <a href="{% url 'enfermeria:inventario_pdf' item.pk %}" 
+              <a href="{% url 'enfermeria2:inventario_pdf' item.pk %}" 
                  class="btn btn-sm btn-secondary" title="Generar PDF">📄</a>
-              <a href="{% url 'enfermeria:historial_uso' item.pk %}" 
+              <a href="{% url 'enfermeria2:historial_uso' item.pk %}" 
                  class="btn btn-sm btn-info" title="Ver historial">📋</a>
             </td>
           </tr>

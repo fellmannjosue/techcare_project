@@ -4,7 +4,6 @@ import datetime
 import io
 
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles import finders
 from django.http import HttpResponse, JsonResponse
 from django.db.models import Sum
@@ -27,21 +26,20 @@ from .forms import (
 )
 
 
-@login_required
+
 def enfermeria_dashboard(request):
-    return render(request, 'enfermeria/dashboard.html')
+    return render(request, 'enfermeria2/dashboard.html')
 
 
 # ================= ATENCIÓN MÉDICA =================
 
-@login_required
 def atencion_form(request):
     delete_id = request.GET.get('delete')
     edit_id   = request.GET.get('edit')
 
     if delete_id:
         get_object_or_404(AtencionMedica, pk=delete_id).delete()
-        return redirect('enfermeria:atencion_form')
+        return redirect('enfermeria2:atencion_form')
 
     if request.method == 'POST':
         pk = request.POST.get('pk')
@@ -53,14 +51,14 @@ def atencion_form(request):
         if form.is_valid():
             form.save()
             request.session['mensaje_exito'] = 'Ficha guardada correctamente'
-            return redirect('enfermeria:atencion_form')
+            return redirect('enfermeria2:atencion_form')
     else:
         instancia = get_object_or_404(AtencionMedica, pk=edit_id) if edit_id else None
         form = AtencionMedicaForm(instance=instancia)
 
     registros = AtencionMedica.objects.order_by('-fecha_hora')
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria/atencion_form.html', {
+    return render(request, 'enfermeria2/atencion_form.html', {
         'form': form,
         'records': registros,
         'edit_id': edit_id or '',
@@ -68,7 +66,7 @@ def atencion_form(request):
     })
 
 
-@login_required
+
 def atencion_download_pdf(request, pk):
     # 1) Recuperar el registro de Atención Médica y preparar el buffer para el PDF
     rec = get_object_or_404(AtencionMedica, pk=pk)
@@ -208,17 +206,17 @@ def atencion_download_pdf(request, pk):
 
 # ================= INVENTARIO MEDICAMENTOS =================
 
-@login_required
+
 def inventario_list(request):
     items = InventarioMedicamento.objects.order_by('-fecha_ingreso')
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria/inventario_list.html', {
+    return render(request, 'enfermeria2/inventario_list.html', {
         'items': items,
         'year': year,
     })
 
 
-@login_required
+
 def inventario_create(request):
     form = InventarioMedicamentoForm(request.POST or None)
     if form.is_valid():
@@ -226,16 +224,16 @@ def inventario_create(request):
         item.modificado_por = request.user
         item.save()
         request.session['mensaje_exito'] = 'Medicamento agregado correctamente'
-        return redirect('enfermeria:inventario_list')
+        return redirect('enfermeria2:inventario_list')
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria/inventario_form.html', {
+    return render(request, 'enfermeria2/inventario_form.html', {
         'form': form,
         'title': 'Agregar Medicamento',
         'year': year,
     })
 
 
-@login_required
+
 def inventario_edit_cantidad(request, pk):
     item = get_object_or_404(InventarioMedicamento, pk=pk)
     form = InventarioMedicamentoForm(request.POST or None, instance=item)
@@ -244,16 +242,16 @@ def inventario_edit_cantidad(request, pk):
         item.modificado_por = request.user
         item.save()
         request.session['mensaje_exito'] = 'Cantidad actualizada correctamente'
-        return redirect('enfermeria:inventario_list')
+        return redirect('enfermeria2:inventario_list')
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria/inventario_form.html', {
+    return render(request, 'enfermeria2/inventario_form.html', {
         'form': form,
         'title': f'Editar Medicamento – {item.nombre}',
         'year': year,
     })
 
 
-@login_required
+
 def uso_create(request):
     form = UsoMedicamentoForm(request.POST or None)
     if form.is_valid():
@@ -265,17 +263,17 @@ def uso_create(request):
             uso.save()
             request.session['mensaje_exito'] = 'Uso registrado correctamente'
             # Regresamos a la pantalla de atención:
-            return redirect('enfermeria:atencion_form')
+            return redirect('enfermeria2:atencion_form')
         form.add_error('cantidad_usada', 'Cantidad excede lo disponible.')
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria/uso_form.html', {
+    return render(request, 'enfermeria2/uso_form.html', {
         'form': form,
         'title': 'Registrar Uso de Medicamento',
         'year': year,
     })
 
 
-@login_required
+
 def inventario_pdf(request, pk):
     med = get_object_or_404(InventarioMedicamento, pk=pk)
     usos = med.usos.order_by('-fecha_uso')
@@ -318,11 +316,11 @@ def inventario_pdf(request, pk):
     return HttpResponse(buf, content_type='application/pdf')
 
 
-@login_required
+
 def historial_uso(request, pk):
     med = get_object_or_404(InventarioMedicamento, pk=pk)
     usos = med.usos.order_by('-fecha_uso')
-    return render(request, 'enfermeria/historial_uso.html', {
+    return render(request, 'enfermeria2/historial_uso.html', {
         'medicamento': med,
         'usos': usos
     })
@@ -330,7 +328,7 @@ def historial_uso(request, pk):
 
 # ================= HISTORIAL MÉDICO =================
 
-@login_required
+
 def medical_history(request):
     # Lista de nombres únicos de estudiante
     students = (
@@ -340,13 +338,13 @@ def medical_history(request):
         .order_by('estudiante')
     )
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria/medical_history.html', {
+    return render(request, 'enfermeria2/medical_history.html', {
         'students': students,
         'year': year,
     })
 
 
-@login_required
+
 def get_medical_history_data(request):
     student_name = request.GET.get('student')
     if not student_name:

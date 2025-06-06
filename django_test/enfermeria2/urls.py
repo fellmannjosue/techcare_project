@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 
-app_name = 'enfermeria'
+app_name = 'enfermeria2'
 
 urlpatterns = [
     # Dashboard principal
