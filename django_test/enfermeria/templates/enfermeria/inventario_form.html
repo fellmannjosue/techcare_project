@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    .form-box {
+      max-width: 700px;
+      margin: auto;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+    .form-box h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <div class="container py-5">
+    <div class="form-box">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">{{ title }}</h2>
+        <a href="{% url 'enfermeria:inventario_list' %}" class="btn btn-sm btn-outline-secondary">← Volver</a>
+      </div>
+
+      <form method="post" class="row g-3">
+        {% csrf_token %}
+
+        <div class="col-12">
+          {{ form.nombre.label_tag }}
+          {{ form.nombre }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.fecha_ingreso.label_tag }}
+          {{ form.fecha_ingreso }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.proveedor.label_tag }}
+          {{ form.proveedor }}
+        </div>
+
+        {# ← Nuevo bloque para “presentación” #}
+        <div class="col-md-6">
+          {{ form.presentacion.label_tag }}
+          {{ form.presentacion }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.cantidad_existente.label_tag }}
+          {{ form.cantidad_existente }}
+        </div>
+
+        {% if form.errors %}
+        <div class="alert alert-danger mt-2">
+          <strong>⚠️ Revisa los errores del formulario.</strong>
+        </div>
+        {% endif %}
+
+        <div class="col-12 text-end">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+          <a href="{% url 'enfermeria:inventario_list' %}" class="btn btn-secondary">Cancelar</a>
+        </div>
+      </form>
+    </div>
+
+    <div class="footer">
+      <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</body>
+</html>
+ 
