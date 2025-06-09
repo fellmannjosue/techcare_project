@@ -1,5 +1,3 @@
-# views.py
-
 import io
 import os
 import datetime
@@ -10,7 +8,7 @@ from django.urls         import reverse
 from django.core.mail    import EmailMessage
 from django.http         import HttpResponse, JsonResponse
 from django.contrib.staticfiles import finders
-from django.db.models    import Sum
+from django.db.models    import Sum, Q
 
 from reportlab.lib       import colors
 from reportlab.lib.units import mm
@@ -71,86 +69,169 @@ def atencion_form(request):
 
 
 def atencion_download_pdf(request, pk):
+    # 1) Recuperar el registro de Atención Médica
     rec = get_object_or_404(AtencionMedica, pk=pk)
+
+    # 2) Preparar buffer y lienzo
     buf = io.BytesIO()
-    w, h = 210 * mm, 297 * mm
+    w, h = 210 * mm, 297 * mm  # A4
     pdf = canvas.Canvas(buf, pagesize=(w, h))
 
-    # Fondo
+    # 3) Fondo claro
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
     pdf.rect(0, 0, w, h, fill=1, stroke=0)
 
-    # Encabezado
+    # 4) Encabezado superior
+    pdf.setFont("Helvetica-Oblique", 12)
+    pdf.setFillColor(colors.darkgray)
+    pdf.drawCentredString(
+        w / 2,
+        h - 10 * mm,
+        "Este es un mensaje de nuestro departamento de enfermería"
+    )
+
+    # 5) Título principal
     pdf.setFont("Helvetica-Bold", 20)
     pdf.setFillColor(colors.black)
-    pdf.drawCentredString(w/2, h - 20*mm, "Ficha de Atención Médica")
-
-    # Texto informativo
-    texto = (
-        f"Estimado padre/madre de {rec.estudiante},\n\n"
-        f"Su hijo(a) fue atendido el {rec.fecha_hora.strftime('%d/%m/%Y')} "
-        f"a las {rec.fecha_hora.strftime('%H:%M')} por {rec.atendido_por.nombre}.\n\n"
-        f"Motivo: {rec.motivo}\n"
-        f"Tratamiento: {rec.tratamiento}"
+    pdf.drawCentredString(
+        w / 2,
+        h - 20 * mm,
+        "Ficha de Atención Médica"
     )
-    style = ParagraphStyle('normal', fontName='Helvetica', fontSize=12, leading=15)
-    frame = Frame(20*mm, h - 100*mm, w - 40*mm, 80*mm, showBoundary=0)
-    frame.addFromList([Paragraph(texto.replace('\n','<br/>'), style)], pdf)
 
-    # Detalle tabla
-    data = [
-        ["Estudiante:",   rec.estudiante],
-        ["Grado:",        rec.grado.nombre],
-        ["Fecha y Hora:", rec.fecha_hora.strftime("%d/%m/%Y %H:%M")],
-        ["Atendido por:", rec.atendido_por.nombre],
+    # 6) Texto informativo
+    texto = (
+        "Estimado padre / madre de familia:<br/>"
+        "El motivo de la ficha es para notificarle que su hij@ fue atendido en el departamento de enfermería.<br/><br/>"
+        f"Se le brindó a su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> "
+        f"quien fue atendido el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> "
+        f"a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador "
+        f"<b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: "
+        f"<b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>."
+    )
+    style = ParagraphStyle(
+        'texto_principal',
+        fontName='Helvetica',
+        fontSize=14,
+        leading=18,
+        textColor=colors.black
+    )
+    # Calcular posición del párrafo
+    y_frame = h - (20 * mm) - (50 * mm) - (50 * mm)
+    frame_texto = Frame(
+        20 * mm,
+        y_frame,
+        w - 40 * mm,
+        50 * mm,
+        showBoundary=0
+    )
+    paragraph = Paragraph(texto, style)
+    frame_texto.addFromList([paragraph], pdf)
+
+    # 7) Subtítulo de tabla
+    y_subtitulo = y_frame - (10 * mm)
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawCentredString(
+        w / 2,
+        y_subtitulo,
+        "Detalle de la atención que se brindó en el departamento de enfermería"
+    )
+
+    # 8) Tabla de datos
+    tabla_data = [
+        ["Estudiante:",    rec.estudiante],
+        ["Grado:",         rec.grado.nombre],
+        ["Fecha y Hora:",  rec.fecha_hora.strftime("%d-%m-%Y %H:%M")],
+        ["Atendido por:",  rec.atendido_por.nombre],
+        ["Motivo:",        rec.motivo],
+        ["Tratamiento:",   rec.tratamiento],
     ]
-    table = Table(data, colWidths=[50*mm, 120*mm])
-    table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
-        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
-        ('FONTSIZE', (0,0), (-1,-1), 12),
+    tabla = Table(tabla_data, colWidths=[50 * mm, 120 * mm])
+    tabla.setStyle(TableStyle([
+        ('GRID',          (0, 0), (-1, -1), 0.25, colors.grey),
+        ('FONTSIZE',      (0, 0), (-1, -1), 14),
+        ('FONTNAME',      (0, 0), (-1, -1), 'Helvetica'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
     ]))
-    table.wrapOn(pdf, w, h)
-    table.drawOn(pdf, 20*mm, h - 150*mm)
+    altura_tabla_aprox = len(tabla_data) * 8 * mm
+    y_arriba_tabla = y_subtitulo - (10 * mm)
+    tabla.wrapOn(pdf, w, h)
+    tabla.drawOn(pdf, 20 * mm, y_arriba_tabla - altura_tabla_aprox)
 
+    # 9) Línea de firma
+    y_base_tabla = y_arriba_tabla - altura_tabla_aprox
+    y_firma = y_base_tabla - (80 * mm)
+    x_inicio = (w / 2) - (50 * mm)
+    x_fin    = (w / 2) + (50 * mm)
+
+    pdf.setFont("Helvetica", 12)
+    pdf.drawString(x_inicio, y_firma + (2 * mm), "Firma:")
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.5)
+    pdf.line(x_inicio, y_firma, x_fin, y_firma)
+
+    # 10) Nombre del profesional SOBRE la línea
+    pdf.setFont("Helvetica-Bold", 14)
+    pdf.drawCentredString(
+        w / 2,
+        y_firma + (3 * mm),
+        rec.atendido_por.nombre
+    )
+
+    # 11) Finalizar y devolver
     pdf.showPage()
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf.getvalue(), content_type='application/pdf')
 
 
+
+
 def enviar_correo(request, atencion_id):
     atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
-    nombres = atencion.estudiante.split()
-    nombre1  = nombres[0]
-    apellido = nombres[-1]
 
-    personas = TblPrsDtosGen.objects.using('padres_sqlserver') \
-                 .filter(Nombre1__iexact=nombre1, Apellido1__iexact=apellido)
+    # Cargamos TODOS los registros de TblPrsDtosGen
+    personas = TblPrsDtosGen.objects.using('padres_sqlserver').all()
 
     pdf_url = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
+
+    default_asunto = f"Ficha médica de {atencion.estudiante}"
+    default_mensaje = (
+        f"Estimado/a padre/madre de {atencion.estudiante},\n\n"
+        "Adjunto encontrará la ficha médica de su hijo(a). Por favor, revise el documento "
+        "y contáctenos si tiene alguna duda.\n\n"
+        "Saludos cordiales,\nDepartamento de Enfermería"
+    )
+
     error_msg = None
-    success = False
+    success   = False
 
     if request.method == 'POST':
-        selected_email = request.POST.get('email')
-        asunto         = request.POST.get('asunto') or f"Ficha médica de {atencion.estudiante}"
-        cuerpo         = request.POST.get('mensaje')
+        email_destino = request.POST.get('email')
+        asunto        = request.POST.get('asunto')  or default_asunto
+        cuerpo        = request.POST.get('mensaje') or default_mensaje
 
-        if selected_email:
+        if email_destino:
             correo = EmailMessage(
                 subject=asunto,
                 body=cuerpo,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[selected_email],
+                to=[email_destino],
             )
-            # Generar PDF en memoria y adjuntar
-            response_pdf = atencion_download_pdf(request, atencion.pk)
-            correo.attach(f"ficha_{atencion.pk}.pdf", response_pdf.content, 'application/pdf')
+            correo.content_subtype = 'html'
+
+            # Adjuntar el PDF en memoria
+            pdf_response = atencion_download_pdf(request, atencion.pk)
+            correo.attach(
+                f"ficha_{atencion.pk}.pdf",
+                pdf_response.content,
+                'application/pdf'
+            )
 
             try:
                 correo.send(fail_silently=False)
                 success = True
+                return redirect('enfermeria2:atencion_form')
             except Exception as e:
                 error_msg = str(e)
 
@@ -158,9 +239,12 @@ def enviar_correo(request, atencion_id):
         'atencion':  atencion,
         'personas':  personas,
         'pdf_url':   pdf_url,
+        'asunto':    default_asunto,
+        'mensaje':   default_mensaje,
         'error_msg': error_msg,
         'success':   success,
     })
+
 
 
 # ================= INVENTARIO MEDICAMENTOS =================
