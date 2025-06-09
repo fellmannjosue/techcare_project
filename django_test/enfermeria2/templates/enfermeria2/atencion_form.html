@@ -44,7 +44,7 @@
           {% if edit_pk %}Actualizar{% else %}Guardar{% endif %}
         </button>
         <a href="{% url 'enfermeria2:enfermeria_dashboard' %}" class="btn btn-secondary ms-2">
-          dashboard de enfermeria
+          Dashboard de Enfermería
         </a>
         <a href="{% url 'enfermeria2:uso_create' %}" class="btn btn-warning ms-2">
           Registro Uso de Medicamento
@@ -73,8 +73,9 @@
                     onclick="location.href='?edit={{ r.pk }}'">✎</button>
             <button class="btn btn-sm btn-danger"
                     onclick="confirmDelete({{ r.pk }})">🗑</button>
-            <a href="{% url 'enfermeria2:atencion_pdf' r.pk %}"
-               class="btn btn-sm btn-secondary">📄</a>
+            {# Aquí reemplazamos la ruta de PDF por la ruta de envío de correo #}
+            <a href="{% url 'enfermeria2:enviar_correo' r.pk %}"
+               class="btn btn-sm btn-secondary">✉️</a>
           </td>
         </tr>
         {% empty %}

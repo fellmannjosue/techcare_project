@@ -1,30 +1,34 @@
 # views.py
 
-import datetime
 import io
+import os
+import datetime
 
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts    import render, redirect, get_object_or_404
+from django.conf         import settings
+from django.urls         import reverse
+from django.core.mail    import EmailMessage
+from django.http         import HttpResponse, JsonResponse
 from django.contrib.staticfiles import finders
-from django.http import HttpResponse, JsonResponse
-from django.db.models import Sum
+from django.db.models    import Sum
 
-from reportlab.lib import colors
+from reportlab.lib       import colors
 from reportlab.lib.units import mm
-from reportlab.pdfgen import canvas
-from reportlab.platypus import Paragraph, Frame, Table, TableStyle
+from reportlab.pdfgen    import canvas
+from reportlab.platypus  import Paragraph, Frame, Table, TableStyle
 from reportlab.lib.styles import ParagraphStyle
 
-from .models import (
+from .models  import (
     AtencionMedica,
     InventarioMedicamento,
     UsoMedicamento,
+    TblPrsDtosGen,
 )
-from .forms import (
+from .forms   import (
     AtencionMedicaForm,
     InventarioMedicamentoForm,
     UsoMedicamentoForm,
 )
-
 
 
 def enfermeria_dashboard(request):
@@ -66,146 +70,100 @@ def atencion_form(request):
     })
 
 
-
 def atencion_download_pdf(request, pk):
-    # 1) Recuperar el registro de Atención Médica y preparar el buffer para el PDF
     rec = get_object_or_404(AtencionMedica, pk=pk)
     buf = io.BytesIO()
-    w, h = 210 * mm, 297 * mm  # dimensiones A4 en milímetros
+    w, h = 210 * mm, 297 * mm
     pdf = canvas.Canvas(buf, pagesize=(w, h))
 
-    # Ajuste: usar el nombre del estudiante en vez del pk para el título
-    nombre_limpio = rec.estudiante.replace(" ", "_")
-    pdf.setTitle(f"ficha_de_atencion_medica_{nombre_limpio}")
-
-    # ———————————————————————————————————————————————
-    # 2) Fondo claro de toda la página
-    # Pintamos un rectángulo que cubre todo el PDF con color #f8f9fa
+    # Fondo
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
     pdf.rect(0, 0, w, h, fill=1, stroke=0)
 
-    # ———————————————————————————————————————————————
-    # 3) Encabezado superior (mensaje informativo en gris)
-    # Usamos Helvetica-Oblique, tamaño 12, color gris oscuro.
-    pdf.setFont("Helvetica-Oblique", 12)
-    pdf.setFillColor(colors.darkgray)
-    pdf.drawCentredString(
-        w / 2,
-        h - 10 * mm,  # 10 mm por debajo del borde superior
-        "Este es un mensaje de nuestro departamento de enfermería"
-    )
-
-    # ———————————————————————————————————————————————
-    # 4) Título principal (centrado justo debajo del encabezado)
-    # Usamos Helvetica-Bold, tamaño 20, color negro.
+    # Encabezado
     pdf.setFont("Helvetica-Bold", 20)
     pdf.setFillColor(colors.black)
-    pdf.drawCentredString(
-        w / 2,
-        h - 20 * mm,  # 20 mm por debajo del borde superior (10 mm para el encabezado + 10 mm extra)
-        "Ficha de Atención Médica"
-    )
+    pdf.drawCentredString(w/2, h - 20*mm, "Ficha de Atención Médica")
 
-    # ———————————————————————————————————————————————
-    # 5) TEXTO PRINCIPAL (párrafo informativo)
+    # Texto informativo
     texto = (
-        "Estimado padre / madre de familia:<br/>"
-        "El motivo de la ficha es para notificarle que su hij@ fue atendido en el departamento de enfermería.<br/><br/>"
-        f"Se le brindó a su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> "
-        f"quien fue atendido el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> "
-        f"a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador "
-        f"<b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: "
-        f"<b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>."
+        f"Estimado padre/madre de {rec.estudiante},\n\n"
+        f"Su hijo(a) fue atendido el {rec.fecha_hora.strftime('%d/%m/%Y')} "
+        f"a las {rec.fecha_hora.strftime('%H:%M')} por {rec.atendido_por.nombre}.\n\n"
+        f"Motivo: {rec.motivo}\n"
+        f"Tratamiento: {rec.tratamiento}"
     )
-    style = ParagraphStyle(
-        'texto_principal',
-        fontName='Helvetica',
-        fontSize=14,
-        leading=18,  # espacio entre líneas
-        textColor=colors.black
-    )
+    style = ParagraphStyle('normal', fontName='Helvetica', fontSize=12, leading=15)
+    frame = Frame(20*mm, h - 100*mm, w - 40*mm, 80*mm, showBoundary=0)
+    frame.addFromList([Paragraph(texto.replace('\n','<br/>'), style)], pdf)
 
-    # Calcular la coordenada “y” para que el texto quede a 50 mm bajo el título
-    #   • El título está en y = h - 20 mm
-    #   • Queremos 50 mm de espacio libre justo debajo del título
-    #   • El propio párrafo ocupa 50 mm de alto
-    #   → Entonces: y_frame = h - 20 mm - 50 mm - 50 mm = h - 120 mm
-    y_frame = h - (20 * mm) - (50 * mm) - (50 * mm)
-
-    frame_texto = Frame(
-        20 * mm,      # x = 20 mm desde borde izquierdo
-        y_frame,      # y = calculado arriba (h - 120 mm)
-        w - 40 * mm,  # ancho total menos márgenes (20 mm a cada lado)
-        50 * mm,      # alto = 50 mm (espacio dedicado al párrafo)
-        showBoundary=0
-    )
-    paragraph = Paragraph(texto, style)
-    frame_texto.addFromList([paragraph], pdf)
-
-    # ———————————————————————————————————————————————
-    # 6) Subtítulo (detalle de la tabla)
-    y_subtitulo = y_frame - (10 * mm)
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.setFillColor(colors.black)
-    pdf.drawCentredString(
-        w / 2,
-        y_subtitulo,
-        "Detalle de la atención que se brindó en el departamento de enfermería"
-    )
-
-    # ———————————————————————————————————————————————
-    # 7) Tabla con datos de la atención
-    tabla_data = [
-        ["Estudiante:",    rec.estudiante],
-        ["Grado:",         rec.grado.nombre],
-        ["Fecha y Hora:",  rec.fecha_hora.strftime("%d-%m-%Y %H:%M")],
-        ["Atendido por:",  rec.atendido_por.nombre],
-        ["Motivo:",        rec.motivo],
-        ["Tratamiento:",   rec.tratamiento],
+    # Detalle tabla
+    data = [
+        ["Estudiante:",   rec.estudiante],
+        ["Grado:",        rec.grado.nombre],
+        ["Fecha y Hora:", rec.fecha_hora.strftime("%d/%m/%Y %H:%M")],
+        ["Atendido por:", rec.atendido_por.nombre],
     ]
-    tabla = Table(tabla_data, colWidths=[50 * mm, 120 * mm])
-    tabla.setStyle(TableStyle([
-        ('GRID',          (0, 0), (-1, -1), 0.25, colors.grey),
-        ('FONTSIZE',      (0, 0), (-1, -1), 14),
-        ('FONTNAME',      (0, 0), (-1, -1), 'Helvetica'),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+    table = Table(data, colWidths=[50*mm, 120*mm])
+    table.setStyle(TableStyle([
+        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
+        ('FONTNAME', (0,0), (-1,-1), 'Helvetica'),
+        ('FONTSIZE', (0,0), (-1,-1), 12),
     ]))
+    table.wrapOn(pdf, w, h)
+    table.drawOn(pdf, 20*mm, h - 150*mm)
 
-    altura_tabla_aprox = len(tabla_data) * 8 * mm
-    y_arriba_tabla = y_subtitulo - (10 * mm)
-    tabla.wrapOn(pdf, w, h)
-    tabla.drawOn(pdf, 20 * mm, y_arriba_tabla - altura_tabla_aprox)
-
-    # ———————————————————————————————————————————————
-    # 8) Línea de firma (80 mm por debajo del final de la tabla)
-    y_base_tabla = y_arriba_tabla - altura_tabla_aprox
-    y_firma = y_base_tabla - (80 * mm)
-
-    x_inicio = (w / 2) - (50 * mm)
-    pdf.setFont("Helvetica", 12)
-    pdf.setFillColor(colors.black)
-    pdf.drawString(x_inicio, y_firma + (2 * mm), "Firma:")
-
-    x_fin = (w / 2) + (50 * mm)
-    pdf.setStrokeColor(colors.black)
-    pdf.setLineWidth(0.5)
-    pdf.line(x_inicio, y_firma, x_fin, y_firma)
-
-    # ———————————————————————————————————————————————
-    # 9) Finalizamos el PDF y regresamos la respuesta HTTP
     pdf.showPage()
     pdf.save()
     buf.seek(0)
+    return HttpResponse(buf.getvalue(), content_type='application/pdf')
 
-    # Ajuste opcional: sugerir nombre de descarga con Content-Disposition
-    response = HttpResponse(buf, content_type='application/pdf')
-   
-    return response
 
+def enviar_correo(request, atencion_id):
+    atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
+    nombres = atencion.estudiante.split()
+    nombre1  = nombres[0]
+    apellido = nombres[-1]
+
+    personas = TblPrsDtosGen.objects.using('padres_sqlserver') \
+                 .filter(Nombre1__iexact=nombre1, Apellido1__iexact=apellido)
+
+    pdf_url = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
+    error_msg = None
+    success = False
+
+    if request.method == 'POST':
+        selected_email = request.POST.get('email')
+        asunto         = request.POST.get('asunto') or f"Ficha médica de {atencion.estudiante}"
+        cuerpo         = request.POST.get('mensaje')
+
+        if selected_email:
+            correo = EmailMessage(
+                subject=asunto,
+                body=cuerpo,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[selected_email],
+            )
+            # Generar PDF en memoria y adjuntar
+            response_pdf = atencion_download_pdf(request, atencion.pk)
+            correo.attach(f"ficha_{atencion.pk}.pdf", response_pdf.content, 'application/pdf')
+
+            try:
+                correo.send(fail_silently=False)
+                success = True
+            except Exception as e:
+                error_msg = str(e)
+
+    return render(request, 'enfermeria2/enviar_correo.html', {
+        'atencion':  atencion,
+        'personas':  personas,
+        'pdf_url':   pdf_url,
+        'error_msg': error_msg,
+        'success':   success,
+    })
 
 
 # ================= INVENTARIO MEDICAMENTOS =================
-
 
 def inventario_list(request):
     items = InventarioMedicamento.objects.order_by('-fecha_ingreso')
@@ -214,7 +172,6 @@ def inventario_list(request):
         'items': items,
         'year': year,
     })
-
 
 
 def inventario_create(request):
@@ -231,7 +188,6 @@ def inventario_create(request):
         'title': 'Agregar Medicamento',
         'year': year,
     })
-
 
 
 def inventario_edit_cantidad(request, pk):
@@ -251,7 +207,6 @@ def inventario_edit_cantidad(request, pk):
     })
 
 
-
 def uso_create(request):
     form = UsoMedicamentoForm(request.POST or None)
     if form.is_valid():
@@ -262,7 +217,6 @@ def uso_create(request):
             med.save()
             uso.save()
             request.session['mensaje_exito'] = 'Uso registrado correctamente'
-            # Regresamos a la pantalla de atención:
             return redirect('enfermeria2:atencion_form')
         form.add_error('cantidad_usada', 'Cantidad excede lo disponible.')
     year = datetime.datetime.now().year
@@ -271,7 +225,6 @@ def uso_create(request):
         'title': 'Registrar Uso de Medicamento',
         'year': year,
     })
-
 
 
 def inventario_pdf(request, pk):
@@ -298,7 +251,7 @@ def inventario_pdf(request, pk):
     for label, val in [
         ("Nombre:",           med.nombre),
         ("Proveedor:",        med.proveedor.nombre),
-        ("Presentación:",     med.presentacion.nombre),
+        ("Presentación:",     med.presentacion.nombre if med.presentacion else "—"),
         ("Fecha de Ingreso:", med.fecha_ingreso.strftime("%d-%m-%Y")),
         ("Disponible:",       med.cantidad_existente),
         ("Total Usado:",      total_usado),
@@ -313,8 +266,7 @@ def inventario_pdf(request, pk):
     pdf.showPage()
     pdf.save()
     buf.seek(0)
-    return HttpResponse(buf, content_type='application/pdf')
-
+    return HttpResponse(buf.getvalue(), content_type='application/pdf')
 
 
 def historial_uso(request, pk):
@@ -328,9 +280,7 @@ def historial_uso(request, pk):
 
 # ================= HISTORIAL MÉDICO =================
 
-
 def medical_history(request):
-    # Lista de nombres únicos de estudiante
     students = (
         AtencionMedica.objects
         .values_list('estudiante', flat=True)
@@ -342,7 +292,6 @@ def medical_history(request):
         'students': students,
         'year': year,
     })
-
 
 
 def get_medical_history_data(request):

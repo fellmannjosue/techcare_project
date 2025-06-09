@@ -1,5 +1,6 @@
 from django.db import models
-from django.conf import settings  # Para AUTH_USER_MODEL
+from django.conf import settings  # Para AUTH_USER_MODEL y MEDIA settings
+import os
 
 # ——————————————————————————————————————————————
 # Modelos existentes en MySQL (sponsors3)
@@ -50,6 +51,26 @@ class AtencionMedica(models.Model):
 
     def __str__(self):
         return f"{self.estudiante} – {self.fecha_hora:%d-%m-%Y %H:%M}"
+
+    # ——————————————————————————————————————————————
+    # Métodos para manejar el PDF asociado a esta atención
+    # ——————————————————————————————————————————————
+
+    def get_pdf_path(self):
+        """
+        Devuelve la ruta absoluta en disco al archivo PDF.
+        (Por ejemplo, MEDIA_ROOT/pdfs/atencion_<id>.pdf)
+        """
+        filename = f"pdfs/atencion_{self.id}.pdf"
+        return os.path.join(settings.MEDIA_ROOT, filename)
+
+    def get_pdf_url(self):
+        """
+        Devuelve la URL pública del PDF para incrustarlo en un <iframe>.
+        (Por ejemplo, MEDIA_URL + 'pdfs/atencion_<id>.pdf')
+        """
+        filename = f"pdfs/atencion_{self.id}.pdf"
+        return settings.MEDIA_URL + filename
 
 
 class Proveedor(models.Model):
@@ -160,7 +181,7 @@ class TblPrsDtosGen(models.Model):
 
     class Meta:
         managed  = False
-        db_table = 'dbo.tblPrsDtosGen'  # Nombre exacto de la tabla en SQL Server
+        db_table = 'tblPrsDtosGen'  # Nombre exacto de la tabla en SQL Server
 
     def __str__(self):
         partes = [self.Nombre1, self.Nombre2, self.Apellido1, self.Apellido2]
