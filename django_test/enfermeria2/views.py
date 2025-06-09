@@ -185,13 +185,11 @@ def atencion_download_pdf(request, pk):
     return HttpResponse(buf.getvalue(), content_type='application/pdf')
 
 
-
-
 def enviar_correo(request, atencion_id):
     atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
 
-    # Cargamos TODOS los registros de TblPrsDtosGen
-    personas = TblPrsDtosGen.objects.using('padres_sqlserver').all()
+    # Cargamos sólo los registros con alum = 1 (~854 filas)
+    personas = TblPrsDtosGen.objects.using('padres_sqlserver').filter(alum=1)
 
     pdf_url = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
 
@@ -244,6 +242,7 @@ def enviar_correo(request, atencion_id):
         'error_msg': error_msg,
         'success':   success,
     })
+
 
 
 
