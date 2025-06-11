@@ -11,6 +11,7 @@ from django.contrib.staticfiles import finders
 from django.db.models    import Sum, Q
 
 from reportlab.lib       import colors
+from django.db import connections
 from reportlab.lib.units import mm
 from reportlab.pdfgen    import canvas
 from reportlab.platypus  import Paragraph, Frame, Table, TableStyle
@@ -43,13 +44,57 @@ def atencion_form(request):
         get_object_or_404(AtencionMedica, pk=delete_id).delete()
         return redirect('enfermeria2:atencion_form')
 
+    # —————————————
+    # 1) Cargar alumnos y su grado desde SQL Server
+    # —————————————
+    sql = """
+    SELECT 
+      d.PersonaID,
+      ISNULL(d.Apellido1,'') + ' ' + ISNULL(d.Apellido2,'')   AS Apellidos,
+      ISNULL(d.Nombre1,'')   + ' ' + ISNULL(d.Nombre2,'')     AS Nombres,
+      ISNULL(d.Apellido1,'') + ' ' + ISNULL(d.Apellido2,'')
+        + ' ' + ISNULL(d.Nombre1,'') + ' ' + ISNULL(d.Nombre2,'') AS NombreCompl,
+      c.CrsoNumero, c.GrupoNumero
+    FROM dbo.tblPrsDtosGen AS d
+    INNER JOIN dbo.tblPrsTipo      AS t  ON d.PersonaID = t.PersonaID
+    INNER JOIN dbo.tblEdcArea      AS a  ON t.IngrEgrID = a.IngrEgrID
+    INNER JOIN dbo.tblEdcEjecCrso  AS ec ON a.AreaID     = ec.AreaID
+    INNER JOIN dbo.tblEdcCrso      AS c  ON ec.CrsoID     = c.CrsoID
+    INNER JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
+    WHERE d.Alum = 1
+      AND DATEPART(yy, c.FechaInicio) = DATEPART(yyyy, GETDATE())
+      AND da.Descripcion IN (N'PrimariaBL', N'ColegioBL', N'PreescolarBL')
+      AND ec.Desertor = 0
+      AND ec.TrasladoPer = 0
+    ORDER BY da.Descripcion, c.CrsoNumero, c.GrupoNumero, d.Sexo, Apellidos, Nombres
+    """
+    with connections['padres_sqlserver'].cursor() as cursor:
+        cursor.execute(sql)
+        filas = cursor.fetchall()
+
+    students = [
+        {
+            'id':    pid,
+            'label': nombreCompl.strip(),
+            'grado': f"{crso}-{grupo}"
+        }
+        for pid, _, _, nombreCompl, crso, grupo in filas
+    ]
+
+    # —————————————
+    # 2) Procesar POST o inicializar form
+    # —————————————
     if request.method == 'POST':
         pk = request.POST.get('pk')
+        data = request.POST.copy()
+        # Injectamos los valores seleccionados en el form
+        data['estudiante']     = request.POST.get('student_name', '')
+        data['grado']          = request.POST.get('student_grade', '')
         if pk:
             instancia = get_object_or_404(AtencionMedica, pk=pk)
-            form = AtencionMedicaForm(request.POST, instance=instancia)
+            form = AtencionMedicaForm(data, instance=instancia)
         else:
-            form = AtencionMedicaForm(request.POST)
+            form = AtencionMedicaForm(data)
         if form.is_valid():
             form.save()
             request.session['mensaje_exito'] = 'Ficha guardada correctamente'
@@ -60,13 +105,14 @@ def atencion_form(request):
 
     registros = AtencionMedica.objects.order_by('-fecha_hora')
     year = datetime.datetime.now().year
-    return render(request, 'enfermeria2/atencion_form.html', {
-        'form': form,
-        'records': registros,
-        'edit_id': edit_id or '',
-        'year': year,
-    })
 
+    return render(request, 'enfermeria2/atencion_form.html', {
+        'form':     form,
+        'records':  registros,
+        'edit_id':  edit_id or '',
+        'year':     year,
+        'students': students,
+    })
 
 def atencion_download_pdf(request, pk):
     # 1) Recuperar el registro de Atención Médica
