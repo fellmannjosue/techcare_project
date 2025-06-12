@@ -57,18 +57,18 @@ def atencion_form(request):
   da.Descripcion    AS AreaDesc,
   c.CrsoNumero,
   c.GrupoNumero
-FROM dbo.tblPrsDtosGen AS d
-JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
-JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
-JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
-JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID     = c.CrsoID
-JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
-WHERE d.Alum = 1
+ FROM dbo.tblPrsDtosGen AS d
+ JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
+ JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
+ JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
+ JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID     = c.CrsoID
+ JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
+ WHERE d.Alum = 1
   AND DATEPART(yy, c.FechaInicio) = DATEPART(yyyy, GETDATE())
   AND da.Descripcion IN (N'PrimariaBL', N'ColegioBL', N'PreescolarBL')
   AND ec.Desertor    = 0
   AND ec.TrasladoPer = 0
-ORDER BY 
+ ORDER BY 
   da.Descripcion,
   c.CrsoNumero,
   c.GrupoNumero,
