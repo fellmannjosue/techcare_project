@@ -10,11 +10,14 @@ from django.http                import HttpResponse, JsonResponse
 from django.contrib.staticfiles import finders
 from django.db.models           import Sum, Q
 from django.db                  import connections
-from reportlab.lib              import colors
-from reportlab.lib.units        import mm
-from reportlab.pdfgen           import canvas
-from reportlab.platypus         import Paragraph, Frame, Table, TableStyle
-from reportlab.lib.styles       import ParagraphStyle
+
+from reportlab.lib import colors
+from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Paragraph, Frame, Table, TableStyle
+from reportlab.lib.pagesizes import letter
+
+from reportlab.lib.styles import ParagraphStyle
 
 from .models import (
     AtencionMedica,
@@ -137,64 +140,117 @@ def atencion_form(request):
     return render(request, 'enfermeria2/atencion_form.html', contexto)
 
 def atencion_download_pdf(request, pk):
+    # 1) Recuperar datos y preparar buffer
     rec = get_object_or_404(AtencionMedica, pk=pk)
     buf = io.BytesIO()
-    w, h = 210 * mm, 297 * mm
-    pdf = canvas.Canvas(buf, pagesize=(w, h))
+    w, h = letter   # carta
+    pdf = canvas.Canvas(buf, pagesize=letter)
+    pdf.setTitle(f"ficha_de_atencion_{rec.estudiante.replace(' ', '_')}")
 
-    # Fondo
+    # 2) Fondo claro
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
     pdf.rect(0, 0, w, h, fill=1, stroke=0)
 
-    # Encabezado
+    # 3) Encabezado informativo
     pdf.setFont("Helvetica-Oblique", 12)
     pdf.setFillColor(colors.darkgray)
-    pdf.drawCentredString(w/2, h-10*mm, "Departamento de Enfermería")
+    pdf.drawCentredString(
+        w/2,
+        h - 15*mm,
+        "Este es un mensaje de nuestro departamento de enfermería"
+    )
 
-    # Título
+    # 4) Título principal
     pdf.setFont("Helvetica-Bold", 20)
     pdf.setFillColor(colors.black)
-    pdf.drawCentredString(w/2, h-20*mm, "Ficha de Atención Médica")
-
-    # Texto
-    texto = (
-        f"Estimado padre/madre:\n\n"
-        f"Su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado}</b> "
-        f"fue atendido el {rec.fecha_hora.strftime('%d/%m/%Y')} "
-        f"a las {rec.fecha_hora.strftime('%H:%M')}.\n\n"
-        f"Motivo: {rec.motivo}\n"
-        f"Tratamiento: {rec.tratamiento}"
+    pdf.drawCentredString(
+        w/2,
+        h - 30*mm,
+        "Ficha de Atención Médica"
     )
-    style = ParagraphStyle('texto', fontName='Helvetica', fontSize=14, leading=18)
-    frame = Frame(20*mm, h-80*mm, w-40*mm, 50*mm, showBoundary=0)
-    frame.addFromList([Paragraph(texto, style)], pdf)
 
-    # Tabla resumen
-    data = [
-        ["Estudiante:", rec.estudiante],
-        ["Grado:", rec.grado],
+    # 5) Párrafo informativo con negritas
+    texto = (
+         "Estimado padre / madre de familia:<br/>"
+        "El motivo de la ficha es para notificarle que su hij@ fue atendido en el departamento de enfermería.<br/><br/>"
+        f"Se le brindó a su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> "
+        f"quien fue atendido el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> "
+        f"a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador "
+        f"<b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: "
+        f"<b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>."
+    )
+    style = ParagraphStyle(
+        'texto_principal',
+        fontName='Helvetica',
+        fontSize=12,
+        leading=18,  # más espacio entre líneas
+        textColor=colors.black,
+    )
+    paragraph = Paragraph(texto, style)
+    ancho_texto = w - 40*mm
+    _, alto_parrafo = paragraph.wrap(ancho_texto, h)
+
+    # Colocar párrafo con separación extra
+    y_parrafo = (h - 30*mm) - 15*mm - alto_parrafo
+    paragraph.drawOn(pdf, 20*mm, y_parrafo)
+
+    # 6) Subtítulo de la tabla
+    y_subt = y_parrafo - 15*mm
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawCentredString(
+        w/2,
+        y_subt,
+        "Detalle de la atención brindada"
+    )
+
+    # 7) Tabla con datos
+    datos = [
+        ["Estudiante:",   rec.estudiante],
+        ["Grado:",        rec.grado.nombre],
         ["Fecha y Hora:", rec.fecha_hora.strftime("%d-%m-%Y %H:%M")],
-        ["Motivo:", rec.motivo],
-        ["Tratamiento:", rec.tratamiento],
+        ["Motivo:",       rec.motivo],
+        ["Tratamiento:",  rec.tratamiento],
     ]
-    table = Table(data, colWidths=[50*mm, 120*mm])
-    table.setStyle(TableStyle([
-        ('GRID', (0,0), (-1,-1), 0.25, colors.grey),
-        ('FONTSIZE', (0,0), (-1,-1), 12),
+    tabla = Table(datos, colWidths=[50*mm, 120*mm])
+    tabla.setStyle(TableStyle([
+        ('GRID',          (0,0), (-1,-1), 0.25, colors.grey),
+        ('FONTSIZE',      (0,0), (-1,-1), 12),
+        ('FONTNAME',      (0,0), (-1,-1), 'Helvetica'),
         ('BOTTOMPADDING', (0,0), (-1,-1), 6),
     ]))
-    table.wrapOn(pdf, w, h)
-    table.drawOn(pdf, 20*mm, h-140*mm)
+    _, alto_tabla = tabla.wrap(ancho_texto, h)
 
+    # Dibujar tabla con separación
+    y_tabla_top = y_subt - 15*mm
+    tabla.drawOn(pdf, 20*mm, y_tabla_top - alto_tabla)
+
+    # 8) Línea de firma con etiqueta "Firma" y nombre centrado
+    y_base  = y_tabla_top - alto_tabla
+    y_linea = y_base - 30*mm
+    largo   = 80 * mm
+    x0      = (w/2) - (largo/2)
+    x1      = x0 + largo
+
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.5)
+    pdf.line(x0, y_linea, x1, y_linea)
+
+    pdf.setFont("Helvetica-Bold", 12)
+    # Etiqueta "Firma" a la izquierda de la línea
+    pdf.drawString(x0, y_linea + 5*mm, "Firma:")
+    # Nombre del atendido por centrado sobre la línea
+    pdf.drawCentredString(w/2, y_linea + 5*mm, rec.atendido_por.nombre)
+
+    # 9) Finalizar y devolver
     pdf.showPage()
     pdf.save()
     buf.seek(0)
-    return HttpResponse(buf.getvalue(), content_type='application/pdf')
+    return HttpResponse(buf, content_type='application/pdf')
 
 
 def enviar_correo(request, atencion_id):
     atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
-    personas = TblPrsDtosGen.objects.using('padres_sqlserver').filter(alum=1)
+    personas = TblPrsDtosGen.objects.using('padres_sqlserver')
     pdf_url  = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
     default_asunto  = f"Ficha médica de {atencion.estudiante}"
     default_mensaje = (
