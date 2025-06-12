@@ -170,15 +170,15 @@ def atencion_download_pdf(request, pk):
     )
 
     # 5) Párrafo informativo con negritas
-    texto = (
-         "Estimado padre / madre de familia:<br/>"
-        "El motivo de la ficha es para notificarle que su hij@ fue atendido en el departamento de enfermería.<br/><br/>"
-        f"Se le brindó a su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> "
-        f"quien fue atendido el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> "
-        f"a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador "
-        f"<b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: "
-        f"<b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>."
-    )
+    texto = f"""
+        Estimado padre / madre de familia:<br/><br/>
+        El motivo de la ficha es para notificarle que su hij@ <b>{rec.estudiante}</b> 
+        del grado <b>{rec.grado.nombre}</b> fue atendido el día 
+        <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> a las 
+        <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador 
+        <b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: 
+        <b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>.
+    """
     style = ParagraphStyle(
         'texto_principal',
         fontName='Helvetica',
