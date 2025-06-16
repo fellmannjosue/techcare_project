@@ -250,7 +250,7 @@ def atencion_download_pdf(request, pk):
 
 def enviar_correo(request, atencion_id):
     atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
-    personas = TblPrsDtosGen.objects.using('padres_sqlserver')
+    personas = TblPrsDtosGen.objects.using('padres_sqlserver').filter(alum=1)
     pdf_url  = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
     default_asunto  = f"Ficha médica de {atencion.estudiante}"
     default_mensaje = (

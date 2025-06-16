@@ -178,7 +178,8 @@ class TblPrsDtosGen(models.Model):
     Email     = models.CharField(max_length=254, blank=True, null=True)
     Email2    = models.CharField(max_length=254, blank=True, null=True)
     Email3    = models.CharField(max_length=254, blank=True, null=True)
-
+    alum      = models.IntegerField(db_column='alum', blank=True, null=True)
+    
     class Meta:
         managed  = False
         db_table = 'tblPrsDtosGen'  # Nombre exacto de la tabla en SQL Server

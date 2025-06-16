@@ -3,16 +3,28 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Atención Médica</title>
+  <title>{% if edit_id %}Editar Atención{% else %}Nueva Atención Médica{% endif %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Bootstrap & SweetAlert2 -->
+  <link rel="shortcut icon"
+      href="{% static 'accounts/img/nuevo.ico' %}"
+      type="image/x-icon" />
+
+
+  <!-- Bootstrap CSS -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet">
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <!-- Select2 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+    rel="stylesheet"/>
+
+  <!-- DataTables CSS -->
+  <link
+    href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
+    rel="stylesheet"/>
+
   <style>
     .footer {
       margin-top: 30px;
@@ -20,92 +32,198 @@
       color: #666;
       font-size: 14px;
     }
+    /* Asegura que Select2 use el ancho completo */
+    .select2-container .select2-selection--single {
+      height: calc(1.5em + .75rem + 2px) !important;
+      padding: .375rem .75rem !important;
+    }
   </style>
 </head>
 <body>
   <div class="container py-4">
 
-    <!-- FORMULARIO ÚNICO -->
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <strong>Errores de validación:</strong>
+        <ul class="mb-0">
+          {% for field, errs in form.errors.items %}
+            <li><strong>{{ field }}:</strong> {{ errs|join:", " }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
     <h2 class="mb-4">
-      {% if edit_pk %}Editar Atención{% else %}Nueva Atención Médica{% endif %}
+      {% if edit_id %}Editar Atención{% else %}Nueva Atención Médica{% endif %}
     </h2>
+
     <form method="post" class="row g-3 mb-5">
       {% csrf_token %}
-      <input type="hidden" name="pk" value="{{ edit_pk }}">
-      <div class="col-md-6">{{ form.estudiante.label_tag }}{{ form.estudiante }}</div>
-      <div class="col-md-6">{{ form.grado.label_tag }}{{ form.grado }}</div>
-      <div class="col-md-6">{{ form.fecha_hora.label_tag }}{{ form.fecha_hora }}</div>
-      <div class="col-md-6">{{ form.atendido_por.label_tag }}{{ form.atendido_por }}</div>
-      <div class="col-12">{{ form.motivo.label_tag }}{{ form.motivo }}</div>
-      <div class="col-12">{{ form.tratamiento.label_tag }}{{ form.tratamiento }}</div>
+      <input type="hidden" name="pk" value="{{ edit_id }}">
+
+      <!-- 1) Selector de estudiante (con Select2) -->
+      <div class="col-md-6">
+        <label for="student-select" class="form-label">Estudiante:</label>
+        <select id="student-select"
+                name="estudiante"
+                class="form-select"
+                required>
+          <option value="">-- Selecciona un alumno --</option>
+          {% for s in students %}
+            <option
+              value="{{ s.id }}"
+              data-grado="{{ s.grado }}"
+              {% if form.instance.estudiante == s.label %}selected{% endif %}>
+              {{ s.label }} ({{ s.grado }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- 2) Campo de solo lectura + hidden para grado -->
+      <div class="col-md-6">
+        <label for="grade-display" class="form-label">Grado:</label>
+        <input type="text"
+               id="grade-display"
+               class="form-control"
+               readonly
+               value="{% if form.instance.grado %}{{ form.instance.grado.nombre }}{% endif %}">
+        <input type="hidden"
+               name="grado"
+               id="student_grade"
+               value="{% if form.instance.grado %}{{ form.instance.grado.nombre }}{% endif %}">
+      </div>
+
+      <!-- 3) Resto de campos -->
+      <div class="col-md-6">
+        {{ form.fecha_hora.label_tag }}{{ form.fecha_hora }}
+      </div>
+      <div class="col-md-6">
+        {{ form.atendido_por.label_tag }}{{ form.atendido_por }}
+      </div>
+      <div class="col-12">
+        {{ form.motivo.label_tag }}{{ form.motivo }}
+      </div>
+      <div class="col-12">
+        {{ form.tratamiento.label_tag }}{{ form.tratamiento }}
+      </div>
 
       <div class="col-12 text-end">
         <button type="submit" class="btn btn-primary">
-          {% if edit_pk %}Actualizar{% else %}Guardar{% endif %}
+          {% if edit_id %}Actualizar{% else %}Guardar{% endif %}
         </button>
-        <a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="btn btn-secondary ms-2">
-          dashboard de enfermeria
-        </a>
-        <a href="{% url 'enfermeria:uso_create' %}" class="btn btn-warning ms-2">
-          Registro Uso de Medicamento
-        </a>
+        <a href="{% url 'enfermeria:enfermeria_dashboard' %}"
+           class="btn btn-secondary ms-2">Dashboard</a>
+        <a href="{% url 'enfermeria:uso_create' %}"
+           class="btn btn-warning ms-2">Registrar Uso</a>
       </div>
     </form>
 
-    <!-- TABLA ÚNICA -->
+    <!-- Listado de Atenciones -->
     <h3 class="mb-3">Listado de Atenciones</h3>
-    <table class="table table-striped table-hover">
+    <table id="atenciones-table" class="table table-striped table-hover">
       <thead class="table-dark">
         <tr>
-          <th>Estudiante</th><th>Grado</th><th>Fecha y Hora</th>
-          <th>Atendido Por</th><th>Acciones</th>
+          <th>Estudiante</th>
+          <th>Grado</th>
+          <th>Fecha y Hora</th>
+          <th>Atendido Por</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
         {% for r in records %}
         <tr>
           <td>{{ r.estudiante }}</td>
-          <td>{{ r.grado }}</td>
+          <td>{{ r.grado.nombre }}</td>
           <td>{{ r.fecha_hora }}</td>
           <td>{{ r.atendido_por }}</td>
           <td>
-            <button class="btn btn-sm btn-warning"
-                    onclick="location.href='?edit={{ r.pk }}'">✎</button>
-            <button class="btn btn-sm btn-danger"
-                    onclick="confirmDelete({{ r.pk }})">🗑</button>
-            <a href="{% url 'enfermeria:atencion_pdf' r.pk %}"
-               class="btn btn-sm btn-secondary">📄</a>
+            <a href="?edit={{ r.pk }}"   class="btn btn-sm btn-warning">✎</a>
+            <a href="?delete={{ r.pk }}" class="btn btn-sm btn-danger">🗑</a>
+            <a href="{% url 'enfermeria:enviar_correo' r.pk %}" 
+               class="btn btn-sm btn-secondary">✉️</a>
           </td>
-        </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center">No hay atenciones registradas.</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
 
     <div class="footer">
-      <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+      © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer.
     </div>
   </div>
 
+  <!-- jQuery -->
+  <script
+    src="https://code.jquery.com/jquery-3.6.0.min.js"
+    integrity="sha256-/xUj+sJ0y..." crossorigin="anonymous">
+  </script>
+  <!-- Bootstrap Bundle (Popper + JS) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Select2 JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
+  </script>
+  <!-- DataTables JS -->
+  <script
+    src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js">
+  </script>
+  <script
+    src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js">
+  </script>
+
   <script>
-  // Confirmación con SweetAlert
-  function confirmDelete(id) {
-    Swal.fire({
-      title: '¿Eliminar esta atención?',
-      text: "¡No podrás revertir esto!",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        window.location.href = '?delete=' + id;
-      }
+    // Inicializar Select2 sobre el select de estudiantes
+    $('#student-select').select2({
+      placeholder: '-- Selecciona un alumno --',
+      width: '100%'
     });
-  }
+
+    // Cuando cambie el alumno, actualizamos grado
+    $('#student-select').on('change', function() {
+      var selected = $(this).find('option:selected');
+      var grado = selected.data('grado') || '';
+      $('#grade-display').val(grado);
+      $('#student_grade').val(grado);
+    });
+
+    // Confirmación de eliminación
+    function confirmDelete(id) {
+      Swal.fire({
+        title: '¿Eliminar esta atención?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.location.href = '?delete=' + id;
+        }
+      });
+    }
+
+    // Inicializar DataTables
+    $(document).ready(function() {
+      $('#atenciones-table').DataTable({
+        pageLength: 50,
+        lengthChange: false,
+        language: {
+          search: "Buscar:",
+          paginate: {
+            previous: "Anterior",
+            next: "Siguiente"
+          },
+          zeroRecords: "No hay registros coincidentes",
+          info: "Mostrando _START_ a _END_ de _TOTAL_ atenciones",
+          infoEmpty: "Mostrando 0 a 0 de 0 atenciones"
+        }
+      });
+    });
   </script>
 </body>
 </html>
