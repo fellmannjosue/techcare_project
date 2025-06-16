@@ -5,23 +5,30 @@
   <meta charset="UTF-8">
   <title>Inventario de Medicamentos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="shortcut icon"
-      href="{% static 'accounts/img/nuevo.ico' %}"
-      type="image/x-icon" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
 
   <!-- Bootstrap CSS -->
   <link 
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
     rel="stylesheet">
+
+  <!-- DataTables CSS -->
+  <link 
+    href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" 
+    rel="stylesheet">
+
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
-               .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body class="bg-light">
@@ -38,11 +45,7 @@
     <!-- Botones de acción -->
     <div class="mb-3 d-flex gap-2 flex-wrap">
       <a href="{% url 'enfermeria:inventario_create' %}" 
-         class="btn btn-success btn-sm">
-        ➕ Agregar Medicamento
-      </a>
-
-      {# Botón “Ver Historial del primer medicamento” siempre visible pero deshabilitado si no hay items #}
+         class="btn btn-success btn-sm">➕ Agregar Medicamento</a>
       <a href="{% if items %}{% url 'enfermeria:historial_uso' items.0.pk %}{% else %}#{% endif %}"
          class="btn btn-info btn-sm {% if not items %}disabled{% endif %}"
          {% if not items %}tabindex="-1" aria-disabled="true"{% endif %}
@@ -53,10 +56,11 @@
 
     <!-- Tabla -->
     <div class="table-responsive">
-      <table class="table table-bordered table-hover bg-white">
+      <table id="inventario-table" class="table table-bordered table-hover bg-white">
         <thead class="table-dark">
           <tr>
             <th>Nombre</th>
+            <th>Presentación</th>
             <th>Fecha Ingreso</th>
             <th>Proveedor</th>
             <th>Cantidad</th>
@@ -68,8 +72,9 @@
           {% for item in items %}
           <tr>
             <td>{{ item.nombre }}</td>
-            <td>{{ item.fecha_ingreso }}</td>
-            <td>{{ item.proveedor }}</td>
+            <td>{{ item.presentacion.nombre }}</td>
+            <td>{{ item.fecha_ingreso|date:"d-m-Y" }}</td>
+            <td>{{ item.proveedor.nombre }}</td>
             <td>
               {% if item.cantidad_existente <= 5 %}
                 <span class="badge bg-danger">{{ item.cantidad_existente }}</span>
@@ -89,18 +94,38 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="6" class="text-center text-muted">
+            <td colspan="7" class="text-center text-muted">
               No hay medicamentos registrados.
             </td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
-        <div class="footer">
+      <div class="footer">
         <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
-    </div>
+      </div>
     </div>
   </div>
+
+  <!-- jQuery (requerido por DataTables) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- DataTables JS -->
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+  <!-- Inicializar DataTables -->
+  <script>
+    $(document).ready(function() {
+      $('#inventario-table').DataTable({
+        pageLength: 10,
+        language: {
+          url: "{% static 'vendor/datatables/i18n/Spanish.json' %}"
+        }
+      });
+    });
+  </script>
 
   <!-- SweetAlert de éxito -->
   {% if request.session.mensaje_exito %}
@@ -114,10 +139,5 @@
     });
   </script>
   {% endif %}
-
-  <!-- Bootstrap JS Bundle -->
-  <script 
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
 </body>
 </html>

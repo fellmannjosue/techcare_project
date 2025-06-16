@@ -1,4 +1,3 @@
-{# templates/seguridad/accounting_form.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -8,19 +7,23 @@
     {% if form.instance.pk %}Editar Registro Contable{% else %}Nuevo Registro Contable{% endif %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  
-<link rel="shortcut icon"
-      href="{% static 'accounts/img/nuevo.ico' %}"
-      type="image/x-icon" />
+
+  <link rel="shortcut icon"
+        href="{% static 'accounts/img/nuevo.ico' %}"
+        type="image/x-icon" />
 
   <!-- Bootstrap CSS -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link
+    href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css"
+    rel="stylesheet">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
-    /* Estilos básicos */
     body {
       background-color: #eef2f7;
       font-family: 'Segoe UI', sans-serif;
@@ -50,17 +53,17 @@
     .btn-sm img {
       vertical-align: middle;
     }
-         .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Mensajes de Django convertidos a SweetAlert2 -->
+
     {% if messages %}
       <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -76,10 +79,8 @@
       </script>
     {% endif %}
 
-    <!-- Volver al Dashboard -->
     <a href="{% url 'seguridad:dashboard' %}" class="btn btn-link mb-3">← Regresar al Dashboard</a>
 
-    <!-- Formulario Contable -->
     <div class="card shadow-sm mb-5">
       <div class="card-body">
         <h3 class="card-title mb-4">
@@ -106,92 +107,91 @@
       </div>
     </div>
 
-    <!-- Tabla Contable -->
     <h3 class="mb-3">Listado Contable de Cámaras</h3>
-    <table class="table table-bordered table-hover bg-white">
-      <thead class="table-light">
-        <tr>
-          <th>Modelo</th>
-          <th>Nombre</th>
-          <th>Cantidad</th>
-          <th>Total</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
+    <div class="table-responsive">
+      <table id="accounting-table" class="table table-bordered table-hover bg-white">
+        <thead class="table-light">
           <tr>
-            <td>{{ item.modelo }}</td>
-            <td>{{ item.nombre }}</td>
-            <td>{{ item.cantidad_modelo }}</td>
-            <td>{{ item.total }}</td>
-            <td class="text-center">
-              <button
-                class="btn btn-sm border-0 bg-transparent btn-edit"
-                data-url="{% url 'seguridad:contable_update' item.pk %}"
-                title="Editar">
-                <img
-                  src="{% static 'seguridad/img/edit-favicon.png' %}"
-                  alt="Editar"
-                  width="20" height="20">
-              </button>
-              <button
-                class="btn btn-sm border-0 bg-transparent btn-delete"
-                data-url="{% url 'seguridad:contable_delete' item.pk %}"
-                title="Eliminar">
-                <img
-                  src="{% static 'seguridad/img/delete-favicon.png' %}"
-                  alt="Eliminar"
-                  width="20" height="20">
-              </button>
-            </td>
+            <th>Modelo</th>
+            <th>Nombre</th>
+            <th>Cantidad</th>
+            <th>Total</th>
+            <th>Acciones</th>
           </tr>
-        {% empty %}
-          <tr>
-            <td colspan="5" class="text-center text-muted">No hay registros contables.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-        <div class="footer">
-        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td>{{ item.modelo }}</td>
+              <td>{{ item.nombre }}</td>
+              <td>{{ item.cantidad_modelo }}</td>
+              <td>{{ item.total }}</td>
+              <td class="text-center">
+                <button
+                  class="btn btn-sm border-0 bg-transparent btn-edit"
+                  data-url="{% url 'seguridad:contable_update' item.pk %}"
+                  title="Editar">
+                  <img
+                    src="{% static 'seguridad/img/edit-favicon.png' %}"
+                    alt="Editar" width="20" height="20">
+                </button>
+                <button
+                  class="btn btn-sm border-0 bg-transparent btn-delete"
+                  data-url="{% url 'seguridad:contable_delete' item.pk %}"
+                  title="Eliminar">
+                  <img
+                    src="{% static 'seguridad/img/delete-favicon.png' %}"
+                    alt="Eliminar" width="20" height="20">
+                </button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">No hay registros contables.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
+    <div class="footer">
+      <p>© {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+    </div>
   </div>
 
-  <!-- Bootstrap JS Bundle -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
+  <!-- JS: Bootstrap, jQuery, DataTables -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // Refrescar tabla
-      document.getElementById('btn-refresh').addEventListener('click', function() {
-        window.location.reload();
+    $(document).ready(function() {
+      // Inicializar DataTables
+      $('#accounting-table').DataTable({
+        pageLength: 25,
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        }
       });
 
-      // Editar
-      document.querySelectorAll('.btn-edit').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          window.location.href = btn.dataset.url;
-        });
+      // Botones
+      $('#btn-refresh').on('click', () => location.reload());
+      $('.btn-edit').on('click', function() {
+        window.location.href = this.dataset.url;
       });
-
-      // Eliminar con confirmación SweetAlert2
-      document.querySelectorAll('.btn-delete').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          Swal.fire({
-            title: '¿Eliminar este registro contable?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, eliminar'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              window.location.href = btn.dataset.url;
-            }
-          });
+      $('.btn-delete').on('click', function() {
+        Swal.fire({
+          title: '¿Eliminar este registro contable?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Sí, eliminar'
+        }).then(result => {
+          if (result.isConfirmed) {
+            window.location.href = this.dataset.url;
+          }
         });
       });
     });
