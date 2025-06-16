@@ -5,6 +5,8 @@ import datetime
 from django.shortcuts           import render, redirect, get_object_or_404
 from django.conf                import settings
 from django.urls                import reverse
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.clickjacking import xframe_options_exempt
 from django.core.mail           import EmailMessage
 from django.http                import HttpResponse, JsonResponse
 from django.contrib.staticfiles import finders
@@ -32,11 +34,11 @@ from .forms  import (
     UsoMedicamentoForm,
 )
 
-
+@login_required
 def enfermeria_dashboard(request):
     return render(request, 'enfermeria/dashboard.html')
 
-
+@login_required
 def atencion_form(request):
     delete_id = request.GET.get('delete')
     edit_id   = request.GET.get('edit')
@@ -139,6 +141,8 @@ def atencion_form(request):
     }
     return render(request, 'enfermeria/atencion_form.html', contexto)
 
+@xframe_options_exempt
+@login_required
 def atencion_download_pdf(request, pk):
     # 1) Recuperar datos y preparar buffer
     rec = get_object_or_404(AtencionMedica, pk=pk)
@@ -247,7 +251,7 @@ def atencion_download_pdf(request, pk):
     buf.seek(0)
     return HttpResponse(buf, content_type='application/pdf')
 
-
+@login_required
 def enviar_correo(request, atencion_id):
     atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
     personas = TblPrsDtosGen.objects.using('padres_sqlserver').filter(alum=1)
@@ -295,7 +299,7 @@ def enviar_correo(request, atencion_id):
 
 
 # ================= INVENTARIO MEDICAMENTOS =================
-
+@login_required
 def inventario_list(request):
     items = InventarioMedicamento.objects.order_by('-fecha_ingreso')
     year = datetime.datetime.now().year
@@ -304,7 +308,7 @@ def inventario_list(request):
         'year':  year,
     })
 
-
+@login_required
 def inventario_create(request):
     form = InventarioMedicamentoForm(request.POST or None)
     if form.is_valid():
@@ -320,7 +324,7 @@ def inventario_create(request):
         'year':  year,
     })
 
-
+@login_required
 def inventario_edit_cantidad(request, pk):
     item = get_object_or_404(InventarioMedicamento, pk=pk)
     form = InventarioMedicamentoForm(request.POST or None, instance=item)
@@ -337,7 +341,7 @@ def inventario_edit_cantidad(request, pk):
         'year':  year,
     })
 
-
+@login_required
 def uso_create(request):
     form = UsoMedicamentoForm(request.POST or None)
     if form.is_valid():
@@ -357,7 +361,7 @@ def uso_create(request):
         'year':  year,
     })
 
-
+@login_required
 def inventario_pdf(request, pk):
     med = get_object_or_404(InventarioMedicamento, pk=pk)
     usos = med.usos.order_by('-fecha_uso')
@@ -398,7 +402,7 @@ def inventario_pdf(request, pk):
     buf.seek(0)
     return HttpResponse(buf.getvalue(), content_type='application/pdf')
 
-
+@login_required
 def historial_uso(request, pk):
     med = get_object_or_404(InventarioMedicamento, pk=pk)
     usos = med.usos.order_by('-fecha_uso')
@@ -409,7 +413,7 @@ def historial_uso(request, pk):
 
 
 # ================= HISTORIAL MÉDICO =================
-
+@login_required
 def medical_history(request):
     students = (
         AtencionMedica.objects
@@ -422,7 +426,7 @@ def medical_history(request):
         'year':     datetime.datetime.now().year,
     })
 
-
+@login_required
 def get_medical_history_data(request):
     student_name = request.GET.get('student')
     if not student_name:
