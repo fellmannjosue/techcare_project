@@ -433,14 +433,16 @@ def get_medical_history_data(request):
         .filter(estudiante=student_name)
         .order_by('-fecha_hora')
     )
-    if not registros.exists():
-        return JsonResponse({}, status=204)
 
-    history = [{
-        'grade':     rec.grado,
-        'date_time': rec.fecha_hora.strftime('%Y-%m-%d %H:%M'),
-        'reason':    rec.motivo,
-        'treatment': rec.tratamiento,
-    } for rec in registros]
+    # Construimos siempre la lista, aunque venga vacía
+    history = []
+    for rec in registros:
+        history.append({
+            'grade':      rec.grado.nombre,
+            'date_time':  rec.fecha_hora.strftime('%d-%m-%Y %H:%M'),
+            'reason':     rec.motivo,
+            'treatment':  rec.tratamiento,
+            'attendant':  rec.atendido_por.nombre,
+        })
 
     return JsonResponse({'history': history})
