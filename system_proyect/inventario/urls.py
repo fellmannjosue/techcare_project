@@ -1,4 +1,5 @@
 # inventario/urls.py
+
 from django.urls import path
 from django.shortcuts import redirect
 from . import views
@@ -6,14 +7,18 @@ from . import views
 app_name = 'inventario'
 
 urlpatterns = [
-    # 1) Dashboard con los 8 botones
+    # 1) Dashboard con los botones principales
     path('', views.dashboard, name='dashboard'),
 
     # 2) Formulario + lista genérica por categoría
     path('por_categoria/', views.inventario_por_categoria, name='inventario_por_categoria'),
 
-    # 3) Descargar PDF de un item concreto
-    path('download_item_pdf/<int:item_id>/', views.download_item_pdf, name='download_item_pdf'),
+    # 3) Descargar PDF de un InventoryItem
+    path(
+        'download_item_pdf/<int:item_id>/',
+        views.download_item_pdf,
+        name='download_item_pdf'
+    ),
 
     # 4) Formularios individuales
     path('computadoras/', views.inventario_computadoras, name='inventario_computadoras'),
@@ -25,6 +30,13 @@ urlpatterns = [
     # 5) Ver registros en tabla desplegable
     path('registros/', views.inventario_registros, name='inventario_registros'),
 
-    # 6) Regresar al menú principal de Cuentas
+    # 6) Descargar QR que apunta al PDF de la ficha
+    path(
+        'registros/qr/<str:tipo>/<int:pk>/',
+        views.descargar_qr,
+        name='descargar_qr'
+    ),
+
+    # 7) Volver al menú principal de Cuentas
     path('menu/', lambda req: redirect('accounts:menu'), name='menu'),
 ]

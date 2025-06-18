@@ -10,7 +10,7 @@ from .models import (
 
 @admin.register(InventoryItem)
 class InventoryItemAdmin(admin.ModelAdmin):
-    list_display = ('category', 'details', 'created_at')
+    list_display = ('category', 'details')
     search_fields = ('category', 'details')
 
 
