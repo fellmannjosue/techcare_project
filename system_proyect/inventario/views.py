@@ -17,20 +17,43 @@ from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib.units import cm
 
-from .models import Computadora, Televisor, Impresora, Router, DataShow
-from .forms import CategoryUpdateForm, ComputadoraForm, TelevisorForm, ImpresoraForm, RouterForm, DataShowForm
+from .models import (
+    InventoryItem,
+    Computadora,
+    Televisor,
+    Impresora,
+    Router,
+    DataShow,
+)
+from .forms import (
+    InventoryItemForm,
+    ComputadoraForm,
+    TelevisorForm,
+    ImpresoraForm,
+    RouterForm,
+    DataShowForm,
+    CategoryUpdateForm,
+)
 
 
 @login_required
 def dashboard(request):
+    """Dashboard con los botones principales de inventario."""
     year = datetime.datetime.now().year
-    return render(request, 'inventario/dashboard.html', {'year': year})
+    return render(request, 'inventario/dashboard.html', {
+        'year': year,
+    })
 
 
 @login_required
 def inventario_por_categoria(request):
+    """
+    Lista unificada de Computadoras, Televisores, Impresoras, Routers y DataShows
+    con formulario inline para cambiar la categoría al vuelo.
+    """
     year = datetime.datetime.now().year
 
+    # Procesar formulario inline de cambio de categoría
     if request.method == 'POST':
         form = CategoryUpdateForm(request.POST)
         if form.is_valid():
@@ -42,6 +65,7 @@ def inventario_por_categoria(request):
     else:
         form = CategoryUpdateForm()
 
+    # Construir y unir los querysets anotados
     mapping = [
         (Computadora, 'Computadora', 'modelo'),
         (Televisor,   'Televisor',   'modelo'),
@@ -49,17 +73,17 @@ def inventario_por_categoria(request):
         (Router,      'Router',      'modelo'),
         (DataShow,    'DataShow',    'serie'),
     ]
-    items = None
-    for Model, label, field in mapping:
+    items_qs = None
+    for Model, tipo_label, campo in mapping:
         qs = Model.objects.annotate(
-            tipo=Value(label, output_field=CharField()),
-            descripcion=F(field),
+            tipo=Value(tipo_label, output_field=CharField()),
+            descripcion=F(campo),
             categoria=F('category'),
         ).values('tipo', 'id', 'descripcion', 'categoria')
-        items = qs if items is None else items.union(qs)
+        items_qs = qs if items_qs is None else items_qs.union(qs)
 
     return render(request, 'inventario/inventario_por_categoria.html', {
-        'items': items,
+        'items': items_qs,
         'form':  form,
         'year':  year,
     })
@@ -67,7 +91,10 @@ def inventario_por_categoria(request):
 
 @login_required
 def inventario_registros(request):
-    year = datetime.datetime.now().year
+    """
+    Ver todos los registros en una tabla con DataTables
+    y botón para descargar PDF vía QR.
+    """
     mapping = [
         (Computadora, 'Computadora', 'modelo'),
         (Televisor,   'Televisor',   'modelo'),
@@ -75,17 +102,18 @@ def inventario_registros(request):
         (Router,      'Router',      'modelo'),
         (DataShow,    'DataShow',    'serie'),
     ]
-    items = None
-    for Model, label, field in mapping:
+    items_qs = None
+    for Model, tipo_label, campo in mapping:
         qs = Model.objects.annotate(
-            tipo=Value(label, output_field=CharField()),
-            descripcion=F(field),
+            tipo=Value(tipo_label, output_field=CharField()),
+            descripcion=F(campo),
             categoria=F('category'),
         ).values('tipo', 'id', 'descripcion', 'categoria')
-        items = qs if items is None else items.union(qs)
+        items_qs = qs if items_qs is None else items_qs.union(qs)
 
+    year = datetime.datetime.now().year
     return render(request, 'inventario/inventario_registros.html', {
-        'items': items,
+        'items': items_qs,
         'year':  year,
     })
 
@@ -93,47 +121,36 @@ def inventario_registros(request):
 @login_required
 def descargar_qr(request, tipo, pk):
     """
-    Genera y descarga un PNG con el QR que apunta al PDF de la ficha.
+    Genera y descarga un PNG con el QR que apunta
+    al PDF de la ficha (download_item_pdf).
     """
     pdf_url = request.build_absolute_uri(
-        reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
+        reverse('inventario:download_item_pdf', args=[pk])
     )
     img = qrcode.make(pdf_url)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     buf.seek(0)
 
-    return HttpResponse(
-        buf.read(),
-        content_type='image/png',
-        headers={'Content-Disposition': f'attachment; filename="qr_{tipo}_{pk}.png"'}
-    )
+    response = HttpResponse(buf.read(), content_type='image/png')
+    response['Content-Disposition'] = f'attachment; filename="qr_{tipo}_{pk}.png"'
+    return response
 
 
 @login_required
-def download_model_pdf(request, tipo, pk):
+def download_item_pdf(request, item_id):
     """
-    Genera la ficha PDF de cualquier ítem (Computadora, Televisor, etc.)
-    usando ReportLab y una tabla de sus campos.
+    Genera la ficha PDF de un InventoryItem usando ReportLab
+    y la devuelve como descarga.
     """
-    model_map = {
-        'computadora': Computadora,
-        'televisor':   Televisor,
-        'impresora':   Impresora,
-        'router':      Router,
-        'datashow':    DataShow,
-    }
-    Modelo = model_map.get(tipo.lower())
-    if not Modelo:
-        return HttpResponse(status=404)
-
-    obj = get_object_or_404(Modelo, pk=pk)
+    item = get_object_or_404(InventoryItem, id=item_id)
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="{tipo}_{pk}.pdf"'
+    response['Content-Disposition'] = f'attachment; filename="item_{item.id}.pdf"'
 
+    # Dimensiones en cm
     w, h = 15 * cm, 15 * cm
     pdf = canvas.Canvas(response, pagesize=(w, h))
-    pdf.setTitle(f"{tipo.capitalize()} – ID {getattr(obj, 'asset_id', obj.pk)}")
+    pdf.setTitle(f"Ficha de Inventario – ID {item.id}")
 
     # Fondo
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
@@ -142,34 +159,36 @@ def download_model_pdf(request, tipo, pk):
     # Logo
     logo_path = finders.find('inventario/img/ana.jpg')
     if logo_path:
-        sz = 60
-        x = (w - sz) / 2
-        y = h - sz - 30
-        pdf.drawImage(logo_path, x, y, width=sz, height=sz)
+        logo_sz = 60
+        x = (w - logo_sz) / 2
+        y = h - logo_sz - 30
+        pdf.drawImage(logo_path, x, y, width=logo_sz, height=logo_sz)
 
     # Título
     pdf.setFont("Helvetica-Bold", 16)
     pdf.setFillColor(colors.HexColor("#007bff"))
-    pdf.drawCentredString(w/2, y - 20, f"Ficha de {tipo.capitalize()}")
+    pdf.drawCentredString(w / 2, y - 20, "Ficha de Inventario")
 
     # Datos en tabla
-    data = [["Campo", "Valor"]]
-    for field in obj._meta.fields:
-        # evita el ID interno si asset_id existe
-        name = field.verbose_name.title()
-        val  = field.value_from_object(obj)
-        data.append([name, str(val)])
-
-    table = Table(data, colWidths=[5*cm, 8*cm])
+    data = [
+        ["Campo",      "Valor"],
+        ["ID",         str(item.id)],
+        ["Categoría",  item.category],
+        ["Detalles",   item.details],
+        ["Fecha",      item.created_at.strftime('%d-%m-%Y %H:%M')],
+    ]
+    table = Table(data, colWidths=[5 * cm, 8 * cm])
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#007bff")),
-        ("TEXTCOLOR",  (0,0), (-1,0), colors.white),
-        ("FONTNAME",   (0,0), (-1,0), "Helvetica-Bold"),
-        ("GRID",       (0,0), (-1,-1), 0.5, colors.gray),
-        ("FONTNAME",   (0,1), (-1,-1), "Helvetica"),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#007bff")),
+        ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
+        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID",       (0, 0), (-1, -1), 0.5, colors.gray),
+        ("FONTNAME",   (0, 1), (-1, -1), "Helvetica"),
     ]))
+
+    # Posicionar la tabla
     table.wrapOn(pdf, w, h)
-    table.drawOn(pdf, x=2*cm, y=h - 8*cm)
+    table.drawOn(pdf, x=2 * cm, y=h - 8 * cm)
 
     pdf.showPage()
     pdf.save()
@@ -178,6 +197,7 @@ def download_model_pdf(request, tipo, pk):
 
 @login_required
 def inventario_computadoras(request):
+    """Formulario y lista de Computadoras."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = ComputadoraForm(request.POST)
@@ -188,12 +208,13 @@ def inventario_computadoras(request):
         form = ComputadoraForm()
     computadoras = Computadora.objects.order_by('-id')
     return render(request, 'inventario/inventario_computadoras.html', {
-        'form': form, 'year': year, 'computadoras': computadoras,
+        'form': form, 'year': year, 'computadoras': computadoras
     })
 
 
 @login_required
 def inventario_televisores(request):
+    """Formulario y lista de Televisores."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = TelevisorForm(request.POST)
@@ -204,12 +225,13 @@ def inventario_televisores(request):
         form = TelevisorForm()
     televisores = Televisor.objects.order_by('-id')
     return render(request, 'inventario/inventario_televisores.html', {
-        'form': form, 'year': year, 'televisores': televisores,
+        'form': form, 'year': year, 'televisores': televisores
     })
 
 
 @login_required
 def inventario_impresoras(request):
+    """Formulario y lista de Impresoras."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = ImpresoraForm(request.POST)
@@ -220,12 +242,13 @@ def inventario_impresoras(request):
         form = ImpresoraForm()
     impresoras = Impresora.objects.order_by('-id')
     return render(request, 'inventario/inventario_impresoras.html', {
-        'form': form, 'year': year, 'impresoras': impresoras,
+        'form': form, 'year': year, 'impresoras': impresoras
     })
 
 
 @login_required
 def inventario_routers(request):
+    """Formulario y lista de Routers."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = RouterForm(request.POST)
@@ -236,12 +259,13 @@ def inventario_routers(request):
         form = RouterForm()
     routers = Router.objects.order_by('-id')
     return render(request, 'inventario/inventario_routers.html', {
-        'form': form, 'year': year, 'routers': routers,
+        'form': form, 'year': year, 'routers': routers
     })
 
 
 @login_required
 def inventario_datashows(request):
+    """Formulario y lista de DataShows."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = DataShowForm(request.POST)
@@ -252,5 +276,5 @@ def inventario_datashows(request):
         form = DataShowForm()
     datashows = DataShow.objects.order_by('-id')
     return render(request, 'inventario/inventario_datashows.html', {
-        'form': form, 'year': year, 'datashows': datashows,
+        'form': form, 'year': year, 'datashows': datashows
     })
