@@ -7,53 +7,41 @@ import qrcode
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.db.models import F, Value, CharField
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
 from django.http import HttpResponse
-from django.contrib.staticfiles import finders
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
+from reportlab.lib.pagesizes import letter, landscape
 from reportlab.lib.units import cm
 
-from .models import (
-    InventoryItem,
-    Computadora,
-    Televisor,
-    Impresora,
-    Router,
-    DataShow,
-)
+from .models import Computadora, Televisor, Impresora, Router, DataShow
 from .forms import (
-    InventoryItemForm,
+    CategoryUpdateForm,
     ComputadoraForm,
     TelevisorForm,
     ImpresoraForm,
     RouterForm,
     DataShowForm,
-    CategoryUpdateForm,
 )
 
 
 @login_required
 def dashboard(request):
-    """Dashboard con los botones principales de inventario."""
+    """Dashboard con los botones principales."""
     year = datetime.datetime.now().year
-    return render(request, 'inventario/dashboard.html', {
-        'year': year,
-    })
+    return render(request, 'inventario/dashboard.html', {'year': year})
 
 
 @login_required
 def inventario_por_categoria(request):
     """
-    Lista unificada de Computadoras, Televisores, Impresoras, Routers y DataShows
-    con formulario inline para cambiar la categoría al vuelo.
+    Unifica todos los modelos y permite cambiar categoría inline.
     """
     year = datetime.datetime.now().year
 
-    # Procesar formulario inline de cambio de categoría
     if request.method == 'POST':
         form = CategoryUpdateForm(request.POST)
         if form.is_valid():
@@ -65,7 +53,6 @@ def inventario_por_categoria(request):
     else:
         form = CategoryUpdateForm()
 
-    # Construir y unir los querysets anotados
     mapping = [
         (Computadora, 'Computadora', 'modelo'),
         (Televisor,   'Televisor',   'modelo'),
@@ -74,10 +61,10 @@ def inventario_por_categoria(request):
         (DataShow,    'DataShow',    'serie'),
     ]
     items_qs = None
-    for Model, tipo_label, campo in mapping:
+    for Model, label, field in mapping:
         qs = Model.objects.annotate(
-            tipo=Value(tipo_label, output_field=CharField()),
-            descripcion=F(campo),
+            tipo=Value(label, output_field=CharField()),
+            descripcion=F(field),
             categoria=F('category'),
         ).values('tipo', 'id', 'descripcion', 'categoria')
         items_qs = qs if items_qs is None else items_qs.union(qs)
@@ -87,112 +74,6 @@ def inventario_por_categoria(request):
         'form':  form,
         'year':  year,
     })
-
-
-@login_required
-def inventario_registros(request):
-    """
-    Ver todos los registros en una tabla con DataTables
-    y botón para descargar PDF vía QR.
-    """
-    mapping = [
-        (Computadora, 'Computadora', 'modelo'),
-        (Televisor,   'Televisor',   'modelo'),
-        (Impresora,   'Impresora',   'nombre'),
-        (Router,      'Router',      'modelo'),
-        (DataShow,    'DataShow',    'serie'),
-    ]
-    items_qs = None
-    for Model, tipo_label, campo in mapping:
-        qs = Model.objects.annotate(
-            tipo=Value(tipo_label, output_field=CharField()),
-            descripcion=F(campo),
-            categoria=F('category'),
-        ).values('tipo', 'id', 'descripcion', 'categoria')
-        items_qs = qs if items_qs is None else items_qs.union(qs)
-
-    year = datetime.datetime.now().year
-    return render(request, 'inventario/inventario_registros.html', {
-        'items': items_qs,
-        'year':  year,
-    })
-
-
-@login_required
-def descargar_qr(request, tipo, pk):
-    """
-    Genera y descarga un PNG con el QR que apunta
-    al PDF de la ficha (download_item_pdf).
-    """
-    pdf_url = request.build_absolute_uri(
-        reverse('inventario:download_item_pdf', args=[pk])
-    )
-    img = qrcode.make(pdf_url)
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-
-    response = HttpResponse(buf.read(), content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename="qr_{tipo}_{pk}.png"'
-    return response
-
-
-@login_required
-def download_item_pdf(request, item_id):
-    """
-    Genera la ficha PDF de un InventoryItem usando ReportLab
-    y la devuelve como descarga.
-    """
-    item = get_object_or_404(InventoryItem, id=item_id)
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="item_{item.id}.pdf"'
-
-    # Dimensiones en cm
-    w, h = 15 * cm, 15 * cm
-    pdf = canvas.Canvas(response, pagesize=(w, h))
-    pdf.setTitle(f"Ficha de Inventario – ID {item.id}")
-
-    # Fondo
-    pdf.setFillColor(colors.HexColor("#f8f9fa"))
-    pdf.rect(0, 0, w, h, fill=1)
-
-    # Logo
-    logo_path = finders.find('inventario/img/ana.jpg')
-    if logo_path:
-        logo_sz = 60
-        x = (w - logo_sz) / 2
-        y = h - logo_sz - 30
-        pdf.drawImage(logo_path, x, y, width=logo_sz, height=logo_sz)
-
-    # Título
-    pdf.setFont("Helvetica-Bold", 16)
-    pdf.setFillColor(colors.HexColor("#007bff"))
-    pdf.drawCentredString(w / 2, y - 20, "Ficha de Inventario")
-
-    # Datos en tabla
-    data = [
-        ["Campo",      "Valor"],
-        ["ID",         str(item.id)],
-        ["Categoría",  item.category],
-        ["Detalles",   item.details],
-        ["Fecha",      item.created_at.strftime('%d-%m-%Y %H:%M')],
-    ]
-    table = Table(data, colWidths=[5 * cm, 8 * cm])
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#007bff")),
-        ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
-        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("GRID",       (0, 0), (-1, -1), 0.5, colors.gray),
-        ("FONTNAME",   (0, 1), (-1, -1), "Helvetica"),
-    ]))
-
-    # Posicionar la tabla
-    table.wrapOn(pdf, w, h)
-    table.drawOn(pdf, x=2 * cm, y=h - 8 * cm)
-
-    pdf.showPage()
-    pdf.save()
-    return response
 
 
 @login_required
@@ -206,9 +87,11 @@ def inventario_computadoras(request):
             return redirect('inventario:inventario_computadoras')
     else:
         form = ComputadoraForm()
-    computadoras = Computadora.objects.order_by('-id')
+    qs = Computadora.objects.order_by('-id')
     return render(request, 'inventario/inventario_computadoras.html', {
-        'form': form, 'year': year, 'computadoras': computadoras
+        'form': form,
+        'year': year,
+        'computadoras': qs,
     })
 
 
@@ -223,9 +106,11 @@ def inventario_televisores(request):
             return redirect('inventario:inventario_televisores')
     else:
         form = TelevisorForm()
-    televisores = Televisor.objects.order_by('-id')
+    qs = Televisor.objects.order_by('-id')
     return render(request, 'inventario/inventario_televisores.html', {
-        'form': form, 'year': year, 'televisores': televisores
+        'form': form,
+        'year': year,
+        'televisores': qs,
     })
 
 
@@ -240,9 +125,11 @@ def inventario_impresoras(request):
             return redirect('inventario:inventario_impresoras')
     else:
         form = ImpresoraForm()
-    impresoras = Impresora.objects.order_by('-id')
+    qs = Impresora.objects.order_by('-id')
     return render(request, 'inventario/inventario_impresoras.html', {
-        'form': form, 'year': year, 'impresoras': impresoras
+        'form': form,
+        'year': year,
+        'impresoras': qs,
     })
 
 
@@ -257,9 +144,11 @@ def inventario_routers(request):
             return redirect('inventario:inventario_routers')
     else:
         form = RouterForm()
-    routers = Router.objects.order_by('-id')
+    qs = Router.objects.order_by('-id')
     return render(request, 'inventario/inventario_routers.html', {
-        'form': form, 'year': year, 'routers': routers
+        'form': form,
+        'year': year,
+        'routers': qs,
     })
 
 
@@ -274,7 +163,193 @@ def inventario_datashows(request):
             return redirect('inventario:inventario_datashows')
     else:
         form = DataShowForm()
-    datashows = DataShow.objects.order_by('-id')
+    qs = DataShow.objects.order_by('-id')
     return render(request, 'inventario/inventario_datashows.html', {
-        'form': form, 'year': year, 'datashows': datashows
+        'form': form,
+        'year': year,
+        'datashows': qs,
     })
+
+
+@login_required
+def inventario_registros(request):
+    """Muestra todos los registros en DataTables con botón QR."""
+    year = datetime.datetime.now().year
+    mapping = [
+        (Computadora, 'Computadora', 'modelo'),
+        (Televisor,   'Televisor',   'modelo'),
+        (Impresora,   'Impresora',   'nombre'),
+        (Router,      'Router',      'modelo'),
+        (DataShow,    'DataShow',    'serie'),
+    ]
+    items_qs = None
+    for Model, label, field in mapping:
+        qs = Model.objects.annotate(
+            tipo=Value(label, output_field=CharField()),
+            descripcion=F(field),
+            categoria=F('category'),
+        ).values('tipo', 'id', 'descripcion', 'categoria')
+        items_qs = qs if items_qs is None else items_qs.union(qs)
+
+    return render(request, 'inventario/inventario_registros.html', {
+        'items': items_qs,
+        'year':  year,
+    })
+
+
+def descargar_qr(request, tipo, pk):
+    """
+    Genera y descarga un PNG con el QR que apunta al PDF,
+    incluyendo el puerto correcto.
+    """
+    path = reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
+    server_name = request.META.get('SERVER_NAME', request.get_host())
+    server_port = request.META.get('SERVER_PORT')
+    host = f"{server_name}:{server_port}" if server_port not in ('80', '443') else server_name
+    scheme = 'https' if request.is_secure() else 'http'
+    pdf_url = f"{scheme}://{host}{path}"
+
+    img = qrcode.make(pdf_url)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+
+    return HttpResponse(
+        buf.read(),
+        content_type='image/png',
+        headers={'Content-Disposition': f'attachment; filename="qr_{tipo}_{pk}.png"'}
+    )
+
+
+def download_model_pdf(request, tipo, pk):
+    """
+    Genera un PDF (Carta horizontal, sin logo) mostrando los campos del ítem,
+    centrado con título grande y vista inline.
+    """
+    # Modelos y campos específicos
+    model_map = {
+        'computadora': Computadora,
+        'televisor':   Televisor,
+        'impresora':   Impresora,
+        'router':      Router,
+        'datashow':    DataShow,
+    }
+    fields_map = {
+        'computadora': [
+            ('ID', 'asset_id'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('IP', 'ip'),
+            ('Categoría', 'category'),
+            ('Asignado a', 'asignado_a'),
+            ('Área', 'area'),
+            ('Grado', 'grado'),
+            ('Fecha Instalación', 'fecha_instalado'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'televisor': [
+            ('ID', 'asset_id'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('IP', 'ip'),
+            ('Categoría', 'category'),
+            ('Grado', 'grado'),
+            ('Área', 'area'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'impresora': [
+            ('ID', 'asset_id'),
+            ('Nombre', 'nombre'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('Categoría', 'category'),
+            ('Asignado a', 'asignado_a'),
+            ('Nivel Tinta', 'nivel_tinta'),
+            ('Últ. llenado', 'ultima_vez_llenado'),
+            ('Cant. impresiones', 'cantidad_impresiones'),
+            ('A color', 'a_color'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'router': [
+            ('ID', 'asset_id'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('Categoría', 'category'),
+            ('Nombre Router', 'nombre_router'),
+            ('Clave Router', 'clave_router'),
+            ('IP Asignada', 'ip_asignada'),
+            ('IP de Uso', 'ip_uso'),
+            ('Ubicado', 'ubicado'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'datashow': [
+            ('ID', 'asset_id'),
+            ('Nombre', 'nombre'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('Categoría', 'category'),
+            ('Estado', 'estado'),
+            ('Cable Corriente', 'cable_corriente'),
+            ('HDMI', 'hdmi'),
+            ('VGA', 'vga'),
+            ('Extensión', 'extension'),
+            ('Observaciones', 'observaciones'),
+        ],
+    }
+
+    tipo = tipo.lower()
+    Modelo = model_map.get(tipo)
+    campos = fields_map.get(tipo)
+    if not Modelo or not campos:
+        return HttpResponse(status=404)
+
+    obj = get_object_or_404(Modelo, pk=pk)
+
+    # Crear PDF
+    buffer = io.BytesIO()
+    width, height = landscape(letter)
+    pdf = canvas.Canvas(buffer, pagesize=(width, height))
+    pdf.setTitle(f"Ficha de {tipo.capitalize()} – {getattr(obj, 'asset_id', obj.pk)}")
+
+    # Fondo
+    pdf.setFillColor(colors.white)
+    pdf.rect(0, 0, width, height, fill=1, stroke=0)
+
+    # Título grande centrado
+    pdf.setFont("Helvetica-Bold", 24)
+    pdf.setFillColor(colors.HexColor("#007bff"))
+    pdf.drawCentredString(width / 2, height - 50, f"Ficha de {tipo.capitalize()}")
+
+    # Tabla de datos
+    data = [["Campo", "Valor"]]
+    for label, attr in campos:
+        val = getattr(obj, attr)
+        if isinstance(val, bool):
+            val = "Sí" if val else "No"
+        data.append([label, str(val)])
+
+    table = Table(data, colWidths=[6 * cm, 12 * cm])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#007bff")),
+        ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
+        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID",       (0, 0), (-1, -1), 0.5, colors.gray),
+        ("FONTNAME",   (0, 1), (-1, -1), "Helvetica"),
+        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+
+    # Centrar la tabla
+    table_width, table_height = table.wrap(0, 0)
+    x = (width - table_width) / 2
+    y = height - 80 - table_height
+    table.drawOn(pdf, x, y)
+
+    pdf.showPage()
+    pdf.save()
+    buffer.seek(0)
+
+    return HttpResponse(
+        buffer.read(),
+        content_type='application/pdf',
+        headers={'Content-Disposition': 'inline; filename="ficha.pdf"'}
+    )
