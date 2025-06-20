@@ -30,16 +30,12 @@ from .forms import (
 
 @login_required
 def dashboard(request):
-    """Dashboard con los botones principales."""
     year = datetime.datetime.now().year
     return render(request, 'inventario/dashboard.html', {'year': year})
 
 
 @login_required
 def inventario_por_categoria(request):
-    """
-    Unifica todos los modelos y permite cambiar categoría inline.
-    """
     year = datetime.datetime.now().year
 
     if request.method == 'POST':
@@ -48,8 +44,7 @@ def inventario_por_categoria(request):
             form.save()
             messages.success(request, "Categoría actualizada correctamente.")
             return redirect('inventario:inventario_por_categoria')
-        else:
-            messages.error(request, "Error al actualizar categoría.")
+        messages.error(request, "Error al actualizar categoría.")
     else:
         form = CategoryUpdateForm()
 
@@ -78,7 +73,6 @@ def inventario_por_categoria(request):
 
 @login_required
 def inventario_computadoras(request):
-    """Formulario y lista de Computadoras."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = ComputadoraForm(request.POST)
@@ -89,15 +83,12 @@ def inventario_computadoras(request):
         form = ComputadoraForm()
     qs = Computadora.objects.order_by('-id')
     return render(request, 'inventario/inventario_computadoras.html', {
-        'form': form,
-        'year': year,
-        'computadoras': qs,
+        'form': form, 'year': year, 'computadoras': qs
     })
 
 
 @login_required
 def inventario_televisores(request):
-    """Formulario y lista de Televisores."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = TelevisorForm(request.POST)
@@ -108,15 +99,12 @@ def inventario_televisores(request):
         form = TelevisorForm()
     qs = Televisor.objects.order_by('-id')
     return render(request, 'inventario/inventario_televisores.html', {
-        'form': form,
-        'year': year,
-        'televisores': qs,
+        'form': form, 'year': year, 'televisores': qs
     })
 
 
 @login_required
 def inventario_impresoras(request):
-    """Formulario y lista de Impresoras."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = ImpresoraForm(request.POST)
@@ -127,15 +115,12 @@ def inventario_impresoras(request):
         form = ImpresoraForm()
     qs = Impresora.objects.order_by('-id')
     return render(request, 'inventario/inventario_impresoras.html', {
-        'form': form,
-        'year': year,
-        'impresoras': qs,
+        'form': form, 'year': year, 'impresoras': qs
     })
 
 
 @login_required
 def inventario_routers(request):
-    """Formulario y lista de Routers."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = RouterForm(request.POST)
@@ -146,15 +131,12 @@ def inventario_routers(request):
         form = RouterForm()
     qs = Router.objects.order_by('-id')
     return render(request, 'inventario/inventario_routers.html', {
-        'form': form,
-        'year': year,
-        'routers': qs,
+        'form': form, 'year': year, 'routers': qs
     })
 
 
 @login_required
 def inventario_datashows(request):
-    """Formulario y lista de DataShows."""
     year = datetime.datetime.now().year
     if request.method == 'POST':
         form = DataShowForm(request.POST)
@@ -165,15 +147,12 @@ def inventario_datashows(request):
         form = DataShowForm()
     qs = DataShow.objects.order_by('-id')
     return render(request, 'inventario/inventario_datashows.html', {
-        'form': form,
-        'year': year,
-        'datashows': qs,
+        'form': form, 'year': year, 'datashows': qs
     })
 
 
 @login_required
 def inventario_registros(request):
-    """Muestra todos los registros en DataTables con botón QR."""
     year = datetime.datetime.now().year
     mapping = [
         (Computadora, 'Computadora', 'modelo'),
@@ -198,10 +177,6 @@ def inventario_registros(request):
 
 
 def descargar_qr(request, tipo, pk):
-    """
-    Genera y descarga un PNG con el QR que apunta al PDF,
-    incluyendo el puerto correcto.
-    """
     path = reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
     server_name = request.META.get('SERVER_NAME', request.get_host())
     server_port = request.META.get('SERVER_PORT')
@@ -222,11 +197,6 @@ def descargar_qr(request, tipo, pk):
 
 
 def download_model_pdf(request, tipo, pk):
-    """
-    Genera un PDF (Carta horizontal, sin logo) mostrando los campos del ítem,
-    centrado con título grande y vista inline.
-    """
-    # Modelos y campos específicos
     model_map = {
         'computadora': Computadora,
         'televisor':   Televisor,
@@ -305,22 +275,18 @@ def download_model_pdf(request, tipo, pk):
 
     obj = get_object_or_404(Modelo, pk=pk)
 
-    # Crear PDF
     buffer = io.BytesIO()
     width, height = landscape(letter)
     pdf = canvas.Canvas(buffer, pagesize=(width, height))
     pdf.setTitle(f"Ficha de {tipo.capitalize()} – {getattr(obj, 'asset_id', obj.pk)}")
 
-    # Fondo
     pdf.setFillColor(colors.white)
     pdf.rect(0, 0, width, height, fill=1, stroke=0)
 
-    # Título grande centrado
     pdf.setFont("Helvetica-Bold", 24)
     pdf.setFillColor(colors.HexColor("#007bff"))
     pdf.drawCentredString(width / 2, height - 50, f"Ficha de {tipo.capitalize()}")
 
-    # Tabla de datos
     data = [["Campo", "Valor"]]
     for label, attr in campos:
         val = getattr(obj, attr)
@@ -328,20 +294,26 @@ def download_model_pdf(request, tipo, pk):
             val = "Sí" if val else "No"
         data.append([label, str(val)])
 
-    table = Table(data, colWidths=[6 * cm, 12 * cm])
+    # Hacemos la tabla más ancha y con fuentes mayores
+    table_width = width - 4 * cm
+    col1 = table_width * 0.35
+    col2 = table_width * 0.65
+    table = Table(data, colWidths=[col1, col2], hAlign='CENTER')
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#007bff")),
         ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
         ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("GRID",       (0, 0), (-1, -1), 0.5, colors.gray),
+        ("FONTSIZE",   (0, 0), (-1, 0), 14),
+        ("GRID",       (0, 0), (-1, -1), 0.5, colors.grey),
         ("FONTNAME",   (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE",   (0, 1), (-1, -1), 12),
         ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
     ]))
 
-    # Centrar la tabla
-    table_width, table_height = table.wrap(0, 0)
-    x = (width - table_width) / 2
-    y = height - 80 - table_height
+    # Centramos verticalmente
+    tw, th = table.wrap(0, 0)
+    x = (width - tw) / 2
+    y = height - 80 - th
     table.drawOn(pdf, x, y)
 
     pdf.showPage()
