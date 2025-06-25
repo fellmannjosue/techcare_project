@@ -21,9 +21,18 @@ Permite crear tickets de soporte y notificar por correo.
 - `/tickets/technician_dashboard/` – panel para técnicos.
 
 ### Inventario
-Control de equipos y materiales con exportación en PDF.
+Control de equipos y materiales con exportación en PDF y vistas por tipo.
 - `/inventario/` – panel general y acceso por categorías.
 - `/inventario/download_item_pdf/<id>/` – descarga de registros.
+- `/inventario/computadoras/` – listado de computadoras.
+- `/inventario/televisores/` – listado de televisores.
+- `/inventario/impresoras/` – listado de impresoras.
+- `/inventario/routers/` – listado de routers.
+- `/inventario/datashows/` – listado de datashows.
+- `/inventario/por_categoria/` – consulta unificada por categoría.
+- `/inventario/registros/` – registro global de equipos.
+- `/registros/qr/<tipo>/<pk>/` – código QR del registro.
+- `/download/<tipo>/<pk>/` – descarga individual en PDF.
 
 ### Mantenimiento
 Registro y reporte de mantenimientos.
@@ -41,9 +50,18 @@ Sistema similar de citas para el colegio.
 - `/citas_colegio/dashboard_col/` – gestión de citas.
 
 ### Enfermería
-Atención médica, inventario y fichas en PDF o correo.
+Atención médica, inventario de medicamentos e historial en PDF o correo.
 - `/enfermeria/` – dashboard principal.
 - `/enfermeria/atencion/` – registrar atención médica.
+- `/enfermeria/inventario/` – listado de medicamentos.
+- `/inventario/nuevo/` – agregar medicamento.
+- `/inventario/<pk>/editar/` – editar medicamento.
+- `/inventario/uso/` – registrar consumo.
+- `/inventario/pdf/<pk>/` – ficha en PDF.
+- `/inventario/<pk>/historial/` – historial de uso.
+- `/enviar-correo/<atencion_id>/` – envío de atención por correo.
+- `/historial/` – consulta de historial médico.
+- `/historial/data/` – datos detallados del historial.
 
 ### Sponsors
 Manejo de padrinos y patrocinadores.
