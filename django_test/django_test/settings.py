@@ -27,6 +27,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'enfermeria2',
+    'imap_test',
+
 ]
 
 # -----------------------------------
@@ -94,15 +96,16 @@ DATABASES = {
 }
 
 # -----------------------------------
-# Configuración de correo (SMTP)
+# Configuración SMTP para enfermeria@ana-hn.org
 # -----------------------------------
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', 'techcare.app2024@gmail.com')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'dvex nxbf quaj nxtc')
-DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'techcare.app2024@gmail.com')
+NURSE_EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+NURSE_EMAIL_HOST          = 'mail.ana-hn.org'
+NURSE_EMAIL_PORT          = 587         # STARTTLS
+NURSE_EMAIL_USE_TLS       = True
+NURSE_EMAIL_USE_SSL       = False
+NURSE_EMAIL_HOST_USER     = 'enfermeria@ana-hn.org'
+NURSE_EMAIL_HOST_PASSWORD = 'Test-123'
+DEFAULT_FROM_EMAIL  = NURSE_EMAIL_HOST_USER
 
 # -----------------------------------
 # Internacionalización y estáticos
