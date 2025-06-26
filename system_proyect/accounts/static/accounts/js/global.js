@@ -32,7 +32,7 @@ function resetInactivityTimer() {
     }
   }, 600000);
 }
-['mousemove', 'keydown', 'scroll', 'touchstart'].forEach(evt => {
+['mousemove', 'keydown', 'scroll', 'touchstart', 'click'].forEach(evt => {
   document.addEventListener(evt, resetInactivityTimer);
 });
 resetInactivityTimer();
