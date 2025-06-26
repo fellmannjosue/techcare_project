@@ -19,7 +19,7 @@ class GlobalScriptMiddleware:
             script = (
                 f"<script>var GLOBAL_USERNAME='{escapejs(username)}';"
                 f"var SHOW_WELCOME={str(show_welcome).lower()};"
-                f"var LOGOUT_URL='{logout_url}';</script>"
+                f"var LOGOUT_URL='{escapejs(logout_url)}';</script>"
                 f"<script src='/static/accounts/js/global.js' defer></script>"
             )
 
