@@ -163,6 +163,7 @@ STATIC_URL = '/static/'
 # Lista “bruta” de posibles carpetas static por app
 _raw_static_dirs = [
     BASE_DIR / "system_proyect/tickets/static",
+    BASE_DIR / "system_proyect/accounts/static",
     BASE_DIR / "system_proyect/inventario/static",
     BASE_DIR / "system_proyect/mantenimiento/static",
     BASE_DIR / "system_proyect/sponsors/static",
