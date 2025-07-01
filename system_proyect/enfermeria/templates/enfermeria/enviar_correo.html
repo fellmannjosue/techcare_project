@@ -1,0 +1,153 @@
+{# templates/enfermeria/enviar_correo.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Enviar Correo – {{ atencion.estudiante }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="shortcut icon"
+      href="{% static 'accounts/img/nuevo.ico' %}"
+      type="image/x-icon" />
+
+
+  <!-- Bootstrap 5 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+  <!-- Select2 CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
+    rel="stylesheet"/>
+
+  <style>
+    body { background: #f0f2f5; }
+    .card { border-radius: .5rem; }
+    .card-header { background-color: #007bff; color: #fff; }
+    iframe { width: 100%; height: 600px; border: 1px solid #ccc; }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+
+    <div class="card mb-4 shadow-sm">
+      <div class="card-header">
+        <h4 class="mb-0">Enviar Correo para: <em>{{ atencion.estudiante }}</em></h4>
+      </div>
+      <div class="card-body">
+
+        {% if error_msg %}
+          <div class="alert alert-danger">{{ error_msg }}</div>
+        {% endif %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          <div class="mb-3 row">
+            <label class="col-sm-3 col-form-label"><strong>Estudiante:</strong></label>
+            <div class="col-sm-9">
+              <p class="form-control-plaintext">{{ atencion.estudiante }}</p>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label">Selecciona el correo del estudiante:</label>
+            <select id="email" name="email" class="form-select select2" required>
+              <option value="">-- Elige un correo --</option>
+              {% for p in personas %}
+                {% if p.Email %}
+                  <option value="{{ p.Email }}">
+                    {{ p.Nombre1 }}{% if p.Nombre2 %} {{ p.Nombre2 }}{% endif %}
+                    {{ p.Apellido1 }}{% if p.Apellido2 %} {{ p.Apellido2 }}{% endif %}
+                    — {{ p.Email }}
+                  </option>
+                {% endif %}
+                {% if p.Email2 %}
+                  <option value="{{ p.Email2 }}">
+                    {{ p.Nombre1 }}{% if p.Nombre2 %} {{ p.Nombre2 }}{% endif %}
+                    {{ p.Apellido1 }}{% if p.Apellido2 %} {{ p.Apellido2 }}{% endif %}
+                    — {{ p.Email2 }}
+                  </option>
+                {% endif %}
+                {% if p.Email3 %}
+                  <option value="{{ p.Email3 }}">
+                    {{ p.Nombre1 }}{% if p.Nombre2 %} {{ p.Nombre2 }}{% endif %}
+                    {{ p.Apellido1 }}{% if p.Apellido2 %} {{ p.Apellido2 }}{% endif %}
+                    — {{ p.Email3 }}
+                  </option>
+                {% endif %}
+              {% empty %}
+                <option value="">No se encontraron registros en SQL Server</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label for="asunto" class="form-label">Asunto:</label>
+            <input
+              type="text"
+              id="asunto"
+              name="asunto"
+              class="form-control"
+              value="Ficha médica de {{ atencion.estudiante }}"
+              required>
+          </div>
+
+          <div class="mb-3">
+            <label for="mensaje" class="form-label">Mensaje:</label>
+            <textarea
+              id="mensaje"
+              name="mensaje"
+              class="form-control"
+              rows="6"
+              required>{{ mensaje }}</textarea>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <button type="submit" class="btn btn-success">Enviar Correo</button>
+            <a href="{% url 'enfermeria:atencion_form' %}" class="btn btn-outline-secondary">
+              Cancelar
+            </a>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <div class="card shadow-sm">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">Vista previa del PDF</h5>
+      </div>
+      <div class="card-body">
+        {% if pdf_url %}
+          <iframe src="{{ pdf_url }}" title="Vista previa"></iframe>
+        {% else %}
+          <div class="alert alert-warning">
+            No se encontró el PDF para este registro.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- jQuery (requerido por Select2) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Bootstrap Bundle JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+  </script>
+  <!-- Select2 JS -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js">
+  </script>
+  <script>
+    $(document).ready(function() {
+      $('.select2').select2({
+        placeholder: "-- Elige un correo --",
+        width: '100%'
+      });
+    });
+  </script>
+</body>
+</html>

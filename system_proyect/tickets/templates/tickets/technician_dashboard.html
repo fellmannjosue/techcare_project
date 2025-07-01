@@ -2,112 +2,145 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard del Técnico</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        .dashboard-container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        .logo-title {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        .logo-title img {
-            width: 100px;
-            height: auto;
-        }
-        .table-container {
-            margin-top: 20px;
-        }
-                   .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="icon"
+        href="{% static 'accounts/img/nuevo.ico' %}"
+        type="image/x-icon" />
+  <title>Panel Tecnico del sistema de tickets</title>
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link
+    href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css"
+    rel="stylesheet">
+
+  <style>
+    .dashboard-container {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    }
+    .logo-title {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .logo-title img {
+      width: 100px;
+      height: auto;
+    }
+    .table-container {
+      margin-top: 20px;
+    }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <div class="dashboard-container">
-            <div class="logo-title">
-                <img src="{% static 'tickets/img/ana-transformed.png' %}" alt="Logo">
-                <h2>Dashboard del Técnico</h2>
-            </div>
-            
-            <div class="table-container">
-                <h4 class="mb-3">Lista de Tickets</h4>
-                <!-- Contenedor responsivo para la tabla -->
-                <div class="table-responsive">
-                    <table class="table table-striped table-bordered">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Correo</th>
-                                <th>Descripción</th>
-                                <th>Estado</th>
-                                <th>Adjunto</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in tickets %}
-                            <tr>
-                                <td>{{ ticket.ticket_id }}</td>
-                                <td>{{ ticket.name }}</td>
-                                <td>{{ ticket.email }}</td>
-                                <td>{{ ticket.description }}</td>
-                                <td>{{ ticket.status }}</td>
-                                <td>
-                                    {% if ticket.attachment %}
-                                    <!-- Botón con imagen -->
-                                    <a href="{{ ticket.attachment.url }}" target="_blank" class="btn btn-secondary btn-sm d-flex align-items-center">
-                                        <img src="{% static 'tickets/img/adjunto.png' %}" alt="Adjunto" style="width: 32px; height: 32px; margin-right: 5px;">
-                                        Ver Adjunto
-                                    </a>
-                                    {% else %}
-                                    No disponible
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{% url 'update_ticket' ticket.id %}" class="btn btn-primary btn-sm">Actualizar</a>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="7" class="text-center">No hay tickets disponibles.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div> <!-- Fin de table-responsive -->               
-            </div>
-            <div class="container mt-5">
-                <!-- Contenido del dashboard -->
-                <a href="{% url 'menu' %}" class="btn btn-secondary mt-3">
-                    <img src="{% static 'tickets/img/regresar.png' %}" alt="Regresar" style="width: 24px; height: 24px; margin-right: 5px;">
-                    Regresar al Menú Principal
-                </a>
-            </div>
-                <div class="footer">
-        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
-    </div>
+  <div class="container mt-5">
+    <div class="dashboard-container">
+      <div class="logo-title">
+        <img src="{% static 'tickets/img/ana-transformed.png' %}" alt="Logo">
+        <h2>Panel Tecnico del sistema de tickets</h2>
+      </div>
 
+      <div class="table-container">
+        <h4 class="mb-3">Lista de Tickets</h4>
+        <div class="table-responsive">
+          <table id="tickets-table" class="table table-striped table-bordered">
+            <thead class="table-dark">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Correo</th>
+                <th>Descripción</th>
+                <th>Estado</th>
+                <th>Adjunto</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ticket in tickets %}
+              <tr>
+                <td>{{ ticket.ticket_id }}</td>
+                <td>{{ ticket.name }}</td>
+                <td>{{ ticket.email }}</td>
+                <td>{{ ticket.description }}</td>
+                <td>{{ ticket.status }}</td>
+                <td>
+                  {% if ticket.attachment %}
+                  <a href="{{ ticket.attachment.url }}"
+                     target="_blank"
+                     class="btn btn-secondary btn-sm d-flex align-items-center">
+                    <img src="{% static 'tickets/img/adjunto.png' %}"
+                         alt="Adjunto"
+                         style="width:32px; height:32px; margin-right:5px;">
+                    Ver Adjunto
+                  </a>
+                  {% else %}
+                  No disponible
+                  {% endif %}
+                </td>
+                <td>
+                  <a href="{% url 'update_ticket' ticket.id %}"
+                     class="btn btn-primary btn-sm">
+                    Actualizar
+                  </a>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center">No hay tickets disponibles.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-    </div>
+      </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+      <div class="text-center mt-4">
+        <a href="{% url 'menu' %}" class="btn btn-secondary">
+          <img src="{% static 'tickets/img/regresar.png' %}"
+               alt="Regresar"
+               style="width:24px; height:24px; margin-right:5px;">
+          Regresar al Menú Principal
+        </a>
+      </div>
+
+      <div class="footer">
+        © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.
+      </div>
+    </div>
+  </div>
+
+  <!-- JS: Bootstrap, jQuery, DataTables -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#tickets-table').DataTable({
+        pageLength: 25,
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        }
+      });
+    });
+  </script>
 </body>
 </html>

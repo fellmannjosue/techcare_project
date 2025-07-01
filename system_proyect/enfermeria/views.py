@@ -1,13 +1,17 @@
-# views.py
-
-import datetime
 import io
+import os
+import datetime
 
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts           import render, redirect, get_object_or_404
+from django.conf                import settings
+from django.urls                import reverse
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.core.mail           import EmailMessage
+from django.http                import HttpResponse, JsonResponse
 from django.contrib.staticfiles import finders
-from django.http import HttpResponse, JsonResponse
-from django.db.models import Sum
+from django.db.models           import Sum, Q
+from django.db                  import connections
 
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -21,55 +25,123 @@ from .models import (
     AtencionMedica,
     InventarioMedicamento,
     UsoMedicamento,
+    TblPrsDtosGen,
+    Grado,
 )
-from .forms import (
+from .forms  import (
     AtencionMedicaForm,
     InventarioMedicamentoForm,
     UsoMedicamentoForm,
 )
 
-
 @login_required
 def enfermeria_dashboard(request):
     return render(request, 'enfermeria/dashboard.html')
-
-
-# ================= ATENCIÓN MÉDICA =================
 
 @login_required
 def atencion_form(request):
     delete_id = request.GET.get('delete')
     edit_id   = request.GET.get('edit')
 
+    # 1) Si viene ?delete=..., borramos y redirigimos
     if delete_id:
         get_object_or_404(AtencionMedica, pk=delete_id).delete()
         return redirect('enfermeria:atencion_form')
 
+    # 2) Tiramos la query a SQL Server para obtener los alumnos
+    sql = """
+      SELECT 
+  d.PersonaID,
+  -- Concatenamos primero Nombres y luego Apellidos
+  ISNULL(d.Nombre1,'') 
+    + CASE WHEN d.Nombre2 IS NOT NULL AND d.Nombre2 <> '' THEN ' ' + d.Nombre2 ELSE '' END
+    + ' ' +
+  ISNULL(d.Apellido1,'')
+    + CASE WHEN d.Apellido2 IS NOT NULL AND d.Apellido2 <> '' THEN ' ' + d.Apellido2 ELSE '' END
+    AS NombreCompl,
+  da.Descripcion    AS AreaDesc,
+  c.CrsoNumero,
+  c.GrupoNumero
+ FROM dbo.tblPrsDtosGen AS d
+ JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
+ JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
+ JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
+ JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID     = c.CrsoID
+ JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
+ WHERE d.Alum = 1
+  AND DATEPART(yy, c.FechaInicio) = DATEPART(yyyy, GETDATE())
+  AND da.Descripcion IN (N'PrimariaBL', N'ColegioBL', N'PreescolarBL')
+  AND ec.Desertor    = 0
+  AND ec.TrasladoPer = 0
+ ORDER BY 
+  da.Descripcion,
+  c.CrsoNumero,
+  c.GrupoNumero,
+  NombreCompl;
+
+    """
+    with connections['padres_sqlserver'].cursor() as cursor:
+        cursor.execute(sql)
+        filas = cursor.fetchall()
+
+    students = [{
+        'id':    pid,
+        'label': nombre.strip(),
+        'grado': f"{area} {crso}-{grupo}"
+    } for pid, nombre, area, crso, grupo in filas]
+
+    # 3) Si es POST, procesamos
+    instancia = get_object_or_404(AtencionMedica, pk=edit_id) if edit_id else None
     if request.method == 'POST':
-        pk = request.POST.get('pk')
-        if pk:
-            instancia = get_object_or_404(AtencionMedica, pk=pk)
-            form = AtencionMedicaForm(request.POST, instance=instancia)
-        else:
-            form = AtencionMedicaForm(request.POST)
+        # 3a) extraemos con get() para no KeyError
+        persona_id = request.POST.get('estudiante')
+        grado_txt  = request.POST.get('grado')
+
+        # 3b) cloneamos el POST y eliminamos esos dos campos
+        post_data = request.POST.copy()
+        post_data.pop('estudiante', None)
+        post_data.pop('grado', None)
+
+        form = AtencionMedicaForm(post_data, instance=instancia)
         if form.is_valid():
-            form.save()
+            obj = form.save(commit=False)
+
+            # 3c) rellenamos el nombre completo
+            if persona_id:
+                persona = TblPrsDtosGen.objects.using('padres_sqlserver') \
+                                               .get(PersonaID=persona_id)
+                partes = filter(None, (
+                    persona.Apellido1, persona.Apellido2,
+                    persona.Nombre1,   persona.Nombre2
+                ))
+                obj.estudiante = " ".join(partes)
+
+            # 3d) obtenemos o creamos el Grado
+            if grado_txt:
+                grado_obj, _ = Grado.objects.get_or_create(nombre=grado_txt)
+                obj.grado = grado_obj
+
+            obj.save()
+            form.save_m2m()
             request.session['mensaje_exito'] = 'Ficha guardada correctamente'
             return redirect('enfermeria:atencion_form')
     else:
-        instancia = get_object_or_404(AtencionMedica, pk=edit_id) if edit_id else None
         form = AtencionMedicaForm(instance=instancia)
 
+    # 4) Finalmente rendereamos
     registros = AtencionMedica.objects.order_by('-fecha_hora')
-    year = datetime.datetime.now().year
-    return render(request, 'enfermeria/atencion_form.html', {
-        'form': form,
-        'records': registros,
-        'edit_id': edit_id or '',
-        'year': year,
-    })
+    year      = datetime.datetime.now().year
+    contexto  = {
+        'form':          form,
+        'records':       registros,
+        'edit_id':       edit_id or '',
+        'year':          year,
+        'students':      students,
+        'mensaje_exito': request.session.pop('mensaje_exito', None),
+    }
+    return render(request, 'enfermeria/atencion_form.html', contexto)
 
-
+@xframe_options_exempt
 @login_required
 def atencion_download_pdf(request, pk):
     # 1) Recuperar datos y preparar buffer
@@ -102,15 +174,15 @@ def atencion_download_pdf(request, pk):
     )
 
     # 5) Párrafo informativo con negritas
-    texto = (
-         "Estimado padre / madre de familia:<br/>"
-        "El motivo de la ficha es para notificarle que su hij@ fue atendido en el departamento de enfermería.<br/><br/>"
-        f"Se le brindó a su hijo(a) <b>{rec.estudiante}</b> del grado <b>{rec.grado.nombre}</b> "
-        f"quien fue atendido el día <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> "
-        f"a las <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador "
-        f"<b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: "
-        f"<b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>."
-    )
+    texto = f"""
+        Estimado padre / madre de familia:<br/><br/>
+        El motivo de la ficha es para notificarle que su hij@ <b>{rec.estudiante}</b> 
+        del grado <b>{rec.grado.nombre}</b> fue atendido el día 
+        <b>{rec.fecha_hora.strftime('%d/%m/%Y')}</b> a las 
+        <b>{rec.fecha_hora.strftime('%H:%M')}</b> por el coordinador 
+        <b>{rec.atendido_por.nombre}</b>, ya que no se sentía bien y presentaba: 
+        <b>{rec.motivo}</b>. Se le trató con: <b>{rec.tratamiento}</b>.
+    """
     style = ParagraphStyle(
         'texto_principal',
         fontName='Helvetica',
@@ -179,20 +251,62 @@ def atencion_download_pdf(request, pk):
     buf.seek(0)
     return HttpResponse(buf, content_type='application/pdf')
 
+@login_required
+def enviar_correo(request, atencion_id):
+    atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
+    personas = TblPrsDtosGen.objects.using('padres_sqlserver').filter(alum=1)
+    pdf_url  = reverse('enfermeria:atencion_pdf', args=[atencion.pk])
+    default_asunto  = f"Ficha médica de {atencion.estudiante}"
+    default_mensaje = (
+        f"Estimado/a padre/madre de {atencion.estudiante},\n\n"
+        "Adjunto la ficha médica.\n\nSaludos."
+    )
 
+    error_msg = None
+    success   = False
+
+    if request.method == 'POST':
+        email_destino = request.POST.get('email')
+        asunto        = request.POST.get('asunto')  or default_asunto
+        cuerpo        = request.POST.get('mensaje') or default_mensaje
+
+        if email_destino:
+            correo = EmailMessage(
+                subject=asunto,
+                body=cuerpo,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email_destino],
+            )
+            correo.content_subtype = 'html'
+            pdf_resp = atencion_download_pdf(request, atencion.pk)
+            correo.attach(f"ficha_{atencion.pk}.pdf", pdf_resp.content, 'application/pdf')
+            try:
+                correo.send(fail_silently=False)
+                success = True
+                return redirect('enfermeria:atencion_form')
+            except Exception as e:
+                error_msg = str(e)
+
+    return render(request, 'enfermeria/enviar_correo.html', {
+        'atencion':  atencion,
+        'personas':  personas,
+        'pdf_url':   pdf_url,
+        'asunto':    default_asunto,
+        'mensaje':   default_mensaje,
+        'error_msg': error_msg,
+        'success':   success,
+    })
 
 
 # ================= INVENTARIO MEDICAMENTOS =================
-
 @login_required
 def inventario_list(request):
     items = InventarioMedicamento.objects.order_by('-fecha_ingreso')
     year = datetime.datetime.now().year
     return render(request, 'enfermeria/inventario_list.html', {
         'items': items,
-        'year': year,
+        'year':  year,
     })
-
 
 @login_required
 def inventario_create(request):
@@ -205,11 +319,10 @@ def inventario_create(request):
         return redirect('enfermeria:inventario_list')
     year = datetime.datetime.now().year
     return render(request, 'enfermeria/inventario_form.html', {
-        'form': form,
+        'form':  form,
         'title': 'Agregar Medicamento',
-        'year': year,
+        'year':  year,
     })
-
 
 @login_required
 def inventario_edit_cantidad(request, pk):
@@ -223,11 +336,10 @@ def inventario_edit_cantidad(request, pk):
         return redirect('enfermeria:inventario_list')
     year = datetime.datetime.now().year
     return render(request, 'enfermeria/inventario_form.html', {
-        'form': form,
+        'form':  form,
         'title': f'Editar Medicamento – {item.nombre}',
-        'year': year,
+        'year':  year,
     })
-
 
 @login_required
 def uso_create(request):
@@ -240,16 +352,14 @@ def uso_create(request):
             med.save()
             uso.save()
             request.session['mensaje_exito'] = 'Uso registrado correctamente'
-            # Regresamos a la pantalla de atención:
             return redirect('enfermeria:atencion_form')
         form.add_error('cantidad_usada', 'Cantidad excede lo disponible.')
     year = datetime.datetime.now().year
     return render(request, 'enfermeria/uso_form.html', {
-        'form': form,
+        'form':  form,
         'title': 'Registrar Uso de Medicamento',
-        'year': year,
+        'year':  year,
     })
-
 
 @login_required
 def inventario_pdf(request, pk):
@@ -262,37 +372,35 @@ def inventario_pdf(request, pk):
     pdf = canvas.Canvas(buf, pagesize=(w, h))
     pdf.setTitle(f"Medicamento_{med.pk}")
     pdf.setFillColor(colors.HexColor("#f8f9fa"))
-    pdf.rect(0, 0, w, h, fill=1, stroke=0)
+    pdf.rect(0, 0, w, h, fill=1)
 
     logo = finders.find('accounts/img/ana-transformed.png')
     if logo:
-        pdf.drawImage(logo, 15 * mm, h - 45 * mm, width=30 * mm, height=30 * mm)
+        pdf.drawImage(logo, 15*mm, h-45*mm, width=30*mm, height=30*mm)
 
     pdf.setFont("Helvetica-Bold", 18)
-    pdf.setFillColor(colors.HexColor("#007bff"))
-    pdf.drawCentredString(w / 2, h - 25 * mm, "Reporte de Medicamento")
+    pdf.drawCentredString(w/2, h-25*mm, "Reporte de Medicamento")
 
-    y = h - 60 * mm
+    y = h-60*mm
     for label, val in [
         ("Nombre:",           med.nombre),
         ("Proveedor:",        med.proveedor.nombre),
-        ("Presentación:",     med.presentacion.nombre),
+        ("Presentación:",     med.presentacion.nombre if med.presentacion else "—"),
         ("Fecha de Ingreso:", med.fecha_ingreso.strftime("%d-%m-%Y")),
         ("Disponible:",       med.cantidad_existente),
         ("Total Usado:",      total_usado),
         ("Modificado por:",   med.modificado_por.username if med.modificado_por else "—"),
     ]:
         pdf.setFont("Helvetica-Bold", 12)
-        pdf.drawString(20 * mm, y, label)
+        pdf.drawString(20*mm, y, label)
         pdf.setFont("Helvetica", 12)
-        pdf.drawString(65 * mm, y, str(val))
-        y -= 10 * mm
+        pdf.drawString(65*mm, y, str(val))
+        y -= 10*mm
 
     pdf.showPage()
     pdf.save()
     buf.seek(0)
-    return HttpResponse(buf, content_type='application/pdf')
-
+    return HttpResponse(buf.getvalue(), content_type='application/pdf')
 
 @login_required
 def historial_uso(request, pk):
@@ -300,33 +408,29 @@ def historial_uso(request, pk):
     usos = med.usos.order_by('-fecha_uso')
     return render(request, 'enfermeria/historial_uso.html', {
         'medicamento': med,
-        'usos': usos
+        'usos':        usos,
     })
 
 
 # ================= HISTORIAL MÉDICO =================
-
 @login_required
 def medical_history(request):
-    # Lista de nombres únicos de estudiante
     students = (
         AtencionMedica.objects
         .values_list('estudiante', flat=True)
         .distinct()
         .order_by('estudiante')
     )
-    year = datetime.datetime.now().year
     return render(request, 'enfermeria/medical_history.html', {
         'students': students,
-        'year': year,
+        'year':     datetime.datetime.now().year,
     })
-
 
 @login_required
 def get_medical_history_data(request):
     student_name = request.GET.get('student')
     if not student_name:
-        return JsonResponse({'error': 'Falta el parámetro "student"'}, status=400)
+        return JsonResponse({'error': 'Falta parámetro student'}, status=400)
 
     registros = (
         AtencionMedica.objects
@@ -334,17 +438,15 @@ def get_medical_history_data(request):
         .order_by('-fecha_hora')
     )
 
-    if not registros.exists():
-        return JsonResponse({}, status=204)
-
-    lista = []
+    # Construimos siempre la lista, aunque venga vacía
+    history = []
     for rec in registros:
-        lista.append({
-            'grade':     rec.grado.nombre,
-            'date_time': rec.fecha_hora.strftime('%Y-%m-%d %H:%M'),
-            'reason':    rec.motivo,
-            'treatment': rec.tratamiento,
-            'attendant': rec.atendido_por.nombre,
+        history.append({
+            'grade':      rec.grado.nombre,
+            'date_time':  rec.fecha_hora.strftime('%d-%m-%Y %H:%M'),
+            'reason':     rec.motivo,
+            'treatment':  rec.tratamiento,
+            'attendant':  rec.atendido_por.nombre,
         })
 
-    return JsonResponse({'history': lista})
+    return JsonResponse({'history': history})

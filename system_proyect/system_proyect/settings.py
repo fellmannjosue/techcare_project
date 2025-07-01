@@ -75,6 +75,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.middleware.GlobalScriptMiddleware',
 ]
 
 
@@ -99,6 +100,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'core.context_processors.current_year',
             ],
         },
     },
@@ -109,6 +111,7 @@ TEMPLATES = [
 # 8. BASE DE DATOS (MySQL)
 # ─────────────────────────────────────────────────────────────
 DATABASES = {
+    # Base de datos principal (MySQL Workbench → sponsors3)
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.getenv('DB_NAME', 'sponsors2'),
@@ -116,9 +119,21 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD', 'Test-12345'),
         'HOST': os.getenv('DB_HOST', '192.168.10.6'),
         'PORT': os.getenv('DB_PORT', '3306'),
-    }
-}
+    },
 
+    # Conexión al SQL Server remoto (Test2)
+    'padres_sqlserver': {
+        'ENGINE': 'mssql',
+        'NAME': os.getenv('MSSQL_DB_NAME', 'Test2'),
+        'USER': os.getenv('MSSQL_DB_USER', 'admin2'),
+        'PASSWORD': os.getenv('MSSQL_DB_PASSWORD', '121800-Jfellmann'),
+        'HOST': os.getenv('MSSQL_DB_HOST', '192.168.10.2'),
+        'PORT': os.getenv('MSSQL_DB_PORT', '1433'),
+        'OPTIONS': {
+            'driver': os.getenv('MSSQL_ODBC_DRIVER', 'ODBC Driver 17 for SQL Server'),
+        },
+    },
+}
 
 # ─────────────────────────────────────────────────────────────
 # 9. VALIDADORES DE CONTRASEÑAS
@@ -148,6 +163,7 @@ STATIC_URL = '/static/'
 # Lista “bruta” de posibles carpetas static por app
 _raw_static_dirs = [
     BASE_DIR / "system_proyect/tickets/static",
+    BASE_DIR / "system_proyect/accounts/static",
     BASE_DIR / "system_proyect/inventario/static",
     BASE_DIR / "system_proyect/mantenimiento/static",
     BASE_DIR / "system_proyect/sponsors/static",

@@ -5,17 +5,17 @@ from .models import AtencionMedica, InventarioMedicamento, UsoMedicamento
 
 class AtencionMedicaForm(forms.ModelForm):
     class Meta:
-        model  = AtencionMedica
-        fields = '__all__'
+        model   = AtencionMedica
+        exclude = ['estudiante', 'grado']
         widgets = {
-            'estudiante':   forms.TextInput(attrs={'class': 'form-control'}),
-            'grado':        forms.Select(attrs={'class': 'form-select'}),
-            'fecha_hora':   forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-            'atendido_por': forms.Select(attrs={'class': 'form-select'}),
-            'motivo':       forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'tratamiento':  forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'fecha_hora':   forms.DateTimeInput(attrs={
+                                'type':'datetime-local',
+                                'class':'form-control'
+                            }),
+            'atendido_por': forms.Select(attrs={'class':'form-select'}),
+            'motivo':       forms.Textarea(attrs={'class':'form-control','rows':3}),
+            'tratamiento':  forms.Textarea(attrs={'class':'form-control','rows':3}),
         }
-
 
 class InventarioMedicamentoForm(forms.ModelForm):
     class Meta:

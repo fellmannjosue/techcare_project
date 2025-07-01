@@ -1,4 +1,3 @@
-{# templates/seguridad/identification_form.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -8,12 +7,22 @@
     {% if form.instance.pk %}Editar Identificación{% else %}Nueva Identificación{% endif %}
   </title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="shortcut icon"
+        href="{% static 'accounts/img/nuevo.ico' %}"
+        type="image/x-icon" />
+
   <!-- Bootstrap CSS -->
   <link
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
     rel="stylesheet">
+  <!-- DataTables CSS -->
+  <link
+    href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css"
+    rel="stylesheet">
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
   <style>
     body {
       background-color: #eef2f7;
@@ -44,12 +53,12 @@
     .btn-sm img {
       vertical-align: middle;
     }
-         .footer {
-            margin-top: 30px;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -58,21 +67,19 @@
       <script>
       document.addEventListener('DOMContentLoaded', function() {
         {% for msg in messages %}
-        Swal.fire({
-          icon: '{{ msg.tags }}' === 'success' ? 'success' : 'error',
-          title: "{{ msg|escapejs }}",
-          timer: 2000,
-          showConfirmButton: false
-        });
+          Swal.fire({
+            icon: '{{ msg.tags }}' === 'success' ? 'success' : 'error',
+            title: "{{ msg|escapejs }}",
+            timer: 2000,
+            showConfirmButton: false
+          });
         {% endfor %}
       });
       </script>
     {% endif %}
 
-    <!-- Volver al Dashboard -->
     <a href="{% url 'seguridad:dashboard' %}" class="btn btn-link mb-3">← Regresar al Dashboard</a>
 
-    <!-- Formulario Identificación -->
     <div class="card shadow-sm mb-5">
       <div class="card-body">
         <h3 class="card-title mb-4">
@@ -132,93 +139,94 @@
       </div>
     </div>
 
-    <!-- Tabla de Identificaciones -->
     <h3 class="mb-3">Listado de Identificaciones</h3>
-    <table class="table table-bordered table-hover bg-white">
-      <thead class="table-light">
-        <tr>
-          <th>Gabinete</th>
-          <th>Switches</th>
-          <th>Patchcords</th>
-          <th>Puerto</th>
-          <th>Cámara</th>
-          <th>NVR</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for item in items %}
+    <div class="table-responsive">
+      <table id="identificacion-table" class="table table-bordered table-hover bg-white">
+        <thead class="table-light">
           <tr>
-            <td>{{ item.numero_gabinete }}</td>
-            <td>{{ item.switches }}</td>
-            <td>{{ item.patchcords }}</td>
-            <td>{{ item.puerto }}</td>
-            <td>{{ item.camara }}</td>
-            <td>{{ item.nvr }}</td>
-            <td class="text-center">
-              <button
-                class="btn btn-sm border-0 bg-transparent btn-edit"
-                data-url="{% url 'seguridad:identificacion_update' item.pk %}"
-                title="Editar">
-                <img
-                  src="{% static 'seguridad/img/edit-favicon.png' %}"
-                  alt="Editar"
-                  width="20" height="20">
-              </button>
-              <button
-                class="btn btn-sm border-0 bg-transparent btn-delete"
-                data-url="{% url 'seguridad:identificacion_delete' item.pk %}"
-                title="Eliminar">
-                <img
-                  src="{% static 'seguridad/img/delete-favicon.png' %}"
-                  alt="Eliminar"
-                  width="20" height="20">
-              </button>
-            </td>
+            <th>Gabinete</th>
+            <th>Switches</th>
+            <th>Patchcords</th>
+            <th>Puerto</th>
+            <th>Cámara</th>
+            <th>NVR</th>
+            <th>Acciones</th>
           </tr>
-        {% empty %}
-          <tr>
-            <td colspan="7" class="text-center text-muted">No hay registros de identificación.</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-        <div class="footer">
-        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+        </thead>
+        <tbody>
+          {% for item in items %}
+            <tr>
+              <td>{{ item.numero_gabinete }}</td>
+              <td>{{ item.switches }}</td>
+              <td>{{ item.patchcords }}</td>
+              <td>{{ item.puerto }}</td>
+              <td>{{ item.camara }}</td>
+              <td>{{ item.nvr }}</td>
+              <td class="text-center">
+                <button
+                  class="btn btn-sm border-0 bg-transparent btn-edit"
+                  data-url="{% url 'seguridad:identificacion_update' item.pk %}"
+                  title="Editar">
+                  <img
+                    src="{% static 'seguridad/img/edit-favicon.png' %}"
+                    alt="Editar" width="20" height="20">
+                </button>
+                <button
+                  class="btn btn-sm border-0 bg-transparent btn-delete"
+                  data-url="{% url 'seguridad:identificacion_delete' item.pk %}"
+                  title="Eliminar">
+                  <img
+                    src="{% static 'seguridad/img/delete-favicon.png' %}"
+                    alt="Eliminar" width="20" height="20">
+                </button>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted">No hay registros de identificación.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
 
+    <div class="footer">
+      <p>© {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+    </div>
   </div>
 
-  <!-- Bootstrap JS Bundle -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
+  <!-- JS: Bootstrap, jQuery, DataTables -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('btn-refresh').addEventListener('click', function() {
-        window.location.reload();
+    $(document).ready(function() {
+      // Inicializar DataTables
+      $('#identificacion-table').DataTable({
+        pageLength: 25,
+        language: {
+          url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+        }
       });
 
-      document.querySelectorAll('.btn-edit').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          window.location.href = btn.dataset.url;
-        });
+      // Botones
+      $('#btn-refresh').on('click', () => location.reload());
+      $('.btn-edit').on('click', function() {
+        window.location.href = this.dataset.url;
       });
-
-      document.querySelectorAll('.btn-delete').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          Swal.fire({
-            title: '¿Eliminar esta identificación?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Sí, eliminar'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              window.location.href = btn.dataset.url;
-            }
-          });
+      $('.btn-delete').on('click', function() {
+        Swal.fire({
+          title: '¿Eliminar esta identificación?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Sí, eliminar'
+        }).then(result => {
+          if (result.isConfirmed) {
+            window.location.href = this.dataset.url;
+          }
         });
       });
     });

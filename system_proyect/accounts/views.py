@@ -21,6 +21,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            request.session['show_welcome'] = True
             messages.success(request, f'¡Bienvenido {user.username}!')
             return redirect('menu')
         else:
@@ -38,6 +39,7 @@ def user_login_view(request):
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
+            request.session['show_welcome'] = True
             messages.success(request, f'¡Bienvenido {user.username}!')
             return redirect('/tickets/submit_ticket/')
         else:
@@ -111,6 +113,10 @@ def logout_view(request):
     """
     Cierra la sesión y redirige al login.
     """
+    inactive = request.GET.get('inactive')
     logout(request)
-    messages.info(request, 'Sesión cerrada correctamente.')
+    if inactive:
+        messages.info(request, 'Sesión cerrada por inactividad.')
+    else:
+        messages.info(request, 'Sesión cerrada correctamente.')
     return redirect('login')
