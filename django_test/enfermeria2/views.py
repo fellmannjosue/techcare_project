@@ -5,7 +5,7 @@ import datetime
 from django.shortcuts           import render, redirect, get_object_or_404
 from django.conf                import settings
 from django.urls                import reverse
-from django.core.mail           import EmailMessage
+from django.core.mail           import EmailMessage, get_connection
 from django.http                import HttpResponse, JsonResponse
 from django.contrib.staticfiles import finders
 from django.db.models           import Sum, Q
@@ -249,9 +249,9 @@ def atencion_download_pdf(request, pk):
 
 
 def enviar_correo(request, atencion_id):
-    atencion = get_object_or_404(AtencionMedica, pk=atencion_id)
-    personas = TblPrsDtosGen.objects.using('padres_sqlserver')
-    pdf_url  = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
+    atencion   = get_object_or_404(AtencionMedica, pk=atencion_id)
+    personas   = TblPrsDtosGen.objects.using('padres_sqlserver')
+    pdf_url    = reverse('enfermeria2:atencion_pdf', args=[atencion.pk])
     default_asunto  = f"Ficha médica de {atencion.estudiante}"
     default_mensaje = (
         f"Estimado/a padre/madre de {atencion.estudiante},\n\n"
@@ -267,30 +267,40 @@ def enviar_correo(request, atencion_id):
         cuerpo        = request.POST.get('mensaje') or default_mensaje
 
         if email_destino:
+            conn_nurse = get_connection(
+                backend='django.core.mail.backends.smtp.EmailBackend',
+                host=settings.NURSE_EMAIL_HOST,
+                port=settings.NURSE_EMAIL_PORT,
+                username=settings.NURSE_EMAIL_HOST_USER,
+                password=settings.NURSE_EMAIL_HOST_PASSWORD,
+                use_tls=settings.NURSE_EMAIL_USE_TLS,
+                fail_silently=False,
+            )
             correo = EmailMessage(
                 subject=asunto,
                 body=cuerpo,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=settings.NURSE_EMAIL_HOST_USER,
                 to=[email_destino],
+                connection=conn_nurse,
             )
             correo.content_subtype = 'html'
             pdf_resp = atencion_download_pdf(request, atencion.pk)
             correo.attach(f"ficha_{atencion.pk}.pdf", pdf_resp.content, 'application/pdf')
             try:
-                correo.send(fail_silently=False)
+                correo.send()
                 success = True
                 return redirect('enfermeria2:atencion_form')
             except Exception as e:
                 error_msg = str(e)
 
     return render(request, 'enfermeria2/enviar_correo.html', {
-        'atencion':  atencion,
-        'personas':  personas,
-        'pdf_url':   pdf_url,
-        'asunto':    default_asunto,
-        'mensaje':   default_mensaje,
-        'error_msg': error_msg,
-        'success':   success,
+        'atencion':   atencion,
+        'personas':   personas,
+        'pdf_url':    pdf_url,
+        'asunto':     default_asunto,
+        'mensaje':    default_mensaje,
+        'error_msg':  error_msg,
+        'success':    success,
     })
 
 
