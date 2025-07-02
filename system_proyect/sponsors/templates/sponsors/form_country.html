@@ -39,21 +39,6 @@
     <div class="container">
         <h2>Gestión de Países</h2>
 
-        <!-- Mensajes emergentes -->
-        {% if messages %}
-        <div>
-            {% for message in messages %}
-            <script>
-                Swal.fire({
-                    icon: "{{ message.tags }}",
-                    title: "{{ message }}",
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-            </script>
-            {% endfor %}
-        </div>
-        {% endif %}
 
         <!-- Formulario para agregar un país -->
         <form method="post" class="mt-3">

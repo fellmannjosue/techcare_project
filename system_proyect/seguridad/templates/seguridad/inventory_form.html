@@ -63,20 +63,6 @@
 </head>
 <body>
   <div class="container">
-    {% if messages %}
-      <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        {% for msg in messages %}
-          Swal.fire({
-            icon: '{{ msg.tags }}' === 'success' ? 'success' : 'error',
-            title: "{{ msg|escapejs }}",
-            timer: 2000,
-            showConfirmButton: false
-          });
-        {% endfor %}
-      });
-      </script>
-    {% endif %}
 
     <a href="{% url 'seguridad:dashboard' %}"
        class="btn btn-link mb-3">← Regresar al Dashboard</a>

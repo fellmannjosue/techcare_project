@@ -47,13 +47,6 @@
 
     <h2>Iniciar Sesión</h2>
 
-    {% if messages %}
-      {% for msg in messages %}
-        <div class="alert alert-danger" role="alert">
-          {{ msg }}
-        </div>
-      {% endfor %}
-    {% endif %}
 
     <form id="loginForm" method="post">
       {% csrf_token %}

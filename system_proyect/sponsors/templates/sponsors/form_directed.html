@@ -20,20 +20,6 @@
     <div class="container mt-5">
         <h2 class="text-center">Agregar Directed</h2>
 
-        {% if messages %}
-        <div>
-            {% for message in messages %}
-            <script>
-                Swal.fire({
-                    icon: "{{ message.tags }}",
-                    title: "{{ message }}",
-                    showConfirmButton: false,
-                    timer: 2000
-                });
-            </script>
-            {% endfor %}
-        </div>
-        {% endif %}
 
         <form method="post" class="mt-3">
             {% csrf_token %}

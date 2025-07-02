@@ -7,6 +7,19 @@ function showSwal(message) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (typeof GLOBAL_MESSAGES !== 'undefined' && Array.isArray(GLOBAL_MESSAGES)) {
+    GLOBAL_MESSAGES.forEach(msg => {
+      const opts = { text: msg.message };
+      if (msg.tags) {
+        if (msg.tags.includes('success')) opts.icon = 'success';
+        else if (msg.tags.includes('error')) opts.icon = 'error';
+        else if (msg.tags.includes('warning')) opts.icon = 'warning';
+        else opts.icon = 'info';
+      }
+      Swal.fire(opts);
+    });
+  }
+
   if (typeof GLOBAL_USERNAME !== 'undefined' && GLOBAL_USERNAME) {
     if (typeof SHOW_WELCOME !== 'undefined' && SHOW_WELCOME) {
       showSwal('¡Bienvenido ' + GLOBAL_USERNAME + '!');
