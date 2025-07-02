@@ -33,11 +33,6 @@
 <div class="container form-container">
     <h2 class="mb-4 text-center">Agregar Descripción de Padrino</h2>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
 
     <form method="POST">
         {% csrf_token %}

@@ -1,5 +1,7 @@
 from django.urls import reverse
 from django.utils.html import escapejs
+from django.contrib.messages import get_messages
+import json
 
 class GlobalScriptMiddleware:
     """Append global JS variables and script to every HTML response."""
@@ -16,11 +18,20 @@ class GlobalScriptMiddleware:
             show_welcome = bool(request.session.pop('show_welcome', False))
             logout_url = reverse('logout') + '?inactive=1'
 
+            messages_data = [
+                {"message": m.message, "tags": m.tags}
+                for m in get_messages(request)
+            ]
+            messages_json = json.dumps(messages_data)
+
             script = (
-                f"<script>var GLOBAL_USERNAME='{escapejs(username)}';"
+                "<script>"
+                f"var GLOBAL_USERNAME='{escapejs(username)}';"
                 f"var SHOW_WELCOME={str(show_welcome).lower()};"
-                f"var LOGOUT_URL='{escapejs(logout_url)}';</script>"
-                f"<script src='/static/accounts/js/global.js' defer></script>"
+                f"var LOGOUT_URL='{escapejs(logout_url)}';"
+                f"var GLOBAL_MESSAGES=JSON.parse('{escapejs(messages_json)}');"
+                "</script>"
+                "<script src='/static/accounts/js/global.js' defer></script>"
             )
 
             content = response.content.decode('utf-8')
