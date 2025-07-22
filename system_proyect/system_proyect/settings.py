@@ -62,7 +62,6 @@ INSTALLED_APPS = [
     'enfermeria',
     'seguridad',
     'informes_col',
-    'informes_bl',
 
 ]
 
