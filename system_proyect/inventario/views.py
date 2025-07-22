@@ -3,6 +3,7 @@
 import datetime
 import io
 import qrcode
+from PIL import Image
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
@@ -27,6 +28,31 @@ from .forms import (
     DataShowForm,
 )
 
+
+def descargar_qr(request, tipo, pk):
+    path = reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
+    server_name = request.META.get('SERVER_NAME', request.get_host())
+    server_port = request.META.get('SERVER_PORT')
+    host = f"{server_name}:{server_port}" if server_port not in ('80', '443') else server_name
+    scheme = 'https' if request.is_secure() else 'http'
+    pdf_url = f"{scheme}://{host}{path}"
+
+    # generar QR (modo 1), luego convertir a RGB para JPEG
+    img = qrcode.make(pdf_url)
+    rgb_img = img.convert("RGB")
+
+    buf = io.BytesIO()
+    # guardamos en JPG; quality=85 es un buen punto de partida
+    rgb_img.save(buf, format='JPEG', quality=85)
+    buf.seek(0)
+
+    return HttpResponse(
+        buf.read(),
+        content_type='image/jpeg',
+        headers={
+            'Content-Disposition': f'attachment; filename="qr_{tipo}_{pk}.jpg"'
+        }
+    )
 
 @login_required
 def dashboard(request):
@@ -175,25 +201,6 @@ def inventario_registros(request):
         'year':  year,
     })
 
-
-def descargar_qr(request, tipo, pk):
-    path = reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
-    server_name = request.META.get('SERVER_NAME', request.get_host())
-    server_port = request.META.get('SERVER_PORT')
-    host = f"{server_name}:{server_port}" if server_port not in ('80', '443') else server_name
-    scheme = 'https' if request.is_secure() else 'http'
-    pdf_url = f"{scheme}://{host}{path}"
-
-    img = qrcode.make(pdf_url)
-    buf = io.BytesIO()
-    img.save(buf, format='PNG')
-    buf.seek(0)
-
-    return HttpResponse(
-        buf.read(),
-        content_type='image/png',
-        headers={'Content-Disposition': f'attachment; filename="qr_{tipo}_{pk}.png"'}
-    )
 
 
 def download_model_pdf(request, tipo, pk):

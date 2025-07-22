@@ -61,6 +61,9 @@ INSTALLED_APPS = [
     'menu',
     'enfermeria',
     'seguridad',
+    'informes_col',
+    'informes_bl',
+
 ]
 
 
@@ -188,7 +191,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/accounts/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
-SESSION_COOKIE_AGE = 600  # 10 minutos
+SESSION_COOKIE_AGE = 1500  # 25 minutos
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 

@@ -1,0 +1,101 @@
+{# templates/informes_bl/progress_list.html #}
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Progress Reports</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- DataTables CSS (opcional, si usas tabla interactiva) -->
+  <link
+    href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css"
+    rel="stylesheet"
+  >
+
+  <!-- Tu CSS personalizado -->
+  <link
+    href="{% static 'informes_bl/css/progress.css' %}"
+    rel="stylesheet"
+  >
+</head>
+<body>
+  <div class="container mt-4">
+    <h2 class="text-center mb-4">Progress Reports</h2>
+
+    <div class="d-flex justify-content-between mb-3">
+      <a href="{% url 'informes_bl:progress_create' %}"
+         class="btn btn-primary">
+        Crear Reporte
+      </a>
+      <a href="{% url 'informes_bl:notas_dashboard' %}"
+         class="btn btn-outline-secondary">
+        ← Regresar
+      </a>
+    </div>
+
+    <div class="table-responsive">
+      <table id="entries-table" class="table table-striped table-bordered">
+        <thead>
+          <tr>
+            <th>Alumno</th>
+            <th>Semanas</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for rpt in reports %}
+          <tr>
+            <td>{{ rpt.alumno_nombre }}</td>
+            <td>{{ rpt.semana_inicio }} – {{ rpt.semana_fin }}</td>
+            <td>
+              <a href="{% url 'informes_bl:progress_edit' rpt.pk %}"
+                 class="btn btn-sm btn-secondary">
+                Editar
+              </a>
+              <a href="{% url 'informes_bl:progress_print' rpt.pk %}"
+                 class="btn btn-sm btn-info">
+                Imprimir
+              </a>
+              <a href="{% url 'informes_bl:progress_delete' rpt.pk %}"
+                 class="btn btn-sm btn-danger"
+                 onclick="return confirm('¿Eliminar este reporte?');">
+                Borrar
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" class="text-center">No hay reportes.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- jQuery (requerido por DataTables) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+  <!-- DataTables JS -->
+  <script
+    src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"
+    defer
+  ></script>
+  <!-- Bootstrap JS Bundle -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    defer
+  ></script>
+  <!-- Tu JS personalizado -->
+  <script
+    src="{% static 'informes_bl/js/progress.js' %}"
+    defer
+  ></script>
+</body>
+</html>

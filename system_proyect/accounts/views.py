@@ -55,45 +55,55 @@ def menu_view(request):
       - 'citas bilingue' ve Citas BL + Enfermería.
       - 'citas colegio' ve Citas COL/VOC.
       - 'enfermeria' ve Enfermería.
-      - permisos individuales controlan Inventario, Mantenimiento, Tickets, Sponsors y Seguridad.
+      - Inventario se muestra si el usuario tiene permiso o pertenece al grupo.
+      - Sponsors, Mantenimiento, Tickets y Seguridad controlados por permiso.
+      - Notas e Informes (BL y COL) controlados por grupo o superuser.
     """
     user = request.user
     year = datetime.datetime.now().year
 
-    # Notificaciones
+    # ——— Notificaciones ———
     citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
     tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
 
-    # Roles por grupo
-    is_admin       = user.is_superuser
-    is_citas_bl    = user.groups.filter(name='citas bilingue').exists()
-    is_citas_col   = user.groups.filter(name='citas colegio').exists()
-    is_enfermeria  = user.groups.filter(name='enfermeria').exists()
+    # ——— Roles / Grupos ———
+    is_admin            = user.is_superuser
+    is_group_citas_bl   = user.groups.filter(name='citas bilingue').exists()
+    is_group_citas_col  = user.groups.filter(name='citas colegio').exists()
+    is_group_enfermeria = user.groups.filter(name='enfermeria').exists()
+    is_group_inventario = user.groups.filter(name='inventario').exists()
+    is_group_notas_bl   = user.groups.filter(name='informes_bl').exists()
+    is_group_notas_col  = user.groups.filter(name='informes_col').exists()
 
-    # Permisos individuales (añádelos en Admin → Users → User permissions)
-    is_inventory    = user.has_perm('inventario.view_inventariomedicamento')
-    is_maintenance  = user.has_perm('mantenimiento.view_mantenimiento')
-    is_tickets_mod  = user.has_perm('tickets.view_ticket')
-    is_sponsors     = user.has_perm('sponsors.view_sponsor')
-    is_seguridad    = user.has_perm('seguridad.view_seguridad')
+    # ——— Permisos individuales ———
+    can_view_inventario   = user.has_perm('inventario.view_inventariomedicamento')
+    can_view_maintenance  = user.has_perm('mantenimiento.view_mantenimiento')
+    can_view_tickets      = user.has_perm('tickets.view_ticket')
+    can_view_sponsors     = user.has_perm('sponsors.view_sponsor')
+    can_view_seguridad    = user.has_perm('seguridad.view_seguridad')
 
     context = {
         'year':               year,
         'citas_pendientes':   citas_pendientes,
         'tickets_pendientes': tickets_pendientes,
 
-        # módulos por permiso o superuser
-        'show_inventory':   is_admin or is_inventory,
-        'show_maintenance': is_admin or is_maintenance,
-        'show_tickets':     is_admin or is_tickets_mod,
-        'show_sponsors':    is_admin or is_sponsors,
-        'show_seguridad':   is_admin or is_seguridad,
+        # ——— Módulos controlados por permiso o grupo (o superuser) ———
+        'show_inventory':   is_admin or can_view_inventario or is_group_inventario,
+        'show_maintenance': is_admin or can_view_maintenance,
+        'show_tickets':     is_admin or can_view_tickets,
+        'show_sponsors':    is_admin or can_view_sponsors,
+        'show_seguridad':   is_admin or can_view_seguridad,
 
-        # módulos por rol/grupo (o admin)
-        'show_citas_bl':    is_admin or is_citas_bl,
-        'show_citas_col':   is_admin or is_citas_col,
-        'show_enfermeria':  is_admin or is_citas_bl or is_enfermeria,
+        # ——— Módulos controlados por rol/grupo (o superuser) ———
+        'show_citas_bl':    is_admin or is_group_citas_bl,
+        'show_citas_col':   is_admin or is_group_citas_col,
+        'show_enfermeria':  is_admin or is_group_citas_bl or is_group_enfermeria,
+
+        # ——— Notas e Informes ———
+        'show_notas_bl':    is_admin or is_group_notas_bl,
+        'show_notas_col':   is_admin or is_group_notas_col,
     }
+
     return render(request, 'accounts/menu.html', context)
 
 @login_required

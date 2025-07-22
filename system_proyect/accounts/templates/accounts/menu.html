@@ -181,7 +181,21 @@
             <span>Seguridad</span>
           </div>
         </div>
+      {% endif %}.
+
+      {% if show_notas_bl %}
+        <div class="col-6 col-sm-4 col-md-3">
+          <div class="menu-item"
+               onclick="window.location='{% url 'informes_bl:notas_dashboard' %}'">
+            <img src="{% static 'accounts/img/chequeo.png' %}"
+                 alt="Notas e Informes">
+            <span>Informes BL</span>
+          </div>
+        </div>
       {% endif %}
+   
+     
+
     </div>
   </div>
 
