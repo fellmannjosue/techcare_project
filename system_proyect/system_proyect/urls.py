@@ -46,8 +46,5 @@ urlpatterns = [
     # ──────────────────────────────────────────────────────────────────────────
     path('seguridad/', include(('seguridad.urls', 'seguridad'), namespace='seguridad')),
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # 8) Notas y Informes
-    # ──────────────────────────────────────────────────────────────────────────
-    # path('notas/', include(('informes_bl.urls', 'informes_bl'), namespace='informes_bl')),
+    
 ]
