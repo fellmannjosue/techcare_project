@@ -297,7 +297,6 @@ def enviar_correo(request, atencion_id):
         'success':   success,
     })
 
-
 # ================= INVENTARIO MEDICAMENTOS =================
 @login_required
 def inventario_list(request):
