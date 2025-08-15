@@ -190,9 +190,26 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/accounts/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
-SESSION_COOKIE_AGE = 1500  # 25 minutos
+
+# Tiempo de vida de la cookie de sesión: 5 horas (en segundos)
+SESSION_COOKIE_AGE = 5 * 60 * 60  # 18000 segundos
+
+# Renovar el tiempo de vida en cada request
 SESSION_SAVE_EVERY_REQUEST = True
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# Mantener la sesión incluso si se cierra el navegador
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+
+# Seguridad extra (si usas HTTPS)
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+# Si usas subdominios
+# SESSION_COOKIE_DOMAIN = '.ana-hn.org'
+# CSRF_COOKIE_DOMAIN = '.ana-hn.org'
+
+# Motor de almacenamiento de sesiones (rápido y persistente)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 
 # ─────────────────────────────────────────────────────────────

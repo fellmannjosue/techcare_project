@@ -11,14 +11,12 @@
   <title>Inventario – Computadoras</title>
 
   <!-- Bootstrap CSS -->
-  <link 
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
-    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
-  <!-- DataTables CSS -->
-  <link 
-    href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" 
-    rel="stylesheet">
+  <!-- DataTables + Bootstrap 5 CSS -->
+  <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+  <!-- DataTables Responsive + Bootstrap 5 CSS -->
+  <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap5.min.css" rel="stylesheet">
 
   <style>
     body {
@@ -31,7 +29,7 @@
       padding: 1.5rem;
       border-radius: .75rem;
       background: #fff;
-      box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.1);
+      box-shadow: 0 .5rem 1rem rgba(0,0,0,0.1);
     }
     .form-card h5 {
       margin-bottom: 1rem;
@@ -44,18 +42,41 @@
       font-size: .9rem;
       padding-bottom: 1rem;
     }
+    /* Tabla al 100% de ancho + comportamiento responsive agradable */
+    .table-responsive, #computadoras-table {
+      width: 100%;
+    }
+    /* Mantén en una línea y usa elipsis cuando no quepa;
+       Responsive de DataTables decidirá qué columnas colapsar */
+    #computadoras-table td, #computadoras-table th {
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+    }
+    /* En pantallas pequeñas, reduce un poco padding/tamaño para más aire */
+    @media (max-width: 576px) {
+      #computadoras-table td, #computadoras-table th {
+        padding: .45rem .5rem;
+        font-size: .875rem;
+      }
+    }
   </style>
 </head>
 <body>
-  <div class="container py-4">
-
-    {# Mensajes de Django #}
-
+  <div class="container-fluid py-4">
     <div class="row">
-      <!-- formulario -->
+      <!-- Formulario de Computadoras -->
       <div class="col-lg-5">
         <div class="form-card">
           <h5 class="text-center">Agregar Nueva Computadora</h5>
+
+          <!-- BOTÓN A FORMULARIO DE FILTRO -->
+          <div class="mb-3 text-end">
+            <a href="{% url 'inventario:filtro_computadoras' %}" class="btn btn-outline-primary">
+              Filtrar Computadoras
+            </a>
+          </div>
+
           <form method="post" novalidate>
             {% csrf_token %}
             {{ form.non_field_errors }}
@@ -69,6 +90,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Modelo -->
               <div class="col-md-6">
                 <label for="id_modelo" class="form-label">Modelo</label>
@@ -78,6 +100,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Serie -->
               <div class="col-md-6">
                 <label for="id_serie" class="form-label">Serie</label>
@@ -87,6 +110,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- IP -->
               <div class="col-md-6">
                 <label for="id_ip" class="form-label">IP</label>
@@ -96,6 +120,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Asignado a -->
               <div class="col-md-6">
                 <label for="id_asignado_a" class="form-label">Asignado a</label>
@@ -105,6 +130,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Área -->
               <div class="col-md-6">
                 <label for="id_area" class="form-label">Área</label>
@@ -114,6 +140,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Grado -->
               <div class="col-md-6">
                 <label for="id_grado" class="form-label">Grado</label>
@@ -123,6 +150,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Fecha instalado -->
               <div class="col-md-6">
                 <label for="id_fecha_instalado" class="form-label">Fecha instalado</label>
@@ -132,6 +160,7 @@
                   <div class="text-danger small mt-1">{{ e }}</div>
                 {% endfor %}
               </div>
+
               <!-- Observaciones -->
               <div class="col-12">
                 <label for="id_observaciones" class="form-label">Observaciones</label>
@@ -149,53 +178,55 @@
         </div>
       </div>
 
-      <!-- tabla -->
-      <div class="col-lg-7">
-        <h5 class="mb-3">Computadoras Registradas</h5>
-        <div class="table-responsive shadow-sm">
-          <table id="computadoras-table" class="table table-hover table-bordered mb-0">
-            <thead class="table-dark">
-              <tr>
-                <th>#</th>
-                <th>Asset ID</th>
-                <th>Modelo</th>
-                <th>Serie</th>
-                <th>IP</th>
-                <th>Asignado a</th>
-                <th>Área</th>
-                <th>Grado</th>
-                <th>Fecha Instalación</th>
-                <th>Observaciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for pc in computadoras %}
-                <tr>
-                  <td>{{ forloop.counter }}</td>
-                  <td>{{ pc.asset_id }}</td>
-                  <td>{{ pc.modelo }}</td>
-                  <td>{{ pc.serie }}</td>
-                  <td>{{ pc.ip }}</td>
-                  <td>{{ pc.asignado_a }}</td>
-                  <td>{{ pc.area }}</td>
-                  <td>{{ pc.grado }}</td>
-                  <td>{{ pc.fecha_instalado }}</td>
-                  <td>{{ pc.observaciones }}</td>
-                </tr>
-              {% empty %}
-                <tr>
-                  <td colspan="10" class="text-center py-3">
-                    No hay computadoras registradas.
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      <!-- Tabla de computadoras -->
+<div class="col-lg-7">
+  <h5 class="mb-3">Computadoras Registradas</h5>
+  <div class="table-responsive shadow-sm">
+    <table id="computadoras-table"
+           class="table table-hover table-bordered align-middle nowrap"
+           style="width:100%;">
+      <thead class="table-dark">
+        <tr>
+          <th data-priority="1" style="width:5%;">ID</th>
+          <th data-priority="1" style="width:18%;">Asset ID</th>
+          <th data-priority="2" style="width:15%;">Modelo</th>
+          <th data-priority="3" style="width:18%;">Serie</th>
+          <th data-priority="4" style="width:10%;">IP</th>
+          <th data-priority="2" style="width:15%;">Asignado a</th>
+          <th data-priority="5" style="width:10%;">Área</th>
+          <th data-priority="5" style="width:10%;">Grado</th>
+          <th data-priority="3" style="width:10%;">Fecha Instal.</th>
+          <th data-priority="6" style="width:15%;">Observaciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for pc in computadoras %}
+          <tr>
+            <td title="{{ pc.id }}">{{ pc.id }}</td>  {# <-- ID real #}
+            <td title="{{ pc.asset_id }}">{{ pc.asset_id }}</td>
+            <td title="{{ pc.modelo }}">{{ pc.modelo }}</td>
+            <td title="{{ pc.serie }}">{{ pc.serie }}</td>
+            <td title="{{ pc.ip }}">{{ pc.ip }}</td>
+            <td title="{{ pc.asignado_a }}">{{ pc.asignado_a }}</td>
+            <td title="{{ pc.area }}">{{ pc.area }}</td>
+            <td title="{{ pc.grado }}">{{ pc.grado }}</td>
+            <td title="{{ pc.fecha_instalado|date:'Y-m-d' }}">{{ pc.fecha_instalado|date:"Y-m-d" }}</td>
+            <td title="{{ pc.observaciones }}">{{ pc.observaciones }}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="10" class="text-center py-3">No hay computadoras registradas.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 
           <div class="mt-3 text-end">
             <a href="{% url 'inventario:dashboard' %}" class="btn btn-outline-secondary">
-              <img src="{% static 'inventario/img/volver.png' %}" alt="Volver" width="20" class="me-1">
-              Volver al Dashboard
+              ← Volver al Dashboard
             </a>
           </div>
         </div>
@@ -205,21 +236,42 @@
     <footer>© {{ year }} Soporte Técnico – Asociación Nuevo Amanecer</footer>
   </div>
 
-  <!-- JS: Bootstrap, jQuery, DataTables -->
+  <!-- JS: Bootstrap, jQuery -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+
+  <!-- DataTables core + Bootstrap 5 -->
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+  <!-- DataTables Responsive + Bootstrap 5 -->
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap5.min.js"></script>
+
   <script>
-    $(document).ready(function() {
-      $('#computadoras-table').DataTable({
-        pageLength: 10,
-        language: {
-          // Traducción al español desde CDN oficial
-          url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
-        }
-      });
-    });
+   $(function() {
+  $('#computadoras-table').DataTable({
+    pageLength: 10,
+    scrollX: true,       // 3) Scroll horizontal
+    responsive: false,   // evita colapsar columnas al usar scrollX
+    order: [[0, 'desc']], // 2) Orden por columna ID (índice 0) desc
+    language: {
+      url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+    },
+    columnDefs: [
+      // Prioridades ya no aplican si responsive=false, pero no estorban:
+      { targets: 1, responsivePriority: 1 }, // Asset ID
+      { targets: 2, responsivePriority: 2 }, // Modelo
+      { targets: 5, responsivePriority: 2 }, // Asignado a
+      { targets: 8, responsivePriority: 3 }, // Fecha
+      { targets: 3, responsivePriority: 3 }, // Serie
+      { targets: 4, responsivePriority: 4 }, // IP
+      { targets: 6, responsivePriority: 5 }, // Área
+      { targets: 7, responsivePriority: 5 }, // Grado
+      { targets: 9, responsivePriority: 6 }, // Observaciones
+    ]
+  });
+});
+
   </script>
 </body>
 </html>
