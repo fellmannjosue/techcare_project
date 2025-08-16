@@ -19,6 +19,14 @@
 
   <div class="container py-4">
     <h2 class="text-center mb-4">Todos los Registros de Inventario</h2>
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
     <div class="table-responsive bg-white p-3 rounded shadow-sm">
       <table id="registros-table" class="table table-striped table-bordered align-middle mb-0">
         <thead class="table-light">
