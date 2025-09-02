@@ -1,0 +1,53 @@
+{% extends 'conducta/base_conducta.html' %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="text-center mb-4">
+    <h2 class="fw-bold">Dashboard Maestro – Bilingüe</h2>
+    <p class="lead">Seleccione una opción para gestionar sus reportes y tickets</p>
+  </div>
+  <div class="row g-4 justify-content-center">
+
+    <!-- Generar Ticket -->
+    <div class="col-6 col-sm-4 col-md-3">
+      <div class="menu-item shadow-sm text-center" onclick="window.location='/tickets/submit_ticket/'" style="cursor:pointer;">
+        <img src="{% static 'conducta/img/tickets.png' %}" alt="Tickets" width="56" height="56">
+        <span class="d-block mt-2">Generar Ticket</span>
+      </div>
+    </div>
+    
+    <!-- Reporte Informativo -->
+    <div class="col-6 col-sm-4 col-md-3">
+      <div class="menu-item shadow-sm text-center" onclick="window.location='{% url 'reporte_informativo_bilingue' %}'" style="cursor:pointer;">
+        <img src="{% static 'conducta/img/informativo.png' %}" alt="Informativo" width="56" height="56">
+        <span class="d-block mt-2">Reporte Informativo</span>
+      </div>
+    </div>
+
+    <!-- Reporte Conductual -->
+    <div class="col-6 col-sm-4 col-md-3">
+      <div class="menu-item shadow-sm text-center" onclick="window.location='{% url 'reporte_conductual_bilingue' %}'" style="cursor:pointer;">
+        <img src="{% static 'conducta/img/conductual.png' %}" alt="Conductual" width="56" height="56">
+        <span class="d-block mt-2">Reporte Conductual</span>
+      </div>
+    </div>
+    
+    <!-- Progress Report -->
+    <div class="col-6 col-sm-4 col-md-3">
+      <div class="menu-item shadow-sm text-center" onclick="window.location='{% url 'progress_report_bilingue' %}'" style="cursor:pointer;">
+        <img src="{% static 'conducta/img/progress.png' %}" alt="Progress Report" width="56" height="56">
+        <span class="d-block mt-2">Progress Report</span>
+      </div>
+    </div>
+    
+    <!-- Historial (Subdashboard) -->
+    <div class="col-6 col-sm-4 col-md-3">
+      <div class="menu-item shadow-sm text-center" onclick="window.location='{% url 'historial_maestro_bilingue' %}'" style="cursor:pointer;">
+        <img src="{% static 'conducta/img/historial.png' %}" alt="Historial" width="56" height="56">
+        <span class="d-block mt-2">Ver Historial</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'menu',
     'enfermeria',
     'seguridad',
+    'conducta',
    
 
 ]
