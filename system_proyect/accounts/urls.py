@@ -5,6 +5,7 @@ urlpatterns = [
     # Login principal
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
+    path('maestro_logout/', views.maestro_logout, name='maestro_logout'),
     path('register/', views.register_maestro, name='register_maestro'),
     path('menu/', views.menu_view, name='menu'),
 

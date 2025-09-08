@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'widget_tweaks',
 
     # Apps personalizadas
     'accounts',
@@ -185,23 +186,24 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
-# ─────────────────────────────────────────────────────────────
-# 12. SESIONES Y LOGIN
-# ─────────────────────────────────────────────────────────────
+# ──────────────────────────────
+# SESIONES Y LOGIN (3 HORAS)
+# ──────────────────────────────
+
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/accounts/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Tiempo de vida de la cookie de sesión: 5 horas (en segundos)
-SESSION_COOKIE_AGE = 5 * 60 * 60  # 18000 segundos
+# Duración de la sesión: 3 horas (en segundos)
+SESSION_COOKIE_AGE = 3 * 60 * 60  # 10800 segundos
 
-# Renovar el tiempo de vida en cada request
+# Renovar el tiempo de vida en cada request (esto lo hace "infinito" si hay actividad)
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Mantener la sesión incluso si se cierra el navegador
+# No cerrar la sesión solo por cerrar el navegador
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Seguridad extra (si usas HTTPS)
+# Cookies solo por HTTPS (OK si usas https)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
@@ -209,9 +211,8 @@ CSRF_COOKIE_SECURE = True
 # SESSION_COOKIE_DOMAIN = '.ana-hn.org'
 # CSRF_COOKIE_DOMAIN = '.ana-hn.org'
 
-# Motor de almacenamiento de sesiones (rápido y persistente)
+# Motor de sesiones: DB cacheada (recomendado si tienes cache)
 SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
-
 
 # ─────────────────────────────────────────────────────────────
 # 13. CORREO ELECTRÓNICO (SMTP)

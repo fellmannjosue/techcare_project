@@ -50,9 +50,6 @@ def user_login_view(request):
 
 
 def register_maestro(request):
-    """
-    Registro de nuevos maestros (solo permite correo @ana-hn.org).
-    """
     if request.method == 'POST':
         form = MaestroRegisterForm(request.POST)
         if form.is_valid():
@@ -61,22 +58,19 @@ def register_maestro(request):
             email = form.cleaned_data['email']
             area = form.cleaned_data['area']
             password = form.cleaned_data['password']
-            username = email.split('@')[0]
 
+            # Usa email como username
             user = User.objects.create_user(
-                username=username,
+                username=email,
                 email=email,
                 password=password,
                 first_name=first_name,
                 last_name=last_name
             )
             # Asignar grupo según área
-            if area == 'bilingue':
-                group, _ = Group.objects.get_or_create(name='maestros_bilingue')
-            else:
-                group, _ = Group.objects.get_or_create(name='maestros_colegio')
+            group_name = 'maestros_bilingue' if area == 'bilingue' else 'maestros_colegio'
+            group, _ = Group.objects.get_or_create(name=group_name)
             user.groups.add(group)
-
             user.save()
             messages.success(request, "¡Registro exitoso! Ahora puedes iniciar sesión.")
             return redirect('user_login')
@@ -156,3 +150,16 @@ def logout_view(request):
     else:
         messages.info(request, 'Sesión cerrada correctamente.')
     return redirect('login')
+
+def maestro_logout(request):
+    """
+    Cierra la sesión y redirige al login de usuario maestro.
+    """
+    inactive = request.GET.get('inactive')
+    logout(request)
+    if inactive:
+        messages.info(request, 'Sesión cerrada por inactividad.')
+    else:
+        messages.info(request, 'Sesión cerrada correctamente.')
+    return redirect('user_login')  # O la url exacta de tu login de maestros
+

@@ -37,9 +37,7 @@ def descargar_qr(request, tipo, pk):
     """
     # Construye la URL absoluta al endpoint de PDF
     path = reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
-    host = request.get_host()
-    scheme = 'https' if request.is_secure() else 'http'
-    pdf_url = f"{scheme}://{host}{path}"
+    pdf_url = f"https://servicios.ana-hn.org:437{path}"  # ← SIEMPRE este dominio y puerto
 
     # Generación de QR y conversión a JPEG
     img = qrcode.make(pdf_url)
@@ -290,11 +288,6 @@ def inventario_registros(request):
 
 
 def download_model_pdf(request, tipo, pk):
-    """
-    Genera un PDF con la ficha detallada de un objeto según su tipo
-    (computadora, televisor, etc.) y retorna el PDF embebido.
-    """
-    # Mapeo tipo → modelo y campos a mostrar
     model_map = {
         'computadora': Computadora,
         'televisor':   Televisor,
@@ -305,10 +298,66 @@ def download_model_pdf(request, tipo, pk):
     fields_map = {
         'computadora': [
             ('ID', 'asset_id'),
-            # ...
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('IP', 'ip'),
+            ('Categoría', 'category'),
+            ('Asignado a', 'asignado_a'),
+            ('Área', 'area'),
+            ('Grado', 'grado'),
+            ('Fecha Instalación', 'fecha_instalado'),
+            ('Observaciones', 'observaciones'),
         ],
-        # Definiciones para otros tipos...
+        'televisor': [
+            ('ID', 'asset_id'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('IP', 'ip'),
+            ('Categoría', 'category'),
+            ('Grado', 'grado'),
+            ('Área', 'area'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'impresora': [
+            ('ID', 'asset_id'),
+            ('Nombre', 'nombre'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('Categoría', 'category'),
+            ('Asignado a', 'asignado_a'),
+            ('Nivel Tinta', 'nivel_tinta'),
+            ('Últ. llenado', 'ultima_vez_llenado'),
+            ('Cant. impresiones', 'cantidad_impresiones'),
+            ('A color', 'a_color'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'router': [
+            ('ID', 'asset_id'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('Categoría', 'category'),
+            ('Nombre Router', 'nombre_router'),
+            ('Clave Router', 'clave_router'),
+            ('IP Asignada', 'ip_asignada'),
+            ('IP de Uso', 'ip_uso'),
+            ('Ubicado', 'ubicado'),
+            ('Observaciones', 'observaciones'),
+        ],
+        'datashow': [
+            ('ID', 'asset_id'),
+            ('Nombre', 'nombre'),
+            ('Modelo', 'modelo'),
+            ('Serie', 'serie'),
+            ('Categoría', 'category'),
+            ('Estado', 'estado'),
+            ('Cable Corriente', 'cable_corriente'),
+            ('HDMI', 'hdmi'),
+            ('VGA', 'vga'),
+            ('Extensión', 'extension'),
+            ('Observaciones', 'observaciones'),
+        ],
     }
+
 
     tipo = tipo.lower()
     Modelo = model_map.get(tipo)
