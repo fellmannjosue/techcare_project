@@ -10,7 +10,7 @@ from .forms import (
 from django.utils import timezone
 
 # ————————————————————————————————
-# CHOICES desde SQL Server y MySQL
+# FUNCIONES AUXILIARES PARA OBTENER DATOS
 # ————————————————————————————————
 
 def obtener_alumnos_bilingue():
@@ -38,7 +38,7 @@ def obtener_alumnos_bilingue():
             cursor.execute(query)
             for pid, nombre, area, crso, grupo in cursor.fetchall():
                 label = f"{nombre.strip()} ({area}) - {crso}{grupo}"
-                alumnos.append((pid, label))
+                alumnos.append({'id': pid, 'label': label, 'grado': f"{area} {crso}-{grupo}"})
     except Exception as e:
         print(">>> ERROR SQL BILINGUE:", e)
     return alumnos
@@ -69,13 +69,12 @@ def obtener_alumnos_colegio():
             cursor.execute(query)
             for pid, nombre, area, crso, grupo in cursor.fetchall():
                 label = f"{nombre.strip()} ({area}) - {crso}{grupo}"
-                alumnos.append((pid, label))
+                alumnos.append({'id': pid, 'label': label, 'grado': f"{area} {crso}-{grupo}"})
     except Exception as e:
         print(">>> ERROR SQL COLEGIO:", e)
     return alumnos
 
 def obtener_materias(area):
-    # Materias de MySQL (sponsors2)
     table = "citas_billingue_subject_bl" if area == 'bilingue' else "citas_colegio_subject_col"
     sql = f"SELECT id, nombre FROM sponsors2.{table} ORDER BY nombre"
     try:
@@ -87,14 +86,10 @@ def obtener_materias(area):
         return []
 
 def obtener_docentes_por_materia(area, materia_id):
-    # Docentes de MySQL (sponsors2), filtrados por materia
-    if area == 'bilingue':
-        table = "citas_billingue_teacher_bl"
-        subject_col = "subject_id"
-    else:
-        table = "citas_colegio_teacher_col"
-        subject_col = "subject_id"
-    sql = f"SELECT id, nombre FROM sponsors2.{table} WHERE {subject_col} = %s ORDER BY nombre"
+    if not materia_id:
+        return []
+    table = "citas_billingue_teacher_bl" if area == 'bilingue' else "citas_colegio_teacher_col"
+    sql = f"SELECT id, nombre FROM sponsors2.{table} WHERE subject_id = %s ORDER BY nombre"
     try:
         with connections['default'].cursor() as cursor:
             cursor.execute(sql, [materia_id])
@@ -102,6 +97,29 @@ def obtener_docentes_por_materia(area, materia_id):
     except Exception as e:
         print(">>> ERROR SQL DOCENTES:", e)
         return []
+
+def obtener_grado_alumno(alumno_id):
+    query = """
+    SELECT TOP 1 da.Descripcion, c.CrsoNumero, c.GrupoNumero
+      FROM dbo.tblPrsDtosGen AS d
+      JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
+      JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
+      JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
+      JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID    = c.CrsoID
+      JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
+     WHERE d.PersonaID = %s
+     ORDER BY ec.FechaInicio DESC
+    """
+    try:
+        with connections['padres_sqlserver'].cursor() as cursor:
+            cursor.execute(query, [alumno_id])
+            row = cursor.fetchone()
+            if row:
+                area, crso, grupo = row
+                return f"{area} {crso}-{grupo}"
+    except Exception as e:
+        print(">>> ERROR SQL GRADO:", e)
+    return ""
 
 # ————————————————————————————————
 # DASHBOARDS
@@ -132,62 +150,68 @@ def dashboard_maestro(request):
 @login_required
 def reporte_informativo_bilingue(request):
     area = 'bilingue'
-    alumnos_choices  = obtener_alumnos_bilingue()
-    materias_choices = obtener_materias(area)
-    docentes_choices = []
+    alumnos = obtener_alumnos_bilingue()
+    materias = obtener_materias(area)
+    docentes = []  # Solo se cargan con AJAX
     fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
+
     if request.method == 'POST':
         form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materias_choices=materias_choices,
-            docentes_choices=docentes_choices,
+            alumnos_choices=[(a['id'], a['label']) for a in alumnos],
+            materias_choices=materias,
+            docentes_choices=docentes,
             data=request.POST
         )
         if form.is_valid():
-            # Guardar el reporte aquí
+            # Guardar el reporte aquí si quieres
             pass
     else:
         form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materias_choices=materias_choices,
-            docentes_choices=docentes_choices,
+            alumnos_choices=[(a['id'], a['label']) for a in alumnos],
+            materias_choices=materias,
+            docentes_choices=docentes,
             initial={'fecha': fecha}
         )
     return render(request, 'conducta/form_informativo.html', {
         'form': form,
         'area': area,
+        'students': alumnos,
     })
 
 @login_required
 def reporte_informativo_colegio(request):
     area = 'colegio'
-    alumnos_choices  = obtener_alumnos_colegio()
-    materias_choices = obtener_materias(area)
-    docentes_choices = []
+    alumnos = obtener_alumnos_colegio()
+    materias = obtener_materias(area)
+    docentes = []
     fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
+
     if request.method == 'POST':
         form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materias_choices=materias_choices,
-            docentes_choices=docentes_choices,
+            alumnos_choices=[(a['id'], a['label']) for a in alumnos],
+            materias_choices=materias,
+            docentes_choices=docentes,
             data=request.POST
         )
         if form.is_valid():
-            # Guardar el reporte aquí
             pass
     else:
         form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materias_choices=materias_choices,
-            docentes_choices=docentes_choices,
+            alumnos_choices=[(a['id'], a['label']) for a in alumnos],
+            materias_choices=materias,
+            docentes_choices=docentes,
             initial={'fecha': fecha}
         )
     return render(request, 'conducta/form_informativo.html', {
         'form': form,
         'area': area,
+        'students': alumnos,
     })
 
-# AJAX: docentes por materia
+# ————————————————————————————————
+# AJAX (Docentes dinámico y Grado automático)
+# ————————————————————————————————
+
 @login_required
 def ajax_docentes_por_materia(request):
     materia_id = request.GET.get('materia_id')
@@ -195,33 +219,28 @@ def ajax_docentes_por_materia(request):
     docentes = obtener_docentes_por_materia(area, materia_id)
     return JsonResponse({'docentes': docentes})
 
-# AJAX: grado según alumno
 @login_required
 def ajax_grado_alumno(request):
     alumno_id = request.GET.get('alumno_id')
-    # TODO: Consultar el grado real del alumno usando SQL Server, igual que en Atención Médica
     grado = ""
-    # Aquí la lógica real para consultar el grado por el alumno_id
-    # ...
+    if alumno_id:
+        grado = obtener_grado_alumno(alumno_id)
     return JsonResponse({'grado': grado})
 
 # ————————————————————————————————
-# RESTO DE VISTAS (igual)
+# RESTO DE VISTAS
 # ————————————————————————————————
 
 @login_required
 def reporte_conductual_bilingue(request):
-    # ... igual que informativo, pero con ReporteConductualForm ...
     pass
 
 @login_required
 def reporte_conductual_colegio(request):
-    # ... igual que informativo, pero con ReporteConductualForm ...
     pass
 
 @login_required
 def progress_report_bilingue(request):
-    # ... igual pero con ProgressReportForm ...
     pass
 
 @login_required
