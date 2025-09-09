@@ -187,32 +187,33 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
 # ──────────────────────────────
-# SESIONES Y LOGIN (3 HORAS)
+# SESIONES Y LOGIN (1 HORA)
 # ──────────────────────────────
 
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/accounts/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
-# Duración de la sesión: 3 horas (en segundos)
-SESSION_COOKIE_AGE = 3 * 60 * 60  # 10800 segundos
+# Duración de la sesión: 1 hora (en segundos)
+SESSION_COOKIE_AGE = 60 * 60  # 3600 segundos
 
-# Renovar el tiempo de vida en cada request (esto lo hace "infinito" si hay actividad)
+# Renovar la sesión con cada request (se reinicia si el usuario navega)
 SESSION_SAVE_EVERY_REQUEST = True
 
-# No cerrar la sesión solo por cerrar el navegador
+# No cerrar la sesión al cerrar el navegador
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 
-# Cookies solo por HTTPS (OK si usas https)
+# Cookies seguras (requerido para HTTPS, déjalo en True si usas HTTPS)
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# Si usas subdominios
+# Motor de sesiones recomendado (usa la base de datos cacheada)
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+
+# Opcional: Si usas subdominios y quieres que la cookie funcione en todos, descomenta:
 # SESSION_COOKIE_DOMAIN = '.ana-hn.org'
 # CSRF_COOKIE_DOMAIN = '.ana-hn.org'
 
-# Motor de sesiones: DB cacheada (recomendado si tienes cache)
-SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 
 # ─────────────────────────────────────────────────────────────
 # 13. CORREO ELECTRÓNICO (SMTP)
