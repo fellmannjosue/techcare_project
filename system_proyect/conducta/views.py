@@ -119,11 +119,92 @@ def dashboard_coordinador_bilingue(request):
 def dashboard_coordinador_colegio(request):
     return render(request, 'conducta/dashboard_coordinador_colegio.html')
 
-# ------------ REPORTE INFORMATIVO (idéntico a tu código actual) ------------
+# ------------ REPORTE INFORMATIVO  ------------
 
-# ... Tus funciones de reporte_informativo_bilingue y reporte_informativo_colegio ...
+@login_required
+def reporte_informativo_bilingue(request):
+    area = 'bilingue'
+    students = obtener_alumnos_bilingue()  
+    materia_docente_choices = get_materia_docente_choices(area)
+    fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
 
-# ------------ REPORTE CONDUCTUAL (BILINGÜE) ------------
+    if request.method == 'POST':
+        alumno_id = request.POST.get('alumno')
+        grado = request.POST.get('grado')
+        materia_docente_id = request.POST.get('materia_docente')
+        comentario = request.POST.get('comentario', "")
+        alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
+        alumno_label = alumno_obj['label'] if alumno_obj else ""
+        materia = docente = ""
+        if materia_docente_id:
+            md_obj = MateriaDocenteBilingue.objects.filter(pk=materia_docente_id).first()
+            if md_obj:
+                materia = md_obj.materia
+                docente = md_obj.docente
+        ReporteInformativo.objects.create(
+            usuario=request.user,
+            area=area,
+            alumno_id=alumno_id,
+            alumno_nombre=alumno_label,
+            grado=grado,
+            materia=materia,
+            docente=docente,
+            comentario=comentario
+        )
+        messages.success(request, "¡Reporte registrado correctamente!")
+        return redirect('reporte_informativo_bilingue')
+
+    return render(request, 'conducta/form_informativo.html', {
+        'students': students,    
+        'materia_docente_choices': materia_docente_choices,
+        'fecha': fecha,
+        'area': area,
+    })
+
+@login_required
+def reporte_informativo_colegio(request):
+    area = 'colegio'
+    students = obtener_alumnos_colegio()
+    materia_docente_choices = get_materia_docente_choices(area)
+    fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
+
+    if request.method == 'POST':
+        alumno_id = request.POST.get('alumno')
+        grado = request.POST.get('grado')
+        materia_docente_id = request.POST.get('materia_docente')
+        comentario = request.POST.get('comentario', "")
+        alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
+        alumno_label = alumno_obj['label'] if alumno_obj else ""
+        materia = docente = ""
+        if materia_docente_id:
+            md_obj = MateriaDocenteColegio.objects.filter(pk=materia_docente_id).first()
+            if md_obj:
+                materia = md_obj.materia
+                docente = md_obj.docente
+        ReporteInformativo.objects.create(
+            usuario=request.user,
+            area=area,
+            alumno_id=alumno_id,
+            alumno_nombre=alumno_label,
+            grado=grado,
+            materia=materia,
+            docente=docente,
+            comentario=comentario
+        )
+        messages.success(request, "¡Reporte registrado correctamente!")
+        return redirect('reporte_informativo_colegio')
+
+    return render(request, 'conducta/form_informativo.html', {
+        'students': students,
+        'materia_docente_choices': materia_docente_choices,
+        'fecha': fecha,
+        'area': area,
+    })
+
+
+
+
+# ------------ REPORTE CONDUCTUAL  ------------
 
 @login_required
 def reporte_conductual_bilingue(request):
@@ -182,7 +263,6 @@ def reporte_conductual_bilingue(request):
         'incisos': incisos,
     })
 
-# ------------ REPORTE CONDUCTUAL (COLEGIO) ------------
 
 @login_required
 def reporte_conductual_colegio(request):
