@@ -212,12 +212,10 @@ def reporte_conductual_bilingue(request):
     students = obtener_alumnos_bilingue()
     materia_docente_choices = get_materia_docente_choices(area)
     fecha = timezone.now().strftime("%Y-%m-%d")
-    severidad_choices = [
-        ('leve', 'Leve'),
-        ('moderada', 'Moderada'),
-        ('grave', 'Grave'),
-    ]
-    incisos = IncisoConductual.objects.filter(activo=True, tipo='bilingue').order_by('descripcion')
+    # Obtiene incisos por severidad
+    incisos_leve = IncisoConductual.objects.filter(activo=True, tipo='leve').order_by('descripcion')
+    incisos_grave = IncisoConductual.objects.filter(activo=True, tipo='grave').order_by('descripcion')
+    incisos_muygrave = IncisoConductual.objects.filter(activo=True, tipo='muy_grave').order_by('descripcion')
 
     if request.method == 'POST':
         alumno_id = request.POST.get('alumno')
@@ -225,8 +223,11 @@ def reporte_conductual_bilingue(request):
         materia_docente_id = request.POST.get('materia_docente')
         fecha_val = request.POST.get('fecha')
         comentario = request.POST.get('comentario', "")
-        severidad = request.POST.get('severidad', "")
-        incisos_seleccionados = request.POST.getlist('conducta')  # lista de IDs
+
+        # Checkboxes (pueden o no venir)
+        inciso_leve = request.POST.get('inciso_leve') if request.POST.get('chk_leve') else None
+        inciso_grave = request.POST.get('inciso_grave') if request.POST.get('chk_grave') else None
+        inciso_muygrave = request.POST.get('inciso_muygrave') if request.POST.get('chk_muygrave') else None
 
         alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
         alumno_label = alumno_obj['label'] if alumno_obj else ""
@@ -237,6 +238,7 @@ def reporte_conductual_bilingue(request):
                 materia = md_obj.materia
                 docente = md_obj.docente
 
+        # Guarda el reporte (ajusta si tienes campos específicos para cada inciso)
         reporte = ReporteConductual.objects.create(
             usuario=request.user,
             area=area,
@@ -246,11 +248,11 @@ def reporte_conductual_bilingue(request):
             materia=materia,
             docente=docente,
             fecha=fecha_val,
-            severidad=severidad,
-            comentario=comentario
+            comentario=comentario,
+            inciso_leve_id=inciso_leve or None,
+            inciso_grave_id=inciso_grave or None,
+            inciso_muygrave_id=inciso_muygrave or None,
         )
-        if hasattr(reporte, "conductas"):
-            reporte.conductas.set(incisos_seleccionados)
         messages.success(request, "¡Reporte conductual registrado correctamente!")
         return redirect('reporte_conductual_bilingue')
 
@@ -259,8 +261,9 @@ def reporte_conductual_bilingue(request):
         'materia_docente_choices': materia_docente_choices,
         'fecha': fecha,
         'area': area,
-        'severidad_choices': severidad_choices,
-        'incisos': incisos,
+        'incisos_leve': incisos_leve,
+        'incisos_grave': incisos_grave,
+        'incisos_muygrave': incisos_muygrave,
     })
 
 
@@ -270,12 +273,9 @@ def reporte_conductual_colegio(request):
     students = obtener_alumnos_colegio()
     materia_docente_choices = get_materia_docente_choices(area)
     fecha = timezone.now().strftime("%Y-%m-%d")
-    severidad_choices = [
-        ('leve', 'Leve'),
-        ('moderada', 'Moderada'),
-        ('grave', 'Grave'),
-    ]
-    incisos = IncisoConductual.objects.filter(activo=True, tipo='colegio').order_by('descripcion')
+    incisos_leve = IncisoConductual.objects.filter(activo=True, tipo='leve').order_by('descripcion')
+    incisos_grave = IncisoConductual.objects.filter(activo=True, tipo='grave').order_by('descripcion')
+    incisos_muygrave = IncisoConductual.objects.filter(activo=True, tipo='muy_grave').order_by('descripcion')
 
     if request.method == 'POST':
         alumno_id = request.POST.get('alumno')
@@ -283,8 +283,10 @@ def reporte_conductual_colegio(request):
         materia_docente_id = request.POST.get('materia_docente')
         fecha_val = request.POST.get('fecha')
         comentario = request.POST.get('comentario', "")
-        severidad = request.POST.get('severidad', "")
-        incisos_seleccionados = request.POST.getlist('conducta')
+
+        inciso_leve = request.POST.get('inciso_leve') if request.POST.get('chk_leve') else None
+        inciso_grave = request.POST.get('inciso_grave') if request.POST.get('chk_grave') else None
+        inciso_muygrave = request.POST.get('inciso_muygrave') if request.POST.get('chk_muygrave') else None
 
         alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
         alumno_label = alumno_obj['label'] if alumno_obj else ""
@@ -304,11 +306,11 @@ def reporte_conductual_colegio(request):
             materia=materia,
             docente=docente,
             fecha=fecha_val,
-            severidad=severidad,
-            comentario=comentario
+            comentario=comentario,
+            inciso_leve_id=inciso_leve or None,
+            inciso_grave_id=inciso_grave or None,
+            inciso_muygrave_id=inciso_muygrave or None,
         )
-        if hasattr(reporte, "conductas"):
-            reporte.conductas.set(incisos_seleccionados)
         messages.success(request, "¡Reporte conductual registrado correctamente!")
         return redirect('reporte_conductual_colegio')
 
@@ -317,8 +319,9 @@ def reporte_conductual_colegio(request):
         'materia_docente_choices': materia_docente_choices,
         'fecha': fecha,
         'area': area,
-        'severidad_choices': severidad_choices,
-        'incisos': incisos,
+        'incisos_leve': incisos_leve,
+        'incisos_grave': incisos_grave,
+        'incisos_muygrave': incisos_muygrave,
     })
 
 # ------------ RESTO DE VISTAS (puedes dejar igual) ------------
