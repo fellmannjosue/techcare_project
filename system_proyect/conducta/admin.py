@@ -1,11 +1,30 @@
 from django.contrib import admin
-from .models import IncisoConductual, ReporteConductual, ReporteInformativo, ProgressReport
+from .models import (
+    IncisoConductual,
+    ReporteConductual,
+    ReporteInformativo,
+    ProgressReport,
+    MateriaDocenteBilingue,
+    MateriaDocenteColegio
+)
 
 @admin.register(IncisoConductual)
 class IncisoConductualAdmin(admin.ModelAdmin):
     list_display = ('descripcion', 'tipo', 'activo')
     list_filter = ('tipo', 'activo')
     search_fields = ('descripcion',)
+
+@admin.register(MateriaDocenteBilingue)
+class MateriaDocenteBilingueAdmin(admin.ModelAdmin):
+    list_display = ('materia', 'docente', 'activo')
+    list_filter = ('materia', 'docente', 'activo')
+    search_fields = ('materia', 'docente')
+
+@admin.register(MateriaDocenteColegio)
+class MateriaDocenteColegioAdmin(admin.ModelAdmin):
+    list_display = ('materia', 'docente', 'activo')
+    list_filter = ('materia', 'docente', 'activo')
+    search_fields = ('materia', 'docente')
 
 @admin.register(ReporteConductual)
 class ReporteConductualAdmin(admin.ModelAdmin):

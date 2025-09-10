@@ -1,0 +1,61 @@
+body {
+  background: #eaf1f8;
+}
+.form-container {
+  background: #fff;
+  max-width: 900px;
+  margin: 36px auto;
+  border-radius: 18px;
+  padding: 32px 36px;
+  box-shadow: 0 2px 16px rgba(80,110,190,0.11);
+  border: 1px solid #e3e8f0;
+}
+.form-container h2 {
+  font-weight: 700;
+  color: #365799;
+  margin-bottom: 30px;
+}
+.form-label {
+  font-weight: 500;
+  color: #41547a;
+}
+.btn-primary {
+  background: linear-gradient(90deg,#4666e5,#4c8bfa);
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1.12rem;
+  margin-top: 12px;
+}
+.btn-primary:hover {
+  background: linear-gradient(90deg,#3054d6,#4182ef);
+}
+.btn-dashboard {
+  background: #f4f8ff;
+  color: #4666e5;
+  border: none;
+  margin-top: 18px;
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: background 0.2s, color 0.2s;
+  padding: 12px;
+  text-decoration: none;
+}
+.btn-dashboard:hover {
+  background: #e3ecff;
+  color: #273996;
+}
+.select2-container .select2-selection--single {
+  height: 42px !important;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  line-height: 42px !important;
+}
+.select2-container--default .select2-selection--single {
+  border-radius: 12px;
+  border: 1px solid #cfd8e3;
+  font-size: 1rem;
+  color: #222;
+}

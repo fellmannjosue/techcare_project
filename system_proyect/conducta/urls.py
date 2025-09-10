@@ -29,7 +29,7 @@ urlpatterns = [
 
     # AJAX (Grado automático y docentes por materia)
     path('ajax/grado/', views.ajax_grado_alumno, name='ajax_grado_alumno'),
-    path('ajax/docentes/', views.ajax_docentes_por_materia, name='ajax_docentes_por_materia'),
+    #path('ajax/docentes/', views.ajax_docentes_por_materia, name='ajax_docentes_por_materia'),
 
     # Detalle, editar y PDF
     path('detalle/<int:pk>/', views.detalle_reporte, name='detalle_reporte'),

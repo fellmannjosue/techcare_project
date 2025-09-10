@@ -1,11 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# Áreas posibles para los reportes
 AREA_CHOICES = (
     ('bilingue', 'Bilingüe'),
     ('colegio', 'Colegio/CFP'),
 )
 
+# ─────────────────────────────
+# Inciso Conductual
+# ─────────────────────────────
 class IncisoConductual(models.Model):
     TIPO_CHOICES = (
         ('leve', 'Leve'),
@@ -24,14 +28,52 @@ class IncisoConductual(models.Model):
         verbose_name_plural = "Incisos Conductuales"
         ordering = ['tipo', 'descripcion']
 
+# ─────────────────────────────
+# Materia-Docente (Bilingüe)
+# ─────────────────────────────
+class MateriaDocenteBilingue(models.Model):
+    materia = models.CharField(max_length=100, verbose_name="Materia")
+    docente = models.CharField(max_length=100, verbose_name="Docente")
+    activo = models.BooleanField(default=True, verbose_name="¿Activo?")
+
+    def __str__(self):
+        return f"{self.materia} – {self.docente}"
+
+    class Meta:
+        verbose_name = "Materia-Docente Bilingüe"
+        verbose_name_plural = "Materias-Docentes Bilingüe"
+        ordering = ['materia', 'docente']
+
+# ─────────────────────────────
+# Materia-Docente (Colegio)
+# ─────────────────────────────
+class MateriaDocenteColegio(models.Model):
+    materia = models.CharField(max_length=100, verbose_name="Materia")
+    docente = models.CharField(max_length=100, verbose_name="Docente")
+    activo = models.BooleanField(default=True, verbose_name="¿Activo?")
+
+    def __str__(self):
+        return f"{self.materia} – {self.docente}"
+
+    class Meta:
+        verbose_name = "Materia-Docente Colegio"
+        verbose_name_plural = "Materias-Docentes Colegio"
+        ordering = ['materia', 'docente']
+
+# ─────────────────────────────
+# Reporte Conductual
+# ─────────────────────────────
 class ReporteConductual(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario que reporta")
     area = models.CharField(max_length=10, choices=AREA_CHOICES, default='bilingue', verbose_name="Área")
     alumno_id = models.CharField(max_length=50, verbose_name="ID Alumno")
     alumno_nombre = models.CharField(max_length=120, verbose_name="Nombre del Alumno")
     grado = models.CharField(max_length=50, verbose_name="Grado")
+
+    # Opcional: ForeignKey a MateriaDocente según área (puedes mejorar luego)
     materia = models.CharField(max_length=100, verbose_name="Materia")
     docente = models.CharField(max_length=100, verbose_name="Docente")
+
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
 
     leve = models.BooleanField(default=False, verbose_name="Leve")
@@ -66,6 +108,9 @@ class ReporteConductual(models.Model):
         verbose_name_plural = "Reportes Conductuales"
         ordering = ['-fecha']
 
+# ─────────────────────────────
+# Reporte Informativo
+# ─────────────────────────────
 class ReporteInformativo(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario que reporta")
     area = models.CharField(max_length=10, choices=AREA_CHOICES, default='bilingue', verbose_name="Área")
@@ -85,6 +130,9 @@ class ReporteInformativo(models.Model):
         verbose_name_plural = "Reportes Informativos"
         ordering = ['-fecha']
 
+# ─────────────────────────────
+# Progress Report
+# ─────────────────────────────
 class ProgressReport(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Usuario que reporta")
     alumno_id = models.CharField(max_length=50, verbose_name="ID Alumno")
