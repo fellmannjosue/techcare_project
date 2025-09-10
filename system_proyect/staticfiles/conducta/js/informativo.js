@@ -1,33 +1,31 @@
 $(function() {
-  // Inicializar Select2 para los combos
+  // Inicializar select2 en alumno y materia_docente
   $('#id_alumno, #id_materia_docente').select2({
     width: '100%',
     minimumResultsForSearch: 10,
     dropdownParent: $('.form-container')
   });
 
-  // Limitar scroll de opciones del dropdown a 300px
+  // Llenar grado automáticamente desde data-grado del <option> seleccionado
+  $('#id_alumno').on('change', function() {
+    let grado = $(this).find('option:selected').data('grado') || '';
+    $('#grado-display').val(grado);
+    $('#id_grado').val(grado);
+  });
+
+  // Al cargar la página (ej. modo editar)
+  let $alumno = $('#id_alumno');
+  let initialGrado = $alumno.find('option:selected').data('grado') || '';
+  $('#grado-display').val(initialGrado);
+  $('#id_grado').val(initialGrado);
+
+  // Limitar scroll de select2
   $(document).on('select2:open', function() {
     $('.select2-results__options').css('max-height', '300px');
   });
 
-  // Autollenar grado al seleccionar estudiante
-  $('#id_alumno').on('change', function() {
-    let alumno_id = $(this).val();
-    if (alumno_id) {
-      $.get('/conducta/ajax/grado/', { alumno_id: alumno_id }, function(data) {
-        $('#id_grado').val(data.grado || '');
-      });
-    } else {
-      $('#id_grado').val('');
-    }
-  });
-
-  // Si ya hay un alumno seleccionado al cargar, carga el grado
-  var selected_alumno = $('#id_alumno').val();
-  if (selected_alumno) {
-    $.get('/conducta/ajax/grado/', { alumno_id: selected_alumno }, function(data) {
-      $('#id_grado').val(data.grado || '');
-    });
-  }
+  // Oculta alertas de éxito tras unos segundos
+  setTimeout(function() {
+    $('.alert-success').fadeOut('slow');
+  }, 4000);
 });

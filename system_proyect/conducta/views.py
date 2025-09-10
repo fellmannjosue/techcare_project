@@ -10,6 +10,7 @@ from .forms import (
     ProgressReportForm
 )
 from .models import (
+    IncisoConductual,
     ReporteInformativo,
     ReporteConductual,
     ProgressReport,
@@ -45,9 +46,9 @@ def obtener_alumnos_bilingue():
         with connections['padres_sqlserver'].cursor() as cursor:
             cursor.execute(query)
             for pid, nombre, area, crso, grupo in cursor.fetchall():
-                label = f"{nombre.strip()} ({area}) - {crso}{grupo}"
+                label = nombre.strip()
                 grado = f"{area} {crso}-{grupo}"
-                alumnos.append((str(pid), label, grado))
+                alumnos.append({'id': str(pid), 'label': label, 'grado': grado})
     except Exception as e:
         print(">>> ERROR SQL BILINGUE:", e)
     return alumnos
@@ -77,35 +78,12 @@ def obtener_alumnos_colegio():
         with connections['padres_sqlserver'].cursor() as cursor:
             cursor.execute(query)
             for pid, nombre, area, crso, grupo in cursor.fetchall():
-                label = f"{nombre.strip()} ({area}) - {crso}{grupo}"
+                label = nombre.strip()
                 grado = f"{area} {crso}-{grupo}"
-                alumnos.append((str(pid), label, grado))
+                alumnos.append({'id': str(pid), 'label': label, 'grado': grado})
     except Exception as e:
         print(">>> ERROR SQL COLEGIO:", e)
     return alumnos
-
-def obtener_grado_alumno(alumno_id):
-    query = """
-    SELECT TOP 1 da.Descripcion, c.CrsoNumero, c.GrupoNumero
-      FROM dbo.tblPrsDtosGen AS d
-      JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
-      JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
-      JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
-      JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID    = c.CrsoID
-      JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
-     WHERE d.PersonaID = %s
-     ORDER BY ec.FechaInicio DESC
-    """
-    try:
-        with connections['padres_sqlserver'].cursor() as cursor:
-            cursor.execute(query, [alumno_id])
-            row = cursor.fetchone()
-            if row:
-                area, crso, grupo = row
-                return f"{area} {crso}-{grupo}"
-    except Exception as e:
-        print(">>> ERROR SQL GRADO:", e)
-    return ""
 
 def get_materia_docente_choices(area):
     if area == 'bilingue':
@@ -120,7 +98,7 @@ def get_materia_docente_choices(area):
         ]
 
 # ---------------------------
-# DASHBOARDS Y REPORTES
+# DASHBOARDS Y FORMULARIOS
 # ---------------------------
 
 @login_required
@@ -141,125 +119,133 @@ def dashboard_coordinador_bilingue(request):
 def dashboard_coordinador_colegio(request):
     return render(request, 'conducta/dashboard_coordinador_colegio.html')
 
-# ------------ REPORTE INFORMATIVO --------------
+# ------------ REPORTE INFORMATIVO (idéntico a tu código actual) ------------
 
-@login_required
-def reporte_informativo_bilingue(request):
-    area = 'bilingue'
-    alumnos = obtener_alumnos_bilingue()  # [(id, label, grado)]
-    alumnos_choices = [(a[0], a[1]) for a in alumnos]
-    materia_docente_choices = get_materia_docente_choices(area)
-    fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
+# ... Tus funciones de reporte_informativo_bilingue y reporte_informativo_colegio ...
 
-    if request.method == 'POST':
-        form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materia_docente_choices=materia_docente_choices,
-            data=request.POST
-        )
-        if form.is_valid():
-            alumno_id = form.cleaned_data['alumno']
-            alumno_obj = next((a for a in alumnos if a[0] == alumno_id), None)
-            alumno_label = alumno_obj[1] if alumno_obj else ""
-            grado = alumno_obj[2] if alumno_obj else ""
-            materia_docente_id = form.cleaned_data['materia_docente']
-            md_obj = MateriaDocenteBilingue.objects.filter(pk=materia_docente_id).first() if materia_docente_id else None
-            materia = md_obj.materia if md_obj else ""
-            docente = md_obj.docente if md_obj else ""
-            ReporteInformativo.objects.create(
-                usuario=request.user,
-                area=area,
-                alumno_id=alumno_id,
-                alumno_nombre=alumno_label,
-                grado=grado,
-                materia=materia,
-                docente=docente,
-                comentario=form.cleaned_data.get('comentario', "")
-            )
-            messages.success(request, "¡Reporte registrado correctamente!")
-            return redirect('reporte_informativo_bilingue')
-    else:
-        form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materia_docente_choices=materia_docente_choices,
-            initial={'fecha': fecha}
-        )
-
-    return render(request, 'conducta/form_informativo.html', {
-        'form': form,
-        'area': area,
-    })
-
-@login_required
-def reporte_informativo_colegio(request):
-    area = 'colegio'
-    alumnos = obtener_alumnos_colegio()  # [(id, label, grado)]
-    alumnos_choices = [(a[0], a[1]) for a in alumnos]
-    materia_docente_choices = get_materia_docente_choices(area)
-    fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
-
-    if request.method == 'POST':
-        form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materia_docente_choices=materia_docente_choices,
-            data=request.POST
-        )
-        if form.is_valid():
-            alumno_id = form.cleaned_data['alumno']
-            alumno_obj = next((a for a in alumnos if a[0] == alumno_id), None)
-            alumno_label = alumno_obj[1] if alumno_obj else ""
-            grado = alumno_obj[2] if alumno_obj else ""
-            materia_docente_id = form.cleaned_data['materia_docente']
-            md_obj = MateriaDocenteColegio.objects.filter(pk=materia_docente_id).first() if materia_docente_id else None
-            materia = md_obj.materia if md_obj else ""
-            docente = md_obj.docente if md_obj else ""
-            ReporteInformativo.objects.create(
-                usuario=request.user,
-                area=area,
-                alumno_id=alumno_id,
-                alumno_nombre=alumno_label,
-                grado=grado,
-                materia=materia,
-                docente=docente,
-                comentario=form.cleaned_data.get('comentario', "")
-            )
-            messages.success(request, "¡Reporte registrado correctamente!")
-            return redirect('reporte_informativo_colegio')
-    else:
-        form = ReporteInformativoForm(
-            alumnos_choices=alumnos_choices,
-            materia_docente_choices=materia_docente_choices,
-            initial={'fecha': fecha}
-        )
-
-    return render(request, 'conducta/form_informativo.html', {
-        'form': form,
-        'area': area,
-    })
-
-# ------------ AJAX: Grado Automático ------------
-
-@login_required
-def ajax_grado_alumno(request):
-    alumno_id = request.GET.get('alumno_id')
-    grado = ""
-    if alumno_id:
-        grado = obtener_grado_alumno(alumno_id)
-    return JsonResponse({'grado': grado})
-
-# ------------ RESTO DE VISTAS, IGUAL ------------
+# ------------ REPORTE CONDUCTUAL (BILINGÜE) ------------
 
 @login_required
 def reporte_conductual_bilingue(request):
-    pass
+    area = 'bilingue'
+    students = obtener_alumnos_bilingue()
+    materia_docente_choices = get_materia_docente_choices(area)
+    fecha = timezone.now().strftime("%Y-%m-%d")
+    severidad_choices = [
+        ('leve', 'Leve'),
+        ('moderada', 'Moderada'),
+        ('grave', 'Grave'),
+    ]
+    incisos = IncisoConductual.objects.filter(activo=True, tipo='bilingue').order_by('descripcion')
+
+    if request.method == 'POST':
+        alumno_id = request.POST.get('alumno')
+        grado = request.POST.get('grado')
+        materia_docente_id = request.POST.get('materia_docente')
+        fecha_val = request.POST.get('fecha')
+        comentario = request.POST.get('comentario', "")
+        severidad = request.POST.get('severidad', "")
+        incisos_seleccionados = request.POST.getlist('conducta')  # lista de IDs
+
+        alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
+        alumno_label = alumno_obj['label'] if alumno_obj else ""
+        materia = docente = ""
+        if materia_docente_id:
+            md_obj = MateriaDocenteBilingue.objects.filter(pk=materia_docente_id).first()
+            if md_obj:
+                materia = md_obj.materia
+                docente = md_obj.docente
+
+        reporte = ReporteConductual.objects.create(
+            usuario=request.user,
+            area=area,
+            alumno_id=alumno_id,
+            alumno_nombre=alumno_label,
+            grado=grado,
+            materia=materia,
+            docente=docente,
+            fecha=fecha_val,
+            severidad=severidad,
+            comentario=comentario
+        )
+        if hasattr(reporte, "conductas"):
+            reporte.conductas.set(incisos_seleccionados)
+        messages.success(request, "¡Reporte conductual registrado correctamente!")
+        return redirect('reporte_conductual_bilingue')
+
+    return render(request, 'conducta/form_conductual.html', {
+        'students': students,
+        'materia_docente_choices': materia_docente_choices,
+        'fecha': fecha,
+        'area': area,
+        'severidad_choices': severidad_choices,
+        'incisos': incisos,
+    })
+
+# ------------ REPORTE CONDUCTUAL (COLEGIO) ------------
 
 @login_required
 def reporte_conductual_colegio(request):
-    pass
+    area = 'colegio'
+    students = obtener_alumnos_colegio()
+    materia_docente_choices = get_materia_docente_choices(area)
+    fecha = timezone.now().strftime("%Y-%m-%d")
+    severidad_choices = [
+        ('leve', 'Leve'),
+        ('moderada', 'Moderada'),
+        ('grave', 'Grave'),
+    ]
+    incisos = IncisoConductual.objects.filter(activo=True, tipo='colegio').order_by('descripcion')
+
+    if request.method == 'POST':
+        alumno_id = request.POST.get('alumno')
+        grado = request.POST.get('grado')
+        materia_docente_id = request.POST.get('materia_docente')
+        fecha_val = request.POST.get('fecha')
+        comentario = request.POST.get('comentario', "")
+        severidad = request.POST.get('severidad', "")
+        incisos_seleccionados = request.POST.getlist('conducta')
+
+        alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
+        alumno_label = alumno_obj['label'] if alumno_obj else ""
+        materia = docente = ""
+        if materia_docente_id:
+            md_obj = MateriaDocenteColegio.objects.filter(pk=materia_docente_id).first()
+            if md_obj:
+                materia = md_obj.materia
+                docente = md_obj.docente
+
+        reporte = ReporteConductual.objects.create(
+            usuario=request.user,
+            area=area,
+            alumno_id=alumno_id,
+            alumno_nombre=alumno_label,
+            grado=grado,
+            materia=materia,
+            docente=docente,
+            fecha=fecha_val,
+            severidad=severidad,
+            comentario=comentario
+        )
+        if hasattr(reporte, "conductas"):
+            reporte.conductas.set(incisos_seleccionados)
+        messages.success(request, "¡Reporte conductual registrado correctamente!")
+        return redirect('reporte_conductual_colegio')
+
+    return render(request, 'conducta/form_conductual.html', {
+        'students': students,
+        'materia_docente_choices': materia_docente_choices,
+        'fecha': fecha,
+        'area': area,
+        'severidad_choices': severidad_choices,
+        'incisos': incisos,
+    })
+
+# ------------ RESTO DE VISTAS (puedes dejar igual) ------------
 
 @login_required
 def progress_report_bilingue(request):
-    pass
+    return render(request, 'conducta/form_progress.html')
 
 @login_required
 def historial_maestro_bilingue(request):

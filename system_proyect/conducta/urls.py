@@ -28,7 +28,7 @@ urlpatterns = [
     path('coordinador/reporte_general/tres_faltas/colegio/', views.reporte_general_tres_faltas_colegio, name='reporte_general_tres_faltas_colegio'),
 
     # AJAX (Grado automático y docentes por materia)
-    path('ajax/grado/', views.ajax_grado_alumno, name='ajax_grado_alumno'),
+    #path('ajax/grado/', views.ajax_grado_alumno, name='ajax_grado_alumno'),
     #path('ajax/docentes/', views.ajax_docentes_por_materia, name='ajax_docentes_por_materia'),
 
     # Detalle, editar y PDF
