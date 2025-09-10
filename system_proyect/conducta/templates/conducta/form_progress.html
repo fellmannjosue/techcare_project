@@ -1,0 +1,27 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Informativo – {% if area == "bilingue" %}Bilingüe{% else %}Colegio/CFP{% endif %}</title>
+    <style>
+        body { background: #f5f8fa; height: 100vh; margin: 0; }
+        .center-construccion {
+            min-height: 100vh; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .mensaje { font-size: 2.1rem; color: #3761b6; font-weight: 600; margin-bottom: 22px; }
+        img { max-width: 440px; width: 98vw; }
+    </style>
+</head>
+<body>
+    <div class="center-construccion">
+        <div class="mensaje">¡En construcción! 🚧</div>
+        <img src="{% static 'conducta/img/enconstruccion_4.webp' %}" alt="Página en construcción">
+    </div>
+    <a class="btn-dashboard text-center" href="/conducta/dashboard/maestro/">
+      &larr; Regresar al Dashboard
+    </a>
+</body>
+</html>

@@ -6,21 +6,21 @@
   <title>Reporte Informativo – {% if area == "bilingue" %}Bilingüe{% else %}Colegio/CFP{% endif %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
   <style>
     body { background: #eaf1f8; }
     .form-container {
-      background: #fff; max-width: 760px; margin: 36px auto;
-      border-radius: 18px; padding: 32px 28px 22px 28px;
-      box-shadow: 0 2px 16px rgba(80,110,190,0.09); border: 1px solid #e3e8f0;
+      background: #fff; max-width: 950px; margin: 32px auto;
+      border-radius: 18px; padding: 34px 36px 26px 36px;
+      box-shadow: 0 2px 16px rgba(80,110,190,0.08); border: 1px solid #e3e8f0;
     }
-    .form-container h2 { font-weight: 700; color: #3a4766; }
+    .form-container h2 { font-weight: 700; color: #283655; margin-bottom: 18px; }
     .form-label { font-weight: 500; color: #41547a; }
     .btn-primary {
       background: linear-gradient(90deg,#4666e5,#4c8bfa);
       border: none; border-radius: 12px; font-weight: 600; font-size: 1.12rem;
-      margin-top: 12px;
+      margin-top: 12px; min-height: 50px;
     }
-    .btn-primary:hover { background: linear-gradient(90deg,#3054d6,#4182ef); }
     .btn-dashboard {
       background: #f4f8ff; color: #4666e5; border: none;
       margin-top: 18px; display: block; width: 100%;
@@ -30,6 +30,21 @@
       text-decoration: none;
     }
     .btn-dashboard:hover { background: #e3ecff; color: #273996; }
+    .select2-container .select2-selection--single { height: 48px !important; }
+    .select2-container--default .select2-selection--single .select2-selection__rendered {
+      line-height: 46px !important; font-size: 1.07rem;
+    }
+    .select2-container--default .select2-selection--single .select2-selection__arrow {
+      height: 46px !important;
+    }
+    /* SCROLL EN DROPDOWN SELECT2 */
+    .select2-dropdown.scrollable-dropdown .select2-results__options {
+      max-height: 220px !important; min-height: 80px;
+      overflow-y: auto !important;
+    }
+    @media (max-width: 900px) {
+      .form-container { max-width: 98vw; padding: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -38,67 +53,50 @@
     <form method="post" autocomplete="off" id="formReporteInformativo">
       {% csrf_token %}
       <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-md-6 mb-2">
           {{ form.alumno.label_tag }}
           {{ form.alumno }}
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 mb-2">
           {{ form.grado.label_tag }}
           {{ form.grado }}
         </div>
       </div>
       <div class="row mb-3">
-        <div class="col-md-6">
+        <div class="col-md-6 mb-2">
           {{ form.materia.label_tag }}
           {{ form.materia }}
         </div>
-        <div class="col-md-6">
+        <div class="col-md-6 mb-2">
           {{ form.docente.label_tag }}
           {{ form.docente }}
         </div>
       </div>
-      <div class="mb-3">
-        {{ form.fecha.label_tag }}
-        {{ form.fecha }}
+      <div class="row mb-3">
+        <div class="col-md-6 mb-2">
+          {{ form.fecha.label_tag }}
+          {{ form.fecha }}
+        </div>
+        <div class="col-md-6 mb-2">
+          {{ form.comentario.label_tag }}
+          {{ form.comentario }}
+        </div>
       </div>
-      <div class="mb-3">
-        {{ form.comentario.label_tag }}
-        {{ form.comentario }}
-      </div>
-      <button type="submit" class="btn btn-primary w-100">Guardar Reporte</button>
+      <button type="submit" class="btn btn-primary w-100 mt-2">Guardar Reporte</button>
     </form>
-   <a class="btn-dashboard text-center"
-      href="/conducta/dashboard/maestro/">
+    <a class="btn-dashboard text-center" href="/conducta/dashboard/maestro/">
       &larr; Regresar al Dashboard
     </a>
   </div>
-
-  <!-- JQuery y Bootstrap JS -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- JQuery, Bootstrap, Select2, SweetAlert2 -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
   <script>
-    $(function(){
-      // Autollenar grado al seleccionar estudiante
-      $('#id_alumno').on('change', function() {
-        let alumno_id = $(this).val();
-        $.get("{% url 'ajax_grado_alumno' %}", {alumno_id: alumno_id}, function(data){
-          $('#id_grado').val(data.grado);
-        });
-      });
-
-      // Cargar docentes según materia
-      $('#id_materia').on('change', function(){
-        let materia_id = $(this).val();
-        let area = "{{ area }}";
-        $.get("{% url 'ajax_docentes_por_materia' %}", {materia_id: materia_id, area: area}, function(data){
-          let $docente = $('#id_docente');
-          $docente.empty();
-          $.each(data.docentes, function(idx, item){
-            $docente.append(new Option(item[1], item[0]));
-          });
-        });
-      });
-    });
+    // Para pasar el área a JS puro
+    document.body.dataset.area = "{{ area }}";
   </script>
+  <script src="{% static 'conducta/js/informativo.js' %}"></script>
 </body>
 </html>

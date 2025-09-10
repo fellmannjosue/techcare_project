@@ -74,6 +74,30 @@ def obtener_alumnos_colegio():
         print(">>> ERROR SQL COLEGIO:", e)
     return alumnos
 
+def obtener_grado_alumno(alumno_id):
+    # Esta función busca el grado real (como en Enfermería)
+    query = """
+    SELECT TOP 1 da.Descripcion, c.CrsoNumero, c.GrupoNumero
+      FROM dbo.tblPrsDtosGen AS d
+      JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
+      JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
+      JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
+      JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID    = c.CrsoID
+      JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
+     WHERE d.PersonaID = %s
+     ORDER BY ec.FechaInicio DESC
+    """
+    try:
+        with connections['padres_sqlserver'].cursor() as cursor:
+            cursor.execute(query, [alumno_id])
+            row = cursor.fetchone()
+            if row:
+                area, crso, grupo = row
+                return f"{area} {crso}-{grupo}"
+    except Exception as e:
+        print(">>> ERROR SQL GRADO:", e)
+    return ""
+
 def obtener_materias(area):
     table = "citas_billingue_subject_bl" if area == 'bilingue' else "citas_colegio_subject_col"
     sql = f"SELECT id, nombre FROM sponsors2.{table} ORDER BY nombre"
@@ -97,29 +121,6 @@ def obtener_docentes_por_materia(area, materia_id):
     except Exception as e:
         print(">>> ERROR SQL DOCENTES:", e)
         return []
-
-def obtener_grado_alumno(alumno_id):
-    query = """
-    SELECT TOP 1 da.Descripcion, c.CrsoNumero, c.GrupoNumero
-      FROM dbo.tblPrsDtosGen AS d
-      JOIN dbo.tblPrsTipo           AS t  ON d.PersonaID = t.PersonaID
-      JOIN dbo.tblEdcArea           AS a  ON t.IngrEgrID  = a.IngrEgrID
-      JOIN dbo.tblEdcEjecCrso       AS ec ON a.AreaID     = ec.AreaID
-      JOIN dbo.tblEdcCrso           AS c  ON ec.CrsoID    = c.CrsoID
-      JOIN dbo.tblEdcDescripAreaEdc AS da ON a.DescrAreaEdcID = da.DescrAreaEdcID
-     WHERE d.PersonaID = %s
-     ORDER BY ec.FechaInicio DESC
-    """
-    try:
-        with connections['padres_sqlserver'].cursor() as cursor:
-            cursor.execute(query, [alumno_id])
-            row = cursor.fetchone()
-            if row:
-                area, crso, grupo = row
-                return f"{area} {crso}-{grupo}"
-    except Exception as e:
-        print(">>> ERROR SQL GRADO:", e)
-    return ""
 
 # ————————————————————————————————
 # DASHBOARDS
@@ -152,7 +153,7 @@ def reporte_informativo_bilingue(request):
     area = 'bilingue'
     alumnos = obtener_alumnos_bilingue()
     materias = obtener_materias(area)
-    docentes = []  # Solo se cargan con AJAX
+    docentes = []
     fecha = timezone.now().strftime("%Y-%m-%dT%H:%M")
 
     if request.method == 'POST':
@@ -163,7 +164,7 @@ def reporte_informativo_bilingue(request):
             data=request.POST
         )
         if form.is_valid():
-            # Guardar el reporte aquí si quieres
+            # Guardar el reporte aquí
             pass
     else:
         form = ReporteInformativoForm(
@@ -176,6 +177,7 @@ def reporte_informativo_bilingue(request):
         'form': form,
         'area': area,
         'students': alumnos,
+        'docentes': docentes,
     })
 
 @login_required
@@ -206,6 +208,7 @@ def reporte_informativo_colegio(request):
         'form': form,
         'area': area,
         'students': alumnos,
+        'docentes': docentes,
     })
 
 # ————————————————————————————————
@@ -233,15 +236,15 @@ def ajax_grado_alumno(request):
 
 @login_required
 def reporte_conductual_bilingue(request):
-    pass
+    return render(request, 'conducta/form_conductual.html')
 
 @login_required
 def reporte_conductual_colegio(request):
-    pass
+    return render(request, 'conducta/form_conductual.html')
 
 @login_required
 def progress_report_bilingue(request):
-    pass
+    return render(request, 'conducta/form_progress.html')
 
 @login_required
 def historial_maestro_bilingue(request):
