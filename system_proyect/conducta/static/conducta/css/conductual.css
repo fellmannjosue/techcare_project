@@ -67,3 +67,12 @@ body {
   font-size: 1rem;
   color: #222;
 }
+.select2-results__option {
+  white-space: pre-line !important; /* Aquí está la clave para los incisos largos */
+  font-size: 1rem;
+  padding: 8px 12px;
+  line-height: 1.4;
+}
+.select2-selection__rendered {
+  white-space: pre-line !important;
+}

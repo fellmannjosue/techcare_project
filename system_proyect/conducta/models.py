@@ -17,7 +17,7 @@ class IncisoConductual(models.Model):
         ('muy_grave', 'Muy Grave'),
     )
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES, verbose_name="Tipo de Inciso")
-    descripcion = models.CharField(max_length=255, verbose_name="Descripción del inciso")
+    descripcion = models.CharField(max_length=500, verbose_name="Descripción del inciso")
     activo = models.BooleanField(default=True, verbose_name="¿Activo?")
 
     def __str__(self):
