@@ -96,9 +96,11 @@ def submit_ticket(request):
                 )
                 send_email_async(subject_user, message_user, [ticket.email])
 
-                # Mensaje de éxito en el navegador
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return JsonResponse({'message': f'Ticket #{ticket.ticket_id} creado exitosamente'}, status=201)
+
                 messages.success(request, f'Ticket #{ticket.ticket_id} creado exitosamente.')
-                return JsonResponse({'message': f'Ticket #{ticket.ticket_id} creado exitosamente'}, status=201)
+                return redirect('success')
 
             else:
                 # Manejo de errores en el formulario
