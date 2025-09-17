@@ -410,15 +410,67 @@ def progress_report_bilingue(request):
     })
 
 
-#-------------- HISTORIAL DASHBOARD MAESTROS -----------------
+#-------------- HISTORIAL MAESTROS -----------------
 
 @login_required
 def historial_maestro_bilingue(request):
-    return render(request, 'conducta/historial_maestro.html')
+    usuario = request.user
+    # Puedes filtrar más si tienes campos de área en los modelos
+    reportes_informativo = ReporteInformativo.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
+    reportes_conductual = ReporteConductual.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
+    reportes_progress = ProgressReport.objects.filter(usuario=usuario).order_by('-fecha')  # Solo bilingüe tiene progress
+
+    return render(request, 'conducta/historial_maestro.html', {
+        'reportes_informativo': reportes_informativo,
+        'reportes_conductual': reportes_conductual,
+        'reportes_progress': reportes_progress,
+        'area': 'bilingue',
+    })
 
 @login_required
 def historial_maestro_colegio(request):
-    return render(request, 'conducta/historial_maestro.html')
+    usuario = request.user
+    reportes_informativo = ReporteInformativo.objects.filter(usuario=usuario, area='colegio').order_by('-fecha')
+    reportes_conductual = ReporteConductual.objects.filter(usuario=usuario, area='colegio').order_by('-fecha')
+    # No incluye progress, porque solo se usa en bilingüe
+
+    return render(request, 'conducta/historial_maestro.html', {
+        'reportes_informativo': reportes_informativo,
+        'reportes_conductual': reportes_conductual,
+        'reportes_progress': [],  # vacía si quieres usar la misma plantilla
+        'area': 'colegio',
+    })
+
+
+
+# ----------- funciones secundarias -----------
+from django.http import HttpResponse
+
+@login_required
+def editar_reporte_informativo(request, pk):
+    return HttpResponse("Editar Reporte Informativo #{}".format(pk))
+
+@login_required
+def descargar_pdf_informativo(request, pk):
+    return HttpResponse("PDF Reporte Informativo #{}".format(pk))
+
+@login_required
+def editar_reporte_conductual(request, pk):
+    return HttpResponse("Editar Reporte Conductual #{}".format(pk))
+
+@login_required
+def descargar_pdf_conductual(request, pk):
+    return HttpResponse("PDF Reporte Conductual #{}".format(pk))
+
+@login_required
+def editar_progress_report(request, pk):
+    return HttpResponse("Editar Progress Report #{}".format(pk))
+
+@login_required
+def descargar_pdf_progress(request, pk):
+    return HttpResponse("PDF Progress Report #{}".format(pk))
+
+
 
 #--------------  DASHBOARD COORDINADOR -----------------
 

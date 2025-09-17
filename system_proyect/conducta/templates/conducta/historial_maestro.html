@@ -3,25 +3,148 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Informativo – {% if area == "bilingue" %}Bilingüe{% else %}Colegio/CFP{% endif %}</title>
-    <style>
-        body { background: #f5f8fa; height: 100vh; margin: 0; }
-        .center-construccion {
-            min-height: 100vh; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
-        .mensaje { font-size: 2.1rem; color: #3761b6; font-weight: 600; margin-bottom: 22px; }
-        img { max-width: 440px; width: 98vw; }
-    </style>
+    <title>Historial de Reportes – Maestro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{% static 'conducta/css/historial.css' %}">
 </head>
 <body>
-    <div class="center-construccion">
-        <div class="mensaje">¡En construcción! 🚧</div>
-        <img src="{% static 'conducta/img/enconstruccion_4.webp' %}" alt="Página en construcción">
+    <div class="historial-container">
+        <ul class="nav nav-tabs mb-3" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-informativo" data-bs-toggle="tab" data-bs-target="#informativo" type="button" role="tab">Reporte Informativo</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-conductual" data-bs-toggle="tab" data-bs-target="#conductual" type="button" role="tab">Reporte Conductual</button>
+            </li>
+            {% if area == "bilingue" %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-progress" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">Progress Report</button>
+            </li>
+            {% endif %}
+        </ul>
+
+        <div class="tab-content" id="reportTabsContent">
+            <!-- Tab 1: Informativo -->
+            <div class="tab-pane fade show active" id="informativo" role="tabpanel">
+                <h5 class="mb-3">Historial de Reportes Informativos</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Estudiante</th>
+                                <th>Grado</th>
+                                <th>Materia</th>
+                                <th>Docente</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reportes_informativo %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.alumno_nombre }}</td>
+                                <td>{{ r.grado }}</td>
+                                <td>{{ r.materia }}</td>
+                                <td>{{ r.docente }}</td>
+                                <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'editar_reporte_informativo' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_informativo' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay reportes informativos.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Tab 2: Conductual -->
+            <div class="tab-pane fade" id="conductual" role="tabpanel">
+                <h5 class="mb-3">Historial de Reportes Conductuales</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Estudiante</th>
+                                <th>Grado</th>
+                                <th>Materia</th>
+                                <th>Docente</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reportes_conductual %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.alumno_nombre }}</td>
+                                <td>{{ r.grado }}</td>
+                                <td>{{ r.materia }}</td>
+                                <td>{{ r.docente }}</td>
+                                <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'editar_reporte_conductual' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_conductual' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay reportes conductuales.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Tab 3: Progress report (solo bilingüe) -->
+            {% if area == "bilingue" %}
+            <div class="tab-pane fade" id="progress" role="tabpanel">
+                <h5 class="mb-3">Historial de Progress Reports</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Estudiante</th>
+                                <th>Grado</th>
+                                <th>Semana Inicio</th>
+                                <th>Semana Fin</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reportes_progress %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.alumno_nombre }}</td>
+                                <td>{{ r.grado }}</td>
+                                <td>{{ r.semana_inicio }}</td>
+                                <td>{{ r.semana_fin }}</td>
+                                <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'editar_progress_report' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_progress' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay progress reports.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        <a class="btn-dashboard text-center mt-4" href="/conducta/dashboard/maestro/">
+            &larr; Regresar al Dashboard
+        </a>
     </div>
-    <a class="btn-dashboard text-center" href="/conducta/dashboard/maestro/">
-      &larr; Regresar al Dashboard
-    </a>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'conducta/js/historial.js' %}"></script>
 </body>
 </html>

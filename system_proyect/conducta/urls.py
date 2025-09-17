@@ -27,11 +27,22 @@ urlpatterns = [
     path('coordinador/reporte_general/tres_faltas/bilingue/', views.reporte_general_tres_faltas_bilingue, name='reporte_general_tres_faltas_bilingue'),
     path('coordinador/reporte_general/tres_faltas/colegio/', views.reporte_general_tres_faltas_colegio, name='reporte_general_tres_faltas_colegio'),
 
-    # AJAX (Grado automático y docentes por materia)
-    #path('ajax/grado/', views.ajax_grado_alumno, name='ajax_grado_alumno'),
-    #path('ajax/docentes/', views.ajax_docentes_por_materia, name='ajax_docentes_por_materia'),
+    # -------------------------------
+    # DETALLE, EDITAR Y PDF por tipo
+    # -------------------------------
+    # INFORMATICO
+    path('reporte-informativo/<int:pk>/editar/', views.editar_reporte_informativo, name='editar_reporte_informativo'),
+    path('reporte-informativo/<int:pk>/pdf/', views.descargar_pdf_informativo, name='descargar_pdf_informativo'),
 
-    # Detalle, editar y PDF
+    # CONDUCTUAL
+    path('reporte-conductual/<int:pk>/editar/', views.editar_reporte_conductual, name='editar_reporte_conductual'),
+    path('reporte-conductual/<int:pk>/pdf/', views.descargar_pdf_conductual, name='descargar_pdf_conductual'),
+
+    # PROGRESS REPORT (solo bilingue)
+    path('progress-report/<int:pk>/editar/', views.editar_progress_report, name='editar_progress_report'),
+    path('progress-report/<int:pk>/pdf/', views.descargar_pdf_progress, name='descargar_pdf_progress'),
+
+    # --- Opcionales o antiguos (por compatibilidad) ---
     path('detalle/<int:pk>/', views.detalle_reporte, name='detalle_reporte'),
     path('editar/<int:pk>/', views.editar_reporte, name='editar_reporte'),
     path('descargar_pdf/<int:pk>/', views.descargar_pdf_reporte, name='descargar_pdf_reporte'),
