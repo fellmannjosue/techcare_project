@@ -69,33 +69,31 @@ class ReporteConductual(models.Model):
     alumno_id = models.CharField(max_length=50, verbose_name="ID Alumno")
     alumno_nombre = models.CharField(max_length=120, verbose_name="Nombre del Alumno")
     grado = models.CharField(max_length=50, verbose_name="Grado")
-
-    # Opcional: ForeignKey a MateriaDocente según área (puedes mejorar luego)
     materia = models.CharField(max_length=100, verbose_name="Materia")
     docente = models.CharField(max_length=100, verbose_name="Docente")
-
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
 
-    leve = models.BooleanField(default=False, verbose_name="Leve")
-    inciso_leve = models.ForeignKey(
-        IncisoConductual, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='conductuales_leve',
+    # Nuevo: Incisos múltiple por severidad
+    incisos_leve = models.ManyToManyField(
+        IncisoConductual,
+        blank=True,
+        related_name='conductuales_leve',
         limit_choices_to={'tipo': 'leve', 'activo': True},
-        verbose_name="Inciso Leve"
+        verbose_name="Incisos Leve"
     )
-    grave = models.BooleanField(default=False, verbose_name="Grave")
-    inciso_grave = models.ForeignKey(
-        IncisoConductual, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='conductuales_grave',
+    incisos_grave = models.ManyToManyField(
+        IncisoConductual,
+        blank=True,
+        related_name='conductuales_grave',
         limit_choices_to={'tipo': 'grave', 'activo': True},
-        verbose_name="Inciso Grave"
+        verbose_name="Incisos Grave"
     )
-    muy_grave = models.BooleanField(default=False, verbose_name="Muy grave")
-    inciso_muy_grave = models.ForeignKey(
-        IncisoConductual, on_delete=models.SET_NULL,
-        null=True, blank=True, related_name='conductuales_muy_grave',
+    incisos_muygrave = models.ManyToManyField(
+        IncisoConductual,
+        blank=True,
+        related_name='conductuales_muygrave',
         limit_choices_to={'tipo': 'muy_grave', 'activo': True},
-        verbose_name="Inciso Muy Grave"
+        verbose_name="Incisos Muy Grave"
     )
 
     comentario = models.TextField(blank=True, null=True, verbose_name="Comentario adicional")
@@ -107,6 +105,7 @@ class ReporteConductual(models.Model):
         verbose_name = "Reporte Conductual"
         verbose_name_plural = "Reportes Conductuales"
         ordering = ['-fecha']
+
 
 # ─────────────────────────────
 # Reporte Informativo

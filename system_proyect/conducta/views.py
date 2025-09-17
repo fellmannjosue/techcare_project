@@ -201,9 +201,6 @@ def reporte_informativo_colegio(request):
         'area': area,
     })
 
-
-
-
 # ------------ REPORTE CONDUCTUAL  ------------
 
 @login_required
@@ -224,10 +221,10 @@ def reporte_conductual_bilingue(request):
         fecha_val = request.POST.get('fecha')
         comentario = request.POST.get('comentario', "")
 
-        # Checkboxes (pueden o no venir)
-        inciso_leve = request.POST.get('inciso_leve') if request.POST.get('chk_leve') else None
-        inciso_grave = request.POST.get('inciso_grave') if request.POST.get('chk_grave') else None
-        inciso_muygrave = request.POST.get('inciso_muygrave') if request.POST.get('chk_muygrave') else None
+        # Obtén las listas seleccionadas si el checkbox está activo
+        ids_leve = request.POST.getlist('inciso_leve[]') if request.POST.get('chk_leve') else []
+        ids_grave = request.POST.getlist('inciso_grave[]') if request.POST.get('chk_grave') else []
+        ids_muygrave = request.POST.getlist('inciso_muygrave[]') if request.POST.get('chk_muygrave') else []
 
         alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
         alumno_label = alumno_obj['label'] if alumno_obj else ""
@@ -238,7 +235,7 @@ def reporte_conductual_bilingue(request):
                 materia = md_obj.materia
                 docente = md_obj.docente
 
-        # Guarda el reporte (ajusta si tienes campos específicos para cada inciso)
+        # Crea el reporte sin los ManyToMany
         reporte = ReporteConductual.objects.create(
             usuario=request.user,
             area=area,
@@ -249,10 +246,15 @@ def reporte_conductual_bilingue(request):
             docente=docente,
             fecha=fecha_val,
             comentario=comentario,
-            inciso_leve_id=inciso_leve or None,
-            inciso_grave_id=inciso_grave or None,
-            inciso_muygrave_id=inciso_muygrave or None,
         )
+        # Asocia los incisos ManyToMany
+        if ids_leve:
+            reporte.incisos_leve.set(ids_leve)
+        if ids_grave:
+            reporte.incisos_grave.set(ids_grave)
+        if ids_muygrave:
+            reporte.incisos_muygrave.set(ids_muygrave)
+
         messages.success(request, "¡Reporte conductual registrado correctamente!")
         return redirect('reporte_conductual_bilingue')
 
@@ -265,7 +267,6 @@ def reporte_conductual_bilingue(request):
         'incisos_grave': incisos_grave,
         'incisos_muygrave': incisos_muygrave,
     })
-
 
 @login_required
 def reporte_conductual_colegio(request):
@@ -284,9 +285,9 @@ def reporte_conductual_colegio(request):
         fecha_val = request.POST.get('fecha')
         comentario = request.POST.get('comentario', "")
 
-        inciso_leve = request.POST.get('inciso_leve') if request.POST.get('chk_leve') else None
-        inciso_grave = request.POST.get('inciso_grave') if request.POST.get('chk_grave') else None
-        inciso_muygrave = request.POST.get('inciso_muygrave') if request.POST.get('chk_muygrave') else None
+        ids_leve = request.POST.getlist('inciso_leve[]') if request.POST.get('chk_leve') else []
+        ids_grave = request.POST.getlist('inciso_grave[]') if request.POST.get('chk_grave') else []
+        ids_muygrave = request.POST.getlist('inciso_muygrave[]') if request.POST.get('chk_muygrave') else []
 
         alumno_obj = next((a for a in students if a['id'] == alumno_id), None)
         alumno_label = alumno_obj['label'] if alumno_obj else ""
@@ -307,10 +308,14 @@ def reporte_conductual_colegio(request):
             docente=docente,
             fecha=fecha_val,
             comentario=comentario,
-            inciso_leve_id=inciso_leve or None,
-            inciso_grave_id=inciso_grave or None,
-            inciso_muygrave_id=inciso_muygrave or None,
         )
+        if ids_leve:
+            reporte.incisos_leve.set(ids_leve)
+        if ids_grave:
+            reporte.incisos_grave.set(ids_grave)
+        if ids_muygrave:
+            reporte.incisos_muygrave.set(ids_muygrave)
+
         messages.success(request, "¡Reporte conductual registrado correctamente!")
         return redirect('reporte_conductual_colegio')
 
@@ -324,11 +329,14 @@ def reporte_conductual_colegio(request):
         'incisos_muygrave': incisos_muygrave,
     })
 
-# ------------ RESTO DE VISTAS (puedes dejar igual) ------------
+
+#-------------- PROGRESS REPORT -----------------
 
 @login_required
 def progress_report_bilingue(request):
     return render(request, 'conducta/form_progress.html')
+
+# ------------ RESTO DE VISTAS (puedes dejar igual) ------------
 
 @login_required
 def historial_maestro_bilingue(request):
