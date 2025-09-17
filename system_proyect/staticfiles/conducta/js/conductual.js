@@ -6,12 +6,11 @@ $(function() {
     dropdownParent: $('.form-container')
   });
 
-  // Select2 para incisos, con formato de párrafo/saltos de línea
+  // Select2 para incisos, múltiple, con saltos de línea
   $('#inciso_leve, #inciso_grave, #inciso_muygrave').select2({
     width: '100%',
     dropdownParent: $('.form-container'),
     templateResult: function(data) {
-      // Respeta saltos de línea en las opciones
       if (!data.id) return data.text;
       return $('<span style="white-space: pre-line;">' + data.text + '</span>');
     },
@@ -21,30 +20,63 @@ $(function() {
     }
   });
 
-  // Llenar grado automáticamente
-  $('#id_alumno').on('change', function() {
-    let grado = $(this).find('option:selected').data('grado') || '';
-    $('#grado-display').val(grado);
-    $('#id_grado').val(grado);
-  });
-  let $alumno = $('#id_alumno');
-  let initialGrado = $alumno.find('option:selected').data('grado') || '';
-  $('#grado-display').val(initialGrado);
-  $('#id_grado').val(initialGrado);
+  // Inicializa selects habilitados si el checkbox ya viene marcado
+  if ($('#chk_leve').is(':checked')) {
+    $('#inciso_leve').prop('disabled', false);
+  }
+  if ($('#chk_grave').is(':checked')) {
+    $('#inciso_grave').prop('disabled', false);
+  }
+  if ($('#chk_muygrave').is(':checked')) {
+    $('#inciso_muygrave').prop('disabled', false);
+  }
 
-  // Activar/desactivar dropdown de inciso según el checkbox
+  // Lógica de activar/desactivar
   $('#chk_leve').on('change', function() {
     $('#inciso_leve').prop('disabled', !this.checked).trigger('change');
-    if (!this.checked) $('#inciso_leve').val('').trigger('change');
+    if (!this.checked) {
+      $('#inciso_leve').val('').trigger('change');
+      $('#txt_incisos_leve').val('');
+    }
   });
   $('#chk_grave').on('change', function() {
     $('#inciso_grave').prop('disabled', !this.checked).trigger('change');
-    if (!this.checked) $('#inciso_grave').val('').trigger('change');
+    if (!this.checked) {
+      $('#inciso_grave').val('').trigger('change');
+      $('#txt_incisos_grave').val('');
+    }
   });
   $('#chk_muygrave').on('change', function() {
     $('#inciso_muygrave').prop('disabled', !this.checked).trigger('change');
-    if (!this.checked) $('#inciso_muygrave').val('').trigger('change');
+    if (!this.checked) {
+      $('#inciso_muygrave').val('').trigger('change');
+      $('#txt_incisos_muygrave').val('');
+    }
   });
+
+  // Mostrar los seleccionados en textarea
+  function actualizarTextareaIncisos(selectorSelect, selectorTextarea) {
+    var incisos = [];
+    $(selectorSelect + ' option:selected').each(function() {
+      incisos.push($(this).text());
+    });
+    $(selectorTextarea).val(incisos.length > 0 ? incisos.join('\n\n') : '');
+  }
+
+  $('#inciso_leve').on('change', function() {
+    actualizarTextareaIncisos('#inciso_leve', '#txt_incisos_leve');
+  });
+  $('#inciso_grave').on('change', function() {
+    actualizarTextareaIncisos('#inciso_grave', '#txt_incisos_grave');
+  });
+  $('#inciso_muygrave').on('change', function() {
+    actualizarTextareaIncisos('#inciso_muygrave', '#txt_incisos_muygrave');
+  });
+
+  // Inicializar los textareas al cargar
+  actualizarTextareaIncisos('#inciso_leve', '#txt_incisos_leve');
+  actualizarTextareaIncisos('#inciso_grave', '#txt_incisos_grave');
+  actualizarTextareaIncisos('#inciso_muygrave', '#txt_incisos_muygrave');
 
   // Limitar scroll select2
   $(document).on('select2:open', function() {

@@ -59,48 +59,48 @@
                 </div>
             </div>
 
-            <!-- Severidad e Incisos -->
-            <div class="row mb-3 severidad-row">
-                <!-- Leve -->
-                <div class="col-md-4">
-                    <div class="form-check mb-1">
-                        <input class="form-check-input" type="checkbox" id="chk_leve" name="chk_leve">
-                        <label class="form-check-label" for="chk_leve">Leve</label>
-                    </div>
-                    <select id="inciso_leve" name="inciso_leve" class="form-select" disabled>
-                        <option value="">-------</option>
-                        {% for inciso in incisos_leve %}
-                        <option value="{{ inciso.id }}">{{ inciso.descripcion }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Grave -->
-                <div class="col-md-4">
-                    <div class="form-check mb-1">
-                        <input class="form-check-input" type="checkbox" id="chk_grave" name="chk_grave">
-                        <label class="form-check-label" for="chk_grave">Grave</label>
-                    </div>
-                    <select id="inciso_grave" name="inciso_grave" class="form-select" disabled>
-                        <option value="">-------</option>
-                        {% for inciso in incisos_grave %}
-                        <option value="{{ inciso.id }}">{{ inciso.descripcion }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Muy grave -->
-                <div class="col-md-4">
-                    <div class="form-check mb-1">
-                        <input class="form-check-input" type="checkbox" id="chk_muygrave" name="chk_muygrave">
-                        <label class="form-check-label" for="chk_muygrave">Muy grave</label>
-                    </div>
-                    <select id="inciso_muygrave" name="inciso_muygrave" class="form-select" disabled>
-                        <option value="">-------</option>
-                        {% for inciso in incisos_muygrave %}
-                        <option value="{{ inciso.id }}">{{ inciso.descripcion }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
+<!-- Severidad e Incisos -->
+<div class="row mb-3 severidad-row">
+    <!-- Leve -->
+    <div class="col-md-4">
+        <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="chk_leve" name="chk_leve">
+            <label class="form-check-label" for="chk_leve">Leve</label>
+        </div>
+        <select id="inciso_leve" name="inciso_leve[]" class="form-select" multiple disabled>
+            {% for inciso in incisos_leve %}
+            <option value="{{ inciso.id }}">{{ inciso.descripcion }}</option>
+            {% endfor %}
+        </select>
+        
+    </div>
+    <!-- Grave -->
+    <div class="col-md-4">
+        <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="chk_grave" name="chk_grave">
+            <label class="form-check-label" for="chk_grave">Grave</label>
+        </div>
+        <select id="inciso_grave" name="inciso_grave[]" class="form-select" multiple disabled>
+            {% for inciso in incisos_grave %}
+            <option value="{{ inciso.id }}">{{ inciso.descripcion }}</option>
+            {% endfor %}
+        </select>
+        
+    </div>
+    <!-- Muy grave -->
+    <div class="col-md-4">
+        <div class="form-check mb-1">
+            <input class="form-check-input" type="checkbox" id="chk_muygrave" name="chk_muygrave">
+            <label class="form-check-label" for="chk_muygrave">Muy grave</label>
+        </div>
+        <select id="inciso_muygrave" name="inciso_muygrave[]" class="form-select" multiple disabled>
+            {% for inciso in incisos_muygrave %}
+            <option value="{{ inciso.id }}">{{ inciso.descripcion }}</option>
+            {% endfor %}
+        </select>
+        
+    </div>
+</div>
 
 
             <!-- Comentario -->
