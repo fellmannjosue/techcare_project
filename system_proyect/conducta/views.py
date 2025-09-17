@@ -17,6 +17,8 @@ from .models import (
     MateriaDocenteBilingue,
     MateriaDocenteColegio
 )
+from tickets.models import Ticket
+
 
 # ---------------------------
 # FUNCIONES AUXILIARES
@@ -415,29 +417,35 @@ def progress_report_bilingue(request):
 @login_required
 def historial_maestro_bilingue(request):
     usuario = request.user
-    # Puedes filtrar más si tienes campos de área en los modelos
     reportes_informativo = ReporteInformativo.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
     reportes_conductual = ReporteConductual.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
-    reportes_progress = ProgressReport.objects.filter(usuario=usuario).order_by('-fecha')  # Solo bilingüe tiene progress
+    reportes_progress = ProgressReport.objects.filter(usuario=usuario).order_by('-fecha')
+
+    # AGREGA ESTA LÍNEA (ajusta el filtro si tienes FK usuario)
+    tickets_usuario = Ticket.objects.filter(email=usuario.email).order_by('-created_at')
 
     return render(request, 'conducta/historial_maestro.html', {
         'reportes_informativo': reportes_informativo,
         'reportes_conductual': reportes_conductual,
         'reportes_progress': reportes_progress,
+        'tickets_usuario': tickets_usuario,      # <- AGREGA AQUÍ
         'area': 'bilingue',
     })
+
 
 @login_required
 def historial_maestro_colegio(request):
     usuario = request.user
     reportes_informativo = ReporteInformativo.objects.filter(usuario=usuario, area='colegio').order_by('-fecha')
     reportes_conductual = ReporteConductual.objects.filter(usuario=usuario, area='colegio').order_by('-fecha')
-    # No incluye progress, porque solo se usa en bilingüe
+
+    tickets_usuario = Ticket.objects.filter(email=usuario.email).order_by('-created_at')
 
     return render(request, 'conducta/historial_maestro.html', {
         'reportes_informativo': reportes_informativo,
         'reportes_conductual': reportes_conductual,
-        'reportes_progress': [],  # vacía si quieres usar la misma plantilla
+        'reportes_progress': [],   # vacía para mantener compatibilidad
+        'tickets_usuario': tickets_usuario,      # <- AGREGA AQUÍ
         'area': 'colegio',
     })
 

@@ -186,6 +186,17 @@ STATICFILES_DIRS = [
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
+
+# ─────────────────────────────────────────────────────────────
+# 12. ARCHIVOS DE USUARIO (MEDIA)
+# ─────────────────────────────────────────────────────────────
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+
+
+
+
 # ──────────────────────────────
 # SESIONES Y LOGIN (1 HORA)
 # ──────────────────────────────

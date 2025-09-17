@@ -46,7 +46,7 @@
                 <img src="{% static 'tickets/img/ana-transformed.png' %}" alt="Logo">
                 <h2 class="text-center">Enviar un Nuevo Ticket</h2>
             </div>
-            <form id="ticketForm" enctype="multipart/form-data">
+            <form id="ticketForm" enctype="multipart/form-data" autocomplete="off">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="name" class="form-label">Nombre:</label>
@@ -58,8 +58,10 @@
                 </div>
                 <div class="mb-3">
                     <label for="email" class="form-label">Correo Electrónico:</label>
-                    <input type="email" class="form-control" id="email" name="email" required>
+                    <input type="email" class="form-control" id="email" name="email" required value="{{ user_email }}"
+                        readonly>
                 </div>
+
                 <div class="mb-3">
                     <label for="description" class="form-label">Descripción del Problema:</label>
                     <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
@@ -78,13 +80,11 @@
                 <a href="{% url 'dashboard_maestro' %}" class="btn btn-outline-secondary mb-4">
                     ← Regresar al Dashboard
                 </a>
-
             </form>
         </div>
         <div class="footer">
             <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
         </div>
-
     </div>
 
     <script>
@@ -112,7 +112,9 @@
                             icon: 'success',
                             confirmButtonText: 'Aceptar'
                         }).then(() => {
-                            window.location.href = "{% url 'success' %}";
+                            // Limpiar el formulario y volver el focus al primer campo
+                            document.getElementById('ticketForm').reset();
+                            document.getElementById('name').focus();
                         });
                     } else if (data.error) {
                         Swal.fire({

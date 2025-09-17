@@ -36,8 +36,10 @@ def submit_ticket(request):
                 data = json.loads(request.body)
                 name = data.get('name')
                 grade = data.get('grade')
-                email = data.get('email')
                 description = data.get('description')
+
+                # Obtén SIEMPRE el email del usuario autenticado
+                email = request.user.email if request.user.is_authenticated else data.get('email')
 
                 # Validar que todos los campos estén completos
                 if not all([name, grade, email, description]):
@@ -47,11 +49,11 @@ def submit_ticket(request):
                 ticket = Ticket.objects.create(
                     name=name,
                     grade=grade,
-                    email=email,
+                    email=email,  # Siempre el del usuario autenticado (si está logueado)
                     description=description
                 )
 
-                # Enviar correo al técnico
+                # Enviar correos
                 subject_technician = f'Nuevo Ticket #{ticket.ticket_id} - {ticket.name}'
                 message_technician = render_to_string(
                     'tickets/email/email_notification.html',
@@ -59,7 +61,6 @@ def submit_ticket(request):
                 )
                 send_email_async(subject_technician, message_technician, ['techcare.app2024@gmail.com'])
 
-                # Enviar correo al usuario
                 subject_user = f'Ticket #{ticket.ticket_id} - Confirmación de Recepción'
                 message_user = render_to_string(
                     'tickets/email/email_notification.html',
@@ -67,7 +68,6 @@ def submit_ticket(request):
                 )
                 send_email_async(subject_user, message_user, [ticket.email])
 
-                # Respuesta JSON de éxito
                 return JsonResponse({'message': f'Ticket #{ticket.ticket_id} creado exitosamente'}, status=201)
 
             except json.JSONDecodeError:
@@ -75,12 +75,13 @@ def submit_ticket(request):
 
         # Manejar solicitudes estándar desde formularios web
         else:
-            form = TicketForm(request.POST, request.FILES)  # Maneja archivos adjuntos con request.FILES
+            form = TicketForm(request.POST, request.FILES)
             if form.is_valid():
-                # Guardar el ticket en la base de datos
-                ticket = form.save()
+                ticket = form.save(commit=False)
+                ticket.email = request.user.email   # ← SIEMPRE el email del usuario autenticado
+                ticket.save()
 
-                # Enviar correo al técnico
+                # Enviar correos
                 subject_technician = f'Nuevo Ticket #{ticket.ticket_id} - {ticket.name}'
                 message_technician = render_to_string(
                     'tickets/email/email_notification.html',
@@ -88,7 +89,6 @@ def submit_ticket(request):
                 )
                 send_email_async(subject_technician, message_technician, ['techcare.app2024@gmail.com'])
 
-                # Enviar correo al usuario
                 subject_user = f'Ticket #{ticket.ticket_id} - Confirmación de Recepción'
                 message_user = render_to_string(
                     'tickets/email/email_notification.html',
@@ -96,27 +96,18 @@ def submit_ticket(request):
                 )
                 send_email_async(subject_user, message_user, [ticket.email])
 
-                # Mensaje de éxito en el navegador
                 messages.success(request, f'Ticket #{ticket.ticket_id} creado exitosamente.')
                 return JsonResponse({'message': f'Ticket #{ticket.ticket_id} creado exitosamente'}, status=201)
 
             else:
-                # Manejo de errores en el formulario
                 errors = form.errors.as_json()
                 return JsonResponse({'error': 'Error en el formulario', 'details': errors}, status=400)
 
     else:
-        # Renderizar el formulario de creación de tickets en la interfaz web
         form = TicketForm()
-
-    return render(request, 'tickets/submit_ticket.html', {'form': form})
-
-
-
-def success(request):
-    return render(request, 'tickets/success.html')
-
-
+        # Pasa el email del usuario logueado al formulario para autollenar (opcional)
+        user_email = request.user.email if request.user.is_authenticated else ""
+        return render(request, 'tickets/submit_ticket.html', {'form': form, 'user_email': user_email})
 @login_required
 def technician_dashboard(request):
     tickets = Ticket.objects.all()

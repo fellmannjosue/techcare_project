@@ -12,12 +12,19 @@
 <body>
     <div class="historial-container">
         <ul class="nav nav-tabs mb-3" id="reportTabs" role="tablist">
+            <!-- TAB 1: TICKETS -->
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-informativo" data-bs-toggle="tab" data-bs-target="#informativo" type="button" role="tab">Reporte Informativo</button>
+                <button class="nav-link active" id="tab-tickets" data-bs-toggle="tab" data-bs-target="#tickets" type="button" role="tab">Tickets</button>
             </li>
+            <!-- TAB 2: INFORMATIVO -->
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-informativo" data-bs-toggle="tab" data-bs-target="#informativo" type="button" role="tab">Reporte Informativo</button>
+            </li>
+            <!-- TAB 3: CONDUCTUAL -->
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-conductual" data-bs-toggle="tab" data-bs-target="#conductual" type="button" role="tab">Reporte Conductual</button>
             </li>
+            <!-- TAB 4: PROGRESS (solo BL) -->
             {% if area == "bilingue" %}
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="tab-progress" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">Progress Report</button>
@@ -26,8 +33,63 @@
         </ul>
 
         <div class="tab-content" id="reportTabsContent">
-            <!-- Tab 1: Informativo -->
-            <div class="tab-pane fade show active" id="informativo" role="tabpanel">
+            <!-- TAB 1: TICKETS -->
+            <div class="tab-pane fade show active" id="tickets" role="tabpanel">
+                <h5 class="mb-3">Historial de Tickets</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered" id="tabla-tickets">
+                        <thead>
+                            <tr class="table-secondary">
+                                <th>TICKET ID</th>
+                                <th>NAME</th>
+                                <th>EMAIL</th>
+                                <th>DESCRIPTION</th>
+                                <th>ADJUNTO</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for t in tickets_usuario %}
+                            <tr>
+                                <td>
+                                    <a href="#" class="link-ticket"
+                                        data-ticket-id="{{ t.ticket_id }}"
+                                        data-name="{{ t.name }}"
+                                        data-email="{{ t.email }}"
+                                        data-description="{{ t.description|escapejs }}"
+                                        data-status="{{ t.status }}"
+                                        data-fecha="{{ t.created_at|date:"Y-m-d H:i" }}"
+                                        data-adjunto="{% if t.attachment %}{{ t.attachment.url }}{% else %}{% endif %}">
+                                        {{ t.ticket_id }}
+                                    </a>
+                                </td>
+                                <td>{{ t.name }}</td>
+                                <td>{{ t.email }}</td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width:150px;">
+                                        {{ t.description|truncatechars:30 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if t.attachment %}
+                                        <a href="{{ t.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                    {% else %}
+                                        <span class="text-muted">No</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark">{{ t.status }}</span>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="6" class="text-center">No hay tickets registrados.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- TAB 2: INFORMATIVO -->
+            <div class="tab-pane fade" id="informativo" role="tabpanel">
                 <h5 class="mb-3">Historial de Reportes Informativos</h5>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle table-bordered">
@@ -63,7 +125,7 @@
                     </table>
                 </div>
             </div>
-            <!-- Tab 2: Conductual -->
+            <!-- TAB 3: CONDUCTUAL -->
             <div class="tab-pane fade" id="conductual" role="tabpanel">
                 <h5 class="mb-3">Historial de Reportes Conductuales</h5>
                 <div class="table-responsive">
@@ -100,7 +162,7 @@
                     </table>
                 </div>
             </div>
-            <!-- Tab 3: Progress report (solo bilingüe) -->
+            <!-- TAB 4: PROGRESS REPORT (SOLO BL) -->
             {% if area == "bilingue" %}
             <div class="tab-pane fade" id="progress" role="tabpanel">
                 <h5 class="mb-3">Historial de Progress Reports</h5>
@@ -145,6 +207,7 @@
         </a>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static 'conducta/js/historial.js' %}"></script>
 </body>
 </html>
