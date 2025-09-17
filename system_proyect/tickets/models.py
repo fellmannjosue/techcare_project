@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import datetime
+from django.contrib.auth.models import User
 
 class Ticket(models.Model):
     ticket_id = models.CharField(max_length=20, unique=True, editable=False, null=True, blank=True)
@@ -32,3 +33,16 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.ticket_id} - {self.name}"
+class TicketComment(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='comentarios')
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    mensaje = models.TextField("Comentario")
+    fecha = models.DateTimeField("Fecha", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Comentario de Ticket"
+        verbose_name_plural = "Comentarios de Tickets"
+        ordering = ['fecha']
+
+    def __str__(self):
+        return f"{self.usuario.username} – {self.fecha.strftime('%d/%m/%Y %H:%M')}: {self.mensaje[:40]}"

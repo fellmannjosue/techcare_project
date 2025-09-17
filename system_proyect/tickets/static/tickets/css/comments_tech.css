@@ -1,0 +1,49 @@
+body { background: #eef4fa; }
+.chat-container {
+    max-width: 650px;
+    margin: 35px auto;
+    background: #fff;
+    border-radius: 13px;
+    box-shadow: 0 2px 18px rgba(0,0,0,0.13);
+    padding: 30px 32px 18px 32px;
+}
+.ticket-info {
+    background: #263238;
+    color: #fff;
+    border-radius: 7px 7px 0 0;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    font-size: 15px;
+}
+.chat-bubble {
+    background: #eceff1;
+    border-radius: 16px 16px 16px 6px;
+    padding: 12px 18px;
+    margin-bottom: 7px;
+    max-width: 80%;
+    word-break: break-word;
+    font-size: 15px;
+}
+.chat-bubble.mine {
+    background: #bbdefb;
+    border-radius: 16px 16px 6px 16px;
+    margin-left: auto;
+    color: #0d223b;
+    font-weight: 500;
+}
+.chat-meta {
+    font-size: 13px;
+    color: #888;
+    margin-top: 1px;
+    margin-bottom: 7px;
+}
+.chat-footer {
+    margin-top: 13px;
+    padding-top: 12px;
+    border-top: 1px solid #e0e0e0;
+}
+.swal2-popup { border-radius: 18px !important; }
+@media (max-width: 700px) {
+    .chat-container { padding: 7px; }
+}
+input, textarea, button, select { font-size: 15px !important; }

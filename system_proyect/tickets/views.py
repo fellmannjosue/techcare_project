@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from .models import Ticket
-from .forms import TicketForm
+from .models import Ticket,TicketComment
+from .forms import TicketForm, TicketCommentForm
 import os
 import json
 from threading import Thread
@@ -108,13 +108,12 @@ def submit_ticket(request):
         # Pasa el email del usuario logueado al formulario para autollenar (opcional)
         user_email = request.user.email if request.user.is_authenticated else ""
         return render(request, 'tickets/submit_ticket.html', {'form': form, 'user_email': user_email})
+
 @login_required
 def technician_dashboard(request):
     tickets = Ticket.objects.all()
     messages.info(request, 'Bienvenido al Dashboard de Técnico.')
     return render(request, 'tickets/technician_dashboard.html', {'tickets': tickets})
-
-
 
 @login_required
 def update_ticket(request, ticket_id):
@@ -153,3 +152,52 @@ def update_ticket(request, ticket_id):
         return redirect('technician_dashboard')
 
     return render(request, 'tickets/update_ticket.html', {'ticket': ticket})
+
+@login_required
+def ticket_comments(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
+
+    if request.method == 'POST':
+        form = TicketCommentForm(request.POST)
+        if form.is_valid():
+            comentario = form.save(commit=False)
+            comentario.ticket = ticket
+            comentario.usuario = request.user
+            comentario.save()
+
+            # Enviar notificación por correo (a ambos: dueño y técnicos si deseas)
+            subject = f"Nuevo comentario en Ticket #{ticket.ticket_id}"
+            html_message = render_to_string(
+                'tickets/email/nuevo_comentario.html',
+                {'ticket': ticket, 'comentario': comentario, 'autor': request.user}
+            )
+            send_email_async(subject, html_message, [ticket.email])
+            # También puedes agregar el correo de soporte si quieres que técnico reciba copia
+
+            # RESPUESTA AJAX
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'ok': True, 'mensaje': 'Comentario agregado correctamente'})
+            # RESPUESTA POST NORMAL
+            else:
+                messages.success(request, "Comentario agregado y notificado por correo.")
+                return redirect('ticket_comments', ticket_id=ticket.id)
+        else:
+            # Error en el formulario
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'ok': False, 'error': 'Error en el formulario'}, status=400)
+
+    else:
+        form = TicketCommentForm()
+
+    # ———— ELEGIR TEMPLATE SEGÚN USUARIO ————
+    if request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists():
+        template = 'tickets/ticket_comments_tech.html'
+    else:
+        template = 'tickets/ticket_comments_user.html'
+
+    return render(request, template, {
+        'ticket': ticket,
+        'comentarios': comentarios,
+        'form': form,
+    })

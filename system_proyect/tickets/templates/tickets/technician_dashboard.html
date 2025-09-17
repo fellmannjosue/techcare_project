@@ -8,25 +8,22 @@
   <link rel="icon"
         href="{% static 'accounts/img/nuevo.ico' %}"
         type="image/x-icon" />
-  <title>Panel Tecnico del sistema de tickets</title>
+  <title>Panel Técnico del sistema de tickets</title>
 
-  <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet">
+  <!-- Bootstrap CSS & Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
   <!-- DataTables CSS -->
-  <link
-    href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css"
-    rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
 
   <style>
     .dashboard-container {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 40px auto;
       padding: 20px;
       background: #f8f9fa;
       border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.08);
     }
     .logo-title {
       display: flex;
@@ -36,7 +33,7 @@
       margin-bottom: 20px;
     }
     .logo-title img {
-      width: 100px;
+      width: 85px;
       height: auto;
     }
     .table-container {
@@ -48,6 +45,9 @@
       color: #666;
       font-size: 14px;
     }
+    .btn-chat {
+      min-width: 80px;
+    }
   </style>
 </head>
 <body>
@@ -55,13 +55,13 @@
     <div class="dashboard-container">
       <div class="logo-title">
         <img src="{% static 'tickets/img/ana-transformed.png' %}" alt="Logo">
-        <h2>Panel Tecnico del sistema de tickets</h2>
+        <h2 class="fw-bold">Panel Técnico del sistema de tickets</h2>
       </div>
 
       <div class="table-container">
         <h4 class="mb-3">Lista de Tickets</h4>
         <div class="table-responsive">
-          <table id="tickets-table" class="table table-striped table-bordered">
+          <table id="tickets-table" class="table table-striped table-bordered align-middle">
             <thead class="table-dark">
               <tr>
                 <th>ID</th>
@@ -70,6 +70,7 @@
                 <th>Descripción</th>
                 <th>Estado</th>
                 <th>Adjunto</th>
+                <th>Chat</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -79,8 +80,12 @@
                 <td>{{ ticket.ticket_id }}</td>
                 <td>{{ ticket.name }}</td>
                 <td>{{ ticket.email }}</td>
-                <td>{{ ticket.description }}</td>
-                <td>{{ ticket.status }}</td>
+                <td style="max-width:220px;white-space:pre-line;">
+                  {{ ticket.description|truncatechars:70 }}
+                </td>
+                <td>
+                  <span class="badge bg-info text-dark">{{ ticket.status }}</span>
+                </td>
                 <td>
                   {% if ticket.attachment %}
                   <a href="{{ ticket.attachment.url }}"
@@ -88,23 +93,30 @@
                      class="btn btn-secondary btn-sm d-flex align-items-center">
                     <img src="{% static 'tickets/img/adjunto.png' %}"
                          alt="Adjunto"
-                         style="width:32px; height:32px; margin-right:5px;">
-                    Ver Adjunto
+                         style="width:20px; height:20px; margin-right:5px;">
+                    Ver
                   </a>
                   {% else %}
-                  No disponible
+                  <span class="text-muted">No disponible</span>
                   {% endif %}
                 </td>
                 <td>
-                  <a href="{% url 'update_ticket' ticket.id %}"
-                     class="btn btn-primary btn-sm">
+                  <a href="{% url 'ticket_comments' ticket.id %}"
+                     class="btn btn-outline-primary btn-sm btn-chat"
+                     target="_blank"
+                     title="Ver y responder chat del ticket">
+                    <i class="bi bi-chat-dots"></i> Chat
+                  </a>
+                </td>
+                <td>
+                  <a href="{% url 'update_ticket' ticket.id %}" class="btn btn-primary btn-sm">
                     Actualizar
                   </a>
                 </td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="7" class="text-center">No hay tickets disponibles.</td>
+                <td colspan="8" class="text-center">No hay tickets disponibles.</td>
               </tr>
               {% endfor %}
             </tbody>
