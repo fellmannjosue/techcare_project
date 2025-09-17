@@ -326,7 +326,6 @@ def reporte_conductual_colegio(request):
 
 @login_required
 def progress_report_bilingue(request):
-    # Materias por grado (puedes ajustar los textos si cambia el nombre en BD)
     MATERIAS_PRIMARIA = [
         "Math", "Phonics", "Spelling", "Reading", "Language",
         "Science", "Español", "CCSS", "Asociadas"
@@ -339,11 +338,9 @@ def progress_report_bilingue(request):
     students = obtener_alumnos_bilingue()
     alumnos_choices = [(s['id'], s['label']) for s in students]
 
-    # Detectar grado y decidir las materias a mostrar (default: primaria)
     materias = MATERIAS_PRIMARIA
     grado = ""
     alumno_id = ""
-    initial = {}
     if request.method == 'POST':
         form = ProgressReportForm(alumnos_choices=alumnos_choices, data=request.POST)
         alumno_id = request.POST.get('alumno')
@@ -352,20 +349,35 @@ def progress_report_bilingue(request):
             alumno_obj = next((s for s in students if s['id'] == alumno_id), None)
             if alumno_obj:
                 grado = alumno_obj['grado']
-        # Lógica: si "Primaria" está en el grado → usa MATERIAS_PRIMARIA, si no, usa MATERIAS_COLEGIO
         if grado and ("Primaria" in grado or "Preescolar" in grado):
             materias = MATERIAS_PRIMARIA
         else:
             materias = MATERIAS_COLEGIO
 
         if form.is_valid():
-            # Recoge los datos de la tabla dinámica
-            asignaciones = []
+            # Procesar materias
+            materias_list = []
             for materia in materias:
-                asig = request.POST.get(f"asignacion_{materia}", "")
-                obs = request.POST.get(f"comentario_{materia}", "")
-                asignaciones.append((materia, asig, obs))
-            # Recoge lo demás del form
+                if materia == "Asociadas":
+                    # Inputs dinámicos: asociadas[], asociadas_comentario[]
+                    asociadas = request.POST.getlist('asociadas[]')
+                    asociadas_comentario = request.POST.getlist('asociadas_comentario[]')
+                    for idx in range(len(asociadas)):
+                        nombre = asociadas[idx]
+                        comentario = asociadas_comentario[idx] if idx < len(asociadas_comentario) else ""
+                        materias_list.append({
+                            'materia': 'Asociadas',
+                            'asignacion': nombre,
+                            'comentario': comentario,
+                        })
+                else:
+                    asignacion = request.POST.get(f"asignacion_{materia}", "")
+                    comentario = request.POST.get(f"comentario_{materia}", "")
+                    materias_list.append({
+                        'materia': materia,
+                        'asignacion': asignacion,
+                        'comentario': comentario,
+                    })
             semana_inicio = form.cleaned_data.get('semana_inicio')
             semana_fin = form.cleaned_data.get('semana_fin')
             comentario_general = form.cleaned_data.get('comentario_general', "")
@@ -373,27 +385,20 @@ def progress_report_bilingue(request):
             alumno_obj = next((s for s in students if s['id'] == alumno_id), None)
             alumno_label = alumno_obj['label'] if alumno_obj else ""
             grado = form.cleaned_data.get('grado')
-            # Guarda el objeto principal
-            progress = ProgressReport.objects.create(
+            # Guarda el ProgressReport con JSON
+            ProgressReport.objects.create(
                 usuario=request.user,
                 alumno_id=alumno_id,
                 alumno_nombre=alumno_label,
                 grado=grado,
                 semana_inicio=semana_inicio,
                 semana_fin=semana_fin,
-                comentario_general=comentario_general
+                comentario_general=comentario_general,
+                materias_json=materias_list
             )
-            # Guarda los detalles de cada materia (ajusta esto según tu modelo, o usa un modelo relacionado)
-            for materia, asig, obs in asignaciones:
-                progress.detalles.create(
-                    materia=materia,
-                    asignacion=asig,
-                    comentario=obs
-                )
             messages.success(request, "¡Progress report registrado correctamente!")
             return redirect('progress_report_bilingue')
     else:
-        # GET: Form vacío, por default materias primaria
         form = ProgressReportForm(alumnos_choices=alumnos_choices)
         materias = MATERIAS_PRIMARIA
 
