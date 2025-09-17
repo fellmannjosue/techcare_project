@@ -2,26 +2,75 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Informativo – {% if area == "bilingue" %}Bilingüe{% else %}Colegio/CFP{% endif %}</title>
-    <style>
-        body { background: #f5f8fa; height: 100vh; margin: 0; }
-        .center-construccion {
-            min-height: 100vh; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
-        .mensaje { font-size: 2.1rem; color: #3761b6; font-weight: 600; margin-bottom: 22px; }
-        img { max-width: 440px; width: 98vw; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Progress Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'conducta/css/progress.css' %}">
 </head>
 <body>
-    <div class="center-construccion">
-        <div class="mensaje">¡En construcción! 🚧</div>
-        <img src="{% static 'conducta/img/enconstruccion_4.webp' %}" alt="Página en construcción">
-    </div>
-    <a class="btn-dashboard text-center" href="/conducta/dashboard/maestro/">
-      &larr; Regresar al Dashboard
-    </a>
+  <div class="container my-4">
+    <h2 class="mb-4">Progress Report</h2>
+    <form id="progressForm" method="post" autocomplete="off">
+      {% csrf_token %}
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Estudiante:</label>
+          <select id="id_alumno" name="alumno" class="form-select" required>
+            <option value="">-- Selecciona un estudiante --</option>
+            {% for s in students %}
+            <option value="{{ s.id }}" data-grado="{{ s.grado }}">{{ s.label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Grado:</label>
+          <input type="text" id="grado-display" class="form-control" readonly>
+          <input type="hidden" name="grado" id="id_grado">
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Semana inicio:</label>
+          <input type="date" id="id_semana_inicio" name="semana_inicio" class="form-control" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Semana fin:</label>
+          <input type="date" id="id_semana_fin" name="semana_fin" class="form-control" required>
+        </div>
+      </div>
+
+      <!-- Tabla de materias -->
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle" id="tabla-materias">
+          <thead class="table-light">
+            <tr>
+              <th style="width:180px;">Materia</th>
+              <th style="width:230px;">Asignación</th>
+              <th>Comentario/Observación</th>
+            </tr>
+          </thead>
+          <tbody id="tabla-materias-body">
+            <!-- Las filas se generan dinámicamente desde JS según grado -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Comentario General:</label>
+        <textarea name="comentario_general" id="id_comentario_general" rows="3" class="form-control"></textarea>
+      </div>
+
+      <button class="btn btn-primary w-100">Guardar Progress Report</button>
+    </form>
+    <a href="/conducta/dashboard/maestro/" class="btn btn-link mt-3">&larr; Regresar al Dashboard</a>
+  </div>
+
+  <!-- JS -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="{% static 'conducta/js/progress.js' %}"></script>
 </body>
 </html>
