@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // MODAL DE DETALLE DE TICKET AL CLIC EN ID
+    // MODAL DE DETALLE DE TICKET AL CLIC EN ID (NO CAMBIA NADA)
     document.querySelectorAll('.link-ticket').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // MODAL DE BIENVENIDA/CONFIRMACIÓN AL CLIC EN "CHAT"
+    // MODAL DE CONFIRMACIÓN AL CLIC EN "CHAT"
     document.querySelectorAll('.btn-chat').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
@@ -54,7 +54,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = `/ticket/${ticketId}/comentarios/`;
+                    // RUTA CORRECTA Y ABSOLUTA
+                    // Soporta si el sistema está en /tickets/ o raíz
+                    let base = window.location.origin;
+                    // Si tu historial de tickets está en /conducta/historial_maestro/
+                    // Esto va a /tickets/ticket/xx/comentarios/
+                   window.location.href = `/tickets/ticket/${ticketId}/comentarios/`;
                 } else {
                     Swal.fire({
                         title: 'Chat no iniciado',

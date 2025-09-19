@@ -74,11 +74,14 @@
                                     <span class="badge bg-info text-dark">{{ t.status }}</span>
                                 </td>
                                 <td>
-                                    <a href="{% url 'ticket_comments' t.id %}"
-                                       class="btn btn-sm btn-outline-primary"
-                                       title="Ver conversación del ticket">
-                                       <i class="bi bi-chat-dots"></i> Chat
-                                    </a>
+                                   <a href="{% url 'ticket_comments' t.id %}"
+   class="btn btn-sm btn-outline-primary btn-chat"
+   data-ticket-id="{{ t.id }}"
+   data-nombre="{{ t.name }}"
+   title="Ver conversación del ticket">
+   <i class="bi bi-chat-dots"></i> Chat
+</a>
+
                                 </td>
                             </tr>
                         {% empty %}
