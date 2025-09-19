@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // MODAL DE DETALLE DE TICKET AL CLIC EN ID (NO CAMBIA NADA)
+    // MODAL DE DETALLE DE TICKET AL CLIC EN ID
     document.querySelectorAll('.link-ticket').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -38,11 +38,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // MODAL DE CONFIRMACIÓN AL CLIC EN "CHAT"
+    // MODAL DE BIENVENIDA/CONFIRMACIÓN AL CLIC EN "CHAT"
     document.querySelectorAll('.btn-chat').forEach(function(btn) {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             let ticketId = btn.dataset.ticketId;
+            let area = btn.dataset.area; // <-- IMPORTANTE: usa data-area
             let nombre = btn.dataset.nombre || 'Usuario';
 
             Swal.fire({
@@ -54,12 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // RUTA CORRECTA Y ABSOLUTA
-                    // Soporta si el sistema está en /tickets/ o raíz
-                    let base = window.location.origin;
-                    // Si tu historial de tickets está en /conducta/historial_maestro/
-                    // Esto va a /tickets/ticket/xx/comentarios/
-                   window.location.href = `/tickets/ticket/${ticketId}/comentarios/`;
+                    // Redirige con el área correspondiente
+                    window.location.href = `/tickets/ticket/${ticketId}/comentarios/?area=${area}`;
                 } else {
                     Swal.fire({
                         title: 'Chat no iniciado',

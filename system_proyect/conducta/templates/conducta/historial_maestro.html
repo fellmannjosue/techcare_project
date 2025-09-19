@@ -1,6 +1,7 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <title>Historial de Reportes – Maestro</title>
@@ -10,25 +11,30 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'conducta/css/historial.css' %}">
 </head>
+
 <body>
     <div class="historial-container">
         <ul class="nav nav-tabs mb-3" id="reportTabs" role="tablist">
             <!-- TAB 1: TICKETS -->
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-tickets" data-bs-toggle="tab" data-bs-target="#tickets" type="button" role="tab">Tickets</button>
+                <button class="nav-link active" id="tab-tickets" data-bs-toggle="tab" data-bs-target="#tickets"
+                    type="button" role="tab">Tickets</button>
             </li>
             <!-- TAB 2: INFORMATIVO -->
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-informativo" data-bs-toggle="tab" data-bs-target="#informativo" type="button" role="tab">Reporte Informativo</button>
+                <button class="nav-link" id="tab-informativo" data-bs-toggle="tab" data-bs-target="#informativo"
+                    type="button" role="tab">Reporte Informativo</button>
             </li>
             <!-- TAB 3: CONDUCTUAL -->
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-conductual" data-bs-toggle="tab" data-bs-target="#conductual" type="button" role="tab">Reporte Conductual</button>
+                <button class="nav-link" id="tab-conductual" data-bs-toggle="tab" data-bs-target="#conductual"
+                    type="button" role="tab">Reporte Conductual</button>
             </li>
             <!-- TAB 4: PROGRESS (solo BL) -->
             {% if area == "bilingue" %}
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-progress" data-bs-toggle="tab" data-bs-target="#progress" type="button" role="tab">Progress Report</button>
+                <button class="nav-link" id="tab-progress" data-bs-toggle="tab" data-bs-target="#progress" type="button"
+                    role="tab">Progress Report</button>
             </li>
             {% endif %}
         </ul>
@@ -51,7 +57,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for t in tickets_usuario %}
+                            {% for t in tickets_usuario %}
                             <tr>
                                 <td>
                                     {{ t.ticket_id }}
@@ -65,28 +71,30 @@
                                 </td>
                                 <td>
                                     {% if t.attachment %}
-                                        <a href="{{ t.attachment.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">Ver</a>
+                                    <a href="{{ t.attachment.url }}" target="_blank"
+                                        class="btn btn-sm btn-outline-secondary">Ver</a>
                                     {% else %}
-                                        <span class="text-muted">No</span>
+                                    <span class="text-muted">No</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     <span class="badge bg-info text-dark">{{ t.status }}</span>
                                 </td>
                                 <td>
-                                   <a href="{% url 'ticket_comments' t.id %}"
-   class="btn btn-sm btn-outline-primary btn-chat"
-   data-ticket-id="{{ t.id }}"
-   data-nombre="{{ t.name }}"
-   title="Ver conversación del ticket">
-   <i class="bi bi-chat-dots"></i> Chat
-</a>
+                                    <a href="{% url 'ticket_comments' t.id %}?area={{ area }}"
+                                        class="btn btn-sm btn-outline-primary btn-chat" data-ticket-id="{{ t.id }}"
+                                        data-nombre="{{ t.name }}" data-area="{{ area }}"
+                                        title="Ver conversación del ticket">
+                                        <i class="bi bi-chat-dots"></i> Chat
+                                    </a>
 
                                 </td>
                             </tr>
-                        {% empty %}
-                            <tr><td colspan="7" class="text-center">No hay tickets registrados.</td></tr>
-                        {% endfor %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No hay tickets registrados.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -108,7 +116,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for r in reportes_informativo %}
+                            {% for r in reportes_informativo %}
                             <tr>
                                 <td>{{ r.id }}</td>
                                 <td>{{ r.alumno_nombre }}</td>
@@ -117,13 +125,17 @@
                                 <td>{{ r.docente }}</td>
                                 <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    <a href="{% url 'editar_reporte_informativo' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <a href="{% url 'descargar_pdf_informativo' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                    <a href="{% url 'editar_reporte_informativo' r.id %}"
+                                        class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_informativo' r.id %}"
+                                        class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
                                 </td>
                             </tr>
-                        {% empty %}
-                            <tr><td colspan="7" class="text-center">No hay reportes informativos.</td></tr>
-                        {% endfor %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No hay reportes informativos.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -145,7 +157,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for r in reportes_conductual %}
+                            {% for r in reportes_conductual %}
                             <tr>
                                 <td>{{ r.id }}</td>
                                 <td>{{ r.alumno_nombre }}</td>
@@ -154,13 +166,17 @@
                                 <td>{{ r.docente }}</td>
                                 <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    <a href="{% url 'editar_reporte_conductual' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <a href="{% url 'descargar_pdf_conductual' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                    <a href="{% url 'editar_reporte_conductual' r.id %}"
+                                        class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_conductual' r.id %}"
+                                        class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
                                 </td>
                             </tr>
-                        {% empty %}
-                            <tr><td colspan="7" class="text-center">No hay reportes conductuales.</td></tr>
-                        {% endfor %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No hay reportes conductuales.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -183,7 +199,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for r in reportes_progress %}
+                            {% for r in reportes_progress %}
                             <tr>
                                 <td>{{ r.id }}</td>
                                 <td>{{ r.alumno_nombre }}</td>
@@ -192,13 +208,17 @@
                                 <td>{{ r.semana_fin }}</td>
                                 <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    <a href="{% url 'editar_progress_report' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
-                                    <a href="{% url 'descargar_pdf_progress' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                    <a href="{% url 'editar_progress_report' r.id %}"
+                                        class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_progress' r.id %}"
+                                        class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
                                 </td>
                             </tr>
-                        {% empty %}
-                            <tr><td colspan="7" class="text-center">No hay progress reports.</td></tr>
-                        {% endfor %}
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No hay progress reports.</td>
+                            </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>
@@ -213,4 +233,5 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static 'conducta/js/historial.js' %}"></script>
 </body>
+
 </html>
