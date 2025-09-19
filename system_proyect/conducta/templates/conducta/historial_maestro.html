@@ -42,11 +42,11 @@
                         <thead>
                             <tr class="table-secondary">
                                 <th>TICKET ID</th>
-                                <th>NOMBRE</th>
+                                <th>NAME</th>
                                 <th>EMAIL</th>
-                                <th>DESCRIPCIÓN</th>
+                                <th>DESCRIPTION</th>
                                 <th>ADJUNTO</th>
-                                <th>ESTADO</th>
+                                <th>STATUS</th>
                                 <th>COMENTARIOS</th>
                             </tr>
                         </thead>
@@ -54,17 +54,7 @@
                         {% for t in tickets_usuario %}
                             <tr>
                                 <td>
-                                    <!-- MODAL SWEETALERT2 AL CLIC -->
-                                    <a href="#" class="link-ticket"
-                                        data-ticket-id="{{ t.ticket_id }}"
-                                        data-name="{{ t.name }}"
-                                        data-email="{{ t.email }}"
-                                        data-description="{{ t.description|escapejs }}"
-                                        data-adjunto="{% if t.attachment %}{{ t.attachment.url }}{% endif %}"
-                                        data-fecha="{{ t.fecha_creacion|date:'d/m/Y H:i' }}"
-                                        data-status="{{ t.status }}">
-                                        {{ t.ticket_id }}
-                                    </a>
+                                    {{ t.ticket_id }}
                                 </td>
                                 <td>{{ t.name }}</td>
                                 <td>{{ t.email }}</td>
@@ -84,12 +74,10 @@
                                     <span class="badge bg-info text-dark">{{ t.status }}</span>
                                 </td>
                                 <td>
-                                    <!-- BOTÓN CHAT CON MODAL DE BIENVENIDA -->
                                     <a href="{% url 'ticket_comments' t.id %}"
-                                        class="btn btn-sm btn-outline-primary btn-chat"
-                                        data-ticket-id="{{ t.id }}"
-                                        data-nombre="{{ t.name }}">
-                                        <i class="bi bi-chat-dots"></i> Chat
+                                       class="btn btn-sm btn-outline-primary"
+                                       title="Ver conversación del ticket">
+                                       <i class="bi bi-chat-dots"></i> Chat
                                     </a>
                                 </td>
                             </tr>
@@ -100,8 +88,119 @@
                     </table>
                 </div>
             </div>
-            <!-- Las demás pestañas (informativo, conductual, progress) siguen igual... -->
-            <!-- ... -->
+            <!-- TAB 2: INFORMATIVO -->
+            <div class="tab-pane fade" id="informativo" role="tabpanel">
+                <h5 class="mb-3">Historial de Reportes Informativos</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Estudiante</th>
+                                <th>Grado</th>
+                                <th>Materia</th>
+                                <th>Docente</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reportes_informativo %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.alumno_nombre }}</td>
+                                <td>{{ r.grado }}</td>
+                                <td>{{ r.materia }}</td>
+                                <td>{{ r.docente }}</td>
+                                <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'editar_reporte_informativo' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_informativo' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay reportes informativos.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- TAB 3: CONDUCTUAL -->
+            <div class="tab-pane fade" id="conductual" role="tabpanel">
+                <h5 class="mb-3">Historial de Reportes Conductuales</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Estudiante</th>
+                                <th>Grado</th>
+                                <th>Materia</th>
+                                <th>Docente</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reportes_conductual %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.alumno_nombre }}</td>
+                                <td>{{ r.grado }}</td>
+                                <td>{{ r.materia }}</td>
+                                <td>{{ r.docente }}</td>
+                                <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'editar_reporte_conductual' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_conductual' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay reportes conductuales.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- TAB 4: PROGRESS REPORT (SOLO BL) -->
+            {% if area == "bilingue" %}
+            <div class="tab-pane fade" id="progress" role="tabpanel">
+                <h5 class="mb-3">Historial de Progress Reports</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Estudiante</th>
+                                <th>Grado</th>
+                                <th>Semana Inicio</th>
+                                <th>Semana Fin</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for r in reportes_progress %}
+                            <tr>
+                                <td>{{ r.id }}</td>
+                                <td>{{ r.alumno_nombre }}</td>
+                                <td>{{ r.grado }}</td>
+                                <td>{{ r.semana_inicio }}</td>
+                                <td>{{ r.semana_fin }}</td>
+                                <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
+                                <td>
+                                    <a href="{% url 'editar_progress_report' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'descargar_pdf_progress' r.id %}" class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="7" class="text-center">No hay progress reports.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
         </div>
         <a class="btn-dashboard text-center mt-4" href="/conducta/dashboard/maestro/">
             &larr; Regresar al Dashboard

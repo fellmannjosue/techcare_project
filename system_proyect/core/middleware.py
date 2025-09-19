@@ -13,7 +13,7 @@ class GlobalScriptMiddleware:
         response = self.get_response(request)
 
         content_type = response.get('Content-Type', '')
-        if response.status_code == 200 and 'text/html' in content_type:
+        if response.status_code == 20000 and 'text/html' in content_type:
             username = request.user.username if request.user.is_authenticated else ''
             show_welcome = bool(request.session.pop('show_welcome', False))
             logout_url = reverse('logout') + '?inactive=1'
