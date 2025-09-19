@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Modal para detalles de ticket
+    // MODAL DE DETALLE DE TICKET AL CLIC EN ID
     document.querySelectorAll('.link-ticket').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -33,6 +33,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 width: 440,
                 customClass: {
                     popup: 'swal2-border-radius'
+                }
+            });
+        });
+    });
+
+    // MODAL DE BIENVENIDA/CONFIRMACIÓN AL CLIC EN "CHAT"
+    document.querySelectorAll('.btn-chat').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            let ticketId = btn.dataset.ticketId;
+            let nombre = btn.dataset.nombre || 'Usuario';
+
+            Swal.fire({
+                title: '¿Deseas iniciar el chat con soporte técnico?',
+                html: `<b>${nombre}</b>, te estás comunicando con el soporte técnico.<br>Por favor, espera a ser atendido.`,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, iniciar chat',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = `/ticket/${ticketId}/comentarios/`;
+                } else {
+                    Swal.fire({
+                        title: 'Chat no iniciado',
+                        text: 'Pronto soporte técnico se comunicará contigo. Este pendiente de su correo.',
+                        icon: 'warning',
+                        confirmButtonText: 'OK'
+                    });
                 }
             });
         });

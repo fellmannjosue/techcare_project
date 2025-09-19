@@ -7,6 +7,8 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from .models import Ticket,TicketComment
 from .forms import TicketForm, TicketCommentForm
+from django.utils import timezone
+from django.contrib.auth import get_user_model
 import os
 import json
 from threading import Thread
@@ -158,6 +160,23 @@ def ticket_comments(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
 
+    # MENSAJE AUTOMÁTICO SI NO HAY COMENTARIOS PREVIOS
+    if not comentarios.exists():
+        # Intentar asignar usuario "soporte_tecnico", si no existe se deja en None
+        User = get_user_model()
+        try:
+            usuario_soporte = User.objects.get(username='soporte_tecnico')
+        except User.DoesNotExist:
+            usuario_soporte = None
+
+        TicketComment.objects.create(
+            ticket=ticket,
+            usuario=usuario_soporte,  # None si el modelo lo permite, o crea un usuario genérico
+            mensaje="Soporte técnico de Asociación Nuevo Amanecer: ¿En qué le podemos ayudar? Descríbanos el problema que presenta.",
+            fecha=timezone.now()
+        )
+        comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
+
     if request.method == 'POST':
         try:
             form = TicketCommentForm(request.POST)
@@ -215,3 +234,19 @@ def ticket_comments(request, ticket_id):
         'comentarios': comentarios,
         'form': form,
     })
+
+@login_required
+def ticket_comments_ajax(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
+    # Determinar el template según el usuario (técnico o usuario normal)
+    if request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists():
+        partial_template = 'tickets/_comments_partial_tech.html'
+    else:
+        partial_template = 'tickets/_comments_partial_user.html'
+    html = render_to_string(partial_template, {
+        'comentarios': comentarios,
+        'request': request,
+        # IMPORTANTE: puedes pasar más context si ocupas
+    })
+    return JsonResponse({'html': html})

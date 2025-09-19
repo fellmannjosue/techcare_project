@@ -21,9 +21,10 @@
         ← Volver al Panel Técnico
     </a>
 
-    <div class="ticket-info">
+    <div class="ticket-info mb-2">
         <b>Ticket:</b> {{ ticket.ticket_id }}<br>
-        <b>Estado:</b> <span class="badge bg-light text-dark">{{ ticket.status }}</span>
+        <b>Estado:</b>
+        <span class="badge bg-light text-dark">{{ ticket.status }}</span>
         <b>| Nombre:</b> {{ ticket.name }}
         <b>| Correo:</b> {{ ticket.email }}
     </div>
@@ -35,9 +36,25 @@
             </a>
         </div>
     {% endif %}
+
+    <!-- SELECT PARA CAMBIAR STATUS -->
+    <form method="post" action="{% url 'update_ticket' ticket.id %}" class="my-3">
+        {% csrf_token %}
+        <div class="input-group" style="max-width:340px;">
+            <label class="input-group-text" for="status"><b>Estado</b></label>
+            <select name="status" id="status" class="form-select">
+                <option value="enviado" {% if ticket.status == 'enviado' %}selected{% endif %}>Enviado</option>
+                <option value="en revision" {% if ticket.status == 'en revision' %}selected{% endif %}>En Revisión</option>
+                <option value="resuelto" {% if ticket.status == 'resuelto' %}selected{% endif %}>Resuelto</option>
+            </select>
+            <button type="submit" class="btn btn-outline-primary">Actualizar</button>
+        </div>
+    </form>
+
     <hr>
     <h5 class="mb-2"><i class="bi bi-chat-left-text"></i> Conversación Técnica del Ticket</h5>
-    <div style="max-height: 320px; overflow-y:auto; background:#f9fafb; border-radius:9px; padding: 16px; margin-bottom:8px;">
+    <!-- CHAT MENSAJES CON ID para AJAX -->
+    <div id="chat-mensajes" style="max-height: 320px; overflow-y:auto; background:#f9fafb; border-radius:9px; padding: 16px; margin-bottom:8px;">
         {% for c in comentarios %}
             <div class="chat-bubble{% if c.usuario == request.user %} mine{% endif %}">
                 {{ c.mensaje|linebreaksbr }}
@@ -68,7 +85,7 @@
 
 <!-- Bootstrap Bundle -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<!-- JS personalizado -->
+<!-- JS personalizado (AJAX y autorefresco) -->
 <script src="{% static 'tickets/js/comments.js' %}"></script>
 </body>
 </html>

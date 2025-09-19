@@ -9,6 +9,7 @@ urlpatterns = [
     path('submit_ticket/', views.submit_ticket, name='submit_ticket'),
     path('technician_dashboard/', views.technician_dashboard, name='technician_dashboard'),
     path('ticket/<int:ticket_id>/comentarios/', views.ticket_comments, name='ticket_comments'),
+    path('ticket_comments/ajax/<int:ticket_id>/', views.ticket_comments_ajax, name='ticket_comments_ajax'),
     path('update_ticket/<int:ticket_id>/', views.update_ticket, name='update_ticket'),
     path('menu/', lambda request: redirect('/accounts/menu/'), name='tickets_menu'),
 ]

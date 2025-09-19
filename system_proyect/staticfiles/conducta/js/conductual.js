@@ -1,12 +1,16 @@
 $(function() {
-  // Select2 para selects largos
+  // ============================
+  // 1. Select2 para selects largos
+  // ============================
   $('#id_alumno, #id_materia_docente').select2({
     width: '100%',
     minimumResultsForSearch: 10,
     dropdownParent: $('.form-container')
   });
 
-  // Select2 para incisos, múltiple, con saltos de línea
+  // ==============================
+  // 2. Select2 para incisos (múltiple)
+  // ==============================
   $('#inciso_leve, #inciso_grave, #inciso_muygrave').select2({
     width: '100%',
     dropdownParent: $('.form-container'),
@@ -20,7 +24,9 @@ $(function() {
     }
   });
 
-  // Inicializa selects habilitados si el checkbox ya viene marcado
+  // =================================================
+  // 3. Inicializar selects habilitados si el checkbox ya viene marcado
+  // =================================================
   if ($('#chk_leve').is(':checked')) {
     $('#inciso_leve').prop('disabled', false);
   }
@@ -31,7 +37,9 @@ $(function() {
     $('#inciso_muygrave').prop('disabled', false);
   }
 
-  // Lógica de activar/desactivar
+  // ==========================================
+  // 4. Lógica de activar/desactivar selects por checkbox
+  // ==========================================
   $('#chk_leve').on('change', function() {
     $('#inciso_leve').prop('disabled', !this.checked).trigger('change');
     if (!this.checked) {
@@ -54,7 +62,9 @@ $(function() {
     }
   });
 
-  // Mostrar los seleccionados en textarea
+  // ======================================
+  // 5. Mostrar incisos seleccionados en textarea
+  // ======================================
   function actualizarTextareaIncisos(selectorSelect, selectorTextarea) {
     var incisos = [];
     $(selectorSelect + ' option:selected').each(function() {
@@ -62,7 +72,6 @@ $(function() {
     });
     $(selectorTextarea).val(incisos.length > 0 ? incisos.join('\n\n') : '');
   }
-
   $('#inciso_leve').on('change', function() {
     actualizarTextareaIncisos('#inciso_leve', '#txt_incisos_leve');
   });
@@ -78,13 +87,34 @@ $(function() {
   actualizarTextareaIncisos('#inciso_grave', '#txt_incisos_grave');
   actualizarTextareaIncisos('#inciso_muygrave', '#txt_incisos_muygrave');
 
-  // Limitar scroll select2
+  // ==========================
+  // 6. Limitar scroll de select2
+  // ==========================
   $(document).on('select2:open', function() {
     $('.select2-results__options').css('max-height', '300px');
   });
 
-  // Ocultar alertas de éxito
+  // ================================
+  // 7. Ocultar alertas de éxito después de 4 segundos
+  // ================================
   setTimeout(function() {
     $('.alert-success').fadeOut('slow');
   }, 4000);
+
+  // ============================================
+  // 8. Autollenado del campo Grado según Estudiante
+  // ============================================
+$('#id_alumno').on('select2:select', function (e) {
+    console.log(e.params.data.element); // <-- Verás el <option> real
+    let grado = $(e.params.data.element).data('grado');
+    console.log('grado:', grado);
+    $('#grado-display').val(grado || '');
+    $('#id_grado').val(grado || '');
+});
+
+  // Al cargar la página, autollenar si hay uno seleccionado
+  let $alumno = $('#id_alumno');
+  let initialGrado = $alumno.find('option:selected').data('grado') || '';
+  $('#grado-display').val(initialGrado);
+  $('#id_grado').val(initialGrado);
 });
