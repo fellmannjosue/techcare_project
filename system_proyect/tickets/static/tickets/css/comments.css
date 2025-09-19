@@ -1,14 +1,14 @@
-body { background: #eef4fa; }
+body { background: #f3f6fb; }
 .chat-container {
     max-width: 650px;
     margin: 35px auto;
     background: #fff;
     border-radius: 13px;
-    box-shadow: 0 2px 18px rgba(0,0,0,0.13);
+    box-shadow: 0 2px 18px rgba(0,0,0,0.11);
     padding: 30px 32px 18px 32px;
 }
 .ticket-info {
-    background: #263238;
+    background: #1565c0;
     color: #fff;
     border-radius: 7px 7px 0 0;
     padding: 12px 18px;
@@ -16,7 +16,7 @@ body { background: #eef4fa; }
     font-size: 15px;
 }
 .chat-bubble {
-    background: #eceff1;
+    background: #f1f5fa;
     border-radius: 16px 16px 16px 6px;
     padding: 12px 18px;
     margin-bottom: 7px;
@@ -25,10 +25,10 @@ body { background: #eef4fa; }
     font-size: 15px;
 }
 .chat-bubble.mine {
-    background: #bbdefb;
+    background: #daf0e8;
     border-radius: 16px 16px 6px 16px;
     margin-left: auto;
-    color: #0d223b;
+    color: #1e463a;
     font-weight: 500;
 }
 .chat-meta {
@@ -40,7 +40,7 @@ body { background: #eef4fa; }
 .chat-footer {
     margin-top: 13px;
     padding-top: 12px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid #f2f2f2;
 }
 .swal2-popup { border-radius: 18px !important; }
 @media (max-width: 700px) {

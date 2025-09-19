@@ -159,38 +159,52 @@ def ticket_comments(request, ticket_id):
     comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
 
     if request.method == 'POST':
-        form = TicketCommentForm(request.POST)
-        if form.is_valid():
-            comentario = form.save(commit=False)
-            comentario.ticket = ticket
-            comentario.usuario = request.user
-            comentario.save()
+        try:
+            form = TicketCommentForm(request.POST)
+            if form.is_valid():
+                comentario = form.save(commit=False)
+                comentario.ticket = ticket
+                comentario.usuario = request.user
+                comentario.save()
 
-            # Enviar notificación por correo (a ambos: dueño y técnicos si deseas)
-            subject = f"Nuevo comentario en Ticket #{ticket.ticket_id}"
-            html_message = render_to_string(
-                'tickets/email/nuevo_comentario.html',
-                {'ticket': ticket, 'comentario': comentario, 'autor': request.user}
-            )
-            send_email_async(subject, html_message, [ticket.email])
-            # También puedes agregar el correo de soporte si quieres que técnico reciba copia
+                # Enviar correo (manejo de error silencioso)
+                try:
+                    subject = f"Nuevo comentario en Ticket #{ticket.ticket_id}"
+                    html_message = render_to_string(
+                        'tickets/email/nuevo_comentario.html',
+                        {'ticket': ticket, 'comentario': comentario, 'autor': request.user}
+                    )
+                    send_email_async(subject, html_message, [ticket.email])
+                except Exception as e:
+                    print("Error enviando correo:", e)
 
-            # RESPUESTA AJAX
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'ok': True, 'mensaje': 'Comentario agregado correctamente'})
-            # RESPUESTA POST NORMAL
+                # AJAX
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'ok': True, 'mensaje': 'Comentario agregado correctamente.'})
+                else:
+                    messages.success(request, "Comentario agregado y notificado por correo.")
+                    return redirect('ticket_comments', ticket_id=ticket.id)
             else:
-                messages.success(request, "Comentario agregado y notificado por correo.")
-                return redirect('ticket_comments', ticket_id=ticket.id)
-        else:
-            # Error en el formulario
+                # ERROR del formulario
+                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                    return JsonResponse({'ok': False, 'error': form.errors.as_json()}, status=400)
+                else:
+                    messages.error(request, "Error en el formulario.")
+        except Exception as ex:
+            import traceback
+            # RESPONDE EL ERROR COMPLETO EN LA VISTA para AJAX
             if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'ok': False, 'error': 'Error en el formulario'}, status=400)
-
+                return JsonResponse({
+                    'ok': False,
+                    'error': str(ex),
+                    'trace': traceback.format_exc()
+                }, status=500)
+            else:
+                raise ex
     else:
         form = TicketCommentForm()
 
-    # ———— ELEGIR TEMPLATE SEGÚN USUARIO ————
+    # Renderizar según tipo usuario
     if request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists():
         template = 'tickets/ticket_comments_tech.html'
     else:

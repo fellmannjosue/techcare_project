@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('formComentario');
+    // Usa el id del form según tu html
+    const form = document.getElementById('formComentario') || document.getElementById('formComentarioTech');
     if (!form) return;
 
     form.addEventListener('submit', function(e){
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     confirmButtonText: 'OK',
                     allowOutsideClick: false
                 }).then(() => {
+                    // Reload para mostrar el nuevo comentario
                     location.reload();
                 });
             } else {

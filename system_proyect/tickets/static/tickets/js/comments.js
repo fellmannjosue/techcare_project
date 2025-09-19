@@ -1,18 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const form = document.getElementById('formComentarioTech');
+    // Usa el id del form según tu html
+    const form = document.getElementById('formComentario') || document.getElementById('formComentarioTech');
     if (!form) return;
 
     form.addEventListener('submit', function(e){
         e.preventDefault();
-        const data = new FormData(form);
+        var data = new FormData(form);
 
         fetch(window.location.pathname, {
             method: 'POST',
             body: data,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-                // Si necesitas CSRF, agrega aquí: 'X-CSRFToken': csrf_token
-            }
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
         })
         .then(resp => resp.json())
         .then(res => {
@@ -20,18 +18,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 Swal.fire({
                     icon: 'success',
                     title: 'Comentario enviado',
-                    text: res.mensaje || '¡Comentario enviado correctamente!',
+                    text: res.mensaje,
                     confirmButtonText: 'OK',
                     allowOutsideClick: false
                 }).then(() => {
-                    // Recarga la página para mostrar el comentario
+                    // Reload para mostrar el nuevo comentario
                     location.reload();
                 });
             } else {
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
-                    text: res.error || 'No se pudo enviar el comentario. Revisa los campos e inténtalo de nuevo.',
+                    text: res.error || 'No se pudo enviar el comentario.',
                     confirmButtonText: 'Cerrar'
                 });
             }
