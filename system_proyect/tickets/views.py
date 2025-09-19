@@ -128,13 +128,11 @@ def ticket_comments(request, ticket_id):
         try:
             usuario_soporte = User.objects.get(username='soporte_tecnico')
         except User.DoesNotExist:
-            # Fallback: primer staff, luego primer superuser, sino el primer usuario del sistema
             usuario_soporte = (
                 User.objects.filter(is_staff=True).first() or
                 User.objects.filter(is_superuser=True).first() or
                 User.objects.all().first()
             )
-        # Solo crear si se encuentra algún usuario
         if usuario_soporte:
             TicketComment.objects.create(
                 ticket=ticket,
@@ -143,9 +141,21 @@ def ticket_comments(request, ticket_id):
                 fecha=timezone.now()
             )
             comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
-        # Si no hay ningún usuario, NO se crea el comentario para evitar error
 
+    # ========== BLOQUEO SI TICKET RESUELTO ==========
+    # Este chequeo es seguro contra mayúsculas/minúsculas y espacios
+    status_resuelto = ticket.status.strip().lower() == "resuelto"
+    
     if request.method == 'POST':
+        # Bloqueo adicional: No dejar enviar mensajes si el ticket está resuelto
+        if status_resuelto and not (request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists()):
+            # Solo bloquea usuarios normales (los técnicos sí pueden comentar si quieres)
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'ok': False, 'error': 'Este ticket está cerrado. No puedes enviar más comentarios.'}, status=403)
+            else:
+                messages.error(request, "Este ticket está cerrado. No puedes enviar más comentarios.")
+                return redirect('ticket_comments', ticket_id=ticket.id)
+
         try:
             form = TicketCommentForm(request.POST)
             if form.is_valid():
@@ -195,6 +205,7 @@ def ticket_comments(request, ticket_id):
         'ticket': ticket,
         'comentarios': comentarios,
         'form': form,
+        'status_resuelto': status_resuelto,  # pásalo al template por si quieres deshabilitar el form
     })
 
 @login_required

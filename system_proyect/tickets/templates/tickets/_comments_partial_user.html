@@ -1,16 +1,16 @@
 {% if comentarios %}
-    {% for c in comentarios %}
-        <div class="chat-bubble{% if c.usuario == request.user %} mine{% endif %}">
-            {{ c.mensaje|linebreaksbr }}
-            <div class="chat-meta">
-                <i class="bi bi-person-circle"></i>
-                <span class="fw-semibold">{{ c.usuario.username }}</span>
-                <span class="text-secondary">{{ c.fecha|date:"d/m/Y H:i" }}</span>
-            </div>
-        </div>
-    {% endfor %}
-{% else %}
-    <div class="alert alert-light text-center py-3">
-        <i class="bi bi-chat-left-dots"></i> No hay comentarios en este ticket.
+{% for c in comentarios %}
+<div class="chat-bubble{% if c.usuario == request.user %} mine{% endif %}">
+    {{ c.mensaje|linebreaksbr }}
+    <div class="chat-meta">
+        <i class="bi bi-person-circle"></i>
+        <span class="fw-semibold">{{ c.usuario.username }}</span>
+        <span class="text-secondary">{{ c.fecha|date:"d/m/Y H:i" }}</span>
     </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-light text-center py-3">
+    <i class="bi bi-chat-left-dots"></i> No hay comentarios en este ticket.
+</div>
 {% endif %}

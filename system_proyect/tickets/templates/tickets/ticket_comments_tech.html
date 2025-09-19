@@ -42,11 +42,11 @@
         {% csrf_token %}
         <div class="input-group" style="max-width:340px;">
             <label class="input-group-text" for="status"><b>Estado</b></label>
-            <select name="status" id="status" class="form-select">
-                <option value="enviado" {% if ticket.status == 'enviado' %}selected{% endif %}>Enviado</option>
-                <option value="en revision" {% if ticket.status == 'en revision' %}selected{% endif %}>En Revisión</option>
-                <option value="resuelto" {% if ticket.status == 'resuelto' %}selected{% endif %}>Resuelto</option>
-            </select>
+            <select class="form-select" id="id_status" name="status">
+                        <option value="Pendiente" {% if ticket.status == "Pendiente" %}selected{% endif %}>Pendiente</option>
+                        <option value="En Proceso" {% if ticket.status == "En Proceso" %}selected{% endif %}>En Proceso</option>
+                        <option value="Resuelto" {% if ticket.status == "Resuelto" %}selected{% endif %}>Resuelto</option>
+                    </select>
             <button type="submit" class="btn btn-outline-primary">Actualizar</button>
         </div>
     </form>
