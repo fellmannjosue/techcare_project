@@ -1,4 +1,5 @@
 $(document).ready(function() {
+    // Inicializa DataTable
     $('#tabla-coordinador').DataTable({
         "order": [[2, "desc"]],
         "language": {
@@ -6,13 +7,11 @@ $(document).ready(function() {
         }
     });
 
-    // Acción para el botón historial
-    $('.btn-historial').on('click', function() {
+    // Acción para el botón historial (abrir modal y cargar datos vía AJAX)
+    $(document).on('click', '.btn-historial', function() {
         let alumno_id = $(this).data('alumno');
-        $('#historial-content').html('Cargando...');
+        $('#historial-content').html('<div class="text-center text-muted py-3">Cargando historial...</div>');
         $('#modalHistorial').modal('show');
-        // Aquí puedes hacer AJAX a tu vista que devuelva el historial de reportes de ese alumno
-        // Ejemplo:
         $.get('/conducta/coordinador/historial/alumno/' + alumno_id + '/', function(data) {
             $('#historial-content').html(data);
         }).fail(function() {

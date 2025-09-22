@@ -1,35 +1,43 @@
 /* coordinador.css */
+
 body {
     background: #f6f7fb;
 }
 
+/* Título del dashboard */
 h2 {
     font-weight: 600;
     color: #222e3c;
 }
 
+/* Ajuste de alineación para tabla */
 .table th, .table td {
     vertical-align: middle !important;
 }
 
+/* Badges de tipo de reporte */
 .badge {
     font-size: 0.95em;
 }
 
+/* Ícono en el botón historial */
 .btn-historial i {
     font-size: 1.1em;
 }
 
+/* Input de búsqueda DataTable */
 .dataTables_wrapper .dataTables_filter input {
     border-radius: 7px;
     padding: 2px 8px;
 }
 
+/* Sombra y bordes redondeados a la tabla principal */
 .table-responsive {
     border-radius: 16px;
     box-shadow: 0 0 20px 0 #dde1e6a8;
 }
 
+/* Espacio entre botones de acción */
 .btn {
     margin-right: 2px;
 }
