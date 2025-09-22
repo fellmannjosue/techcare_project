@@ -2,6 +2,8 @@ from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
+from django.shortcuts import render, get_object_or_404
+from weasyprint import HTML
 from django.http import HttpResponse
 from django.contrib import messages
 from django.db import connections
@@ -471,8 +473,19 @@ def editar_reporte_conductual(request, pk):
 
 @login_required
 def descargar_pdf_conductual(request, pk):
-    return HttpResponse("PDF Reporte Conductual #{}".format(pk))
+    reporte = get_object_or_404(ReporteConductual, pk=pk)
+    reportes = list(ReporteConductual.objects.filter(alumno_id=reporte.alumno_id).order_by('-fecha')[:3])
 
+    context = {
+        'titulo_area': "Nuevo Amanecer School" if reporte.area == "bilingue" else "Nuevo Amanecer",
+        'reportes': reportes,
+        'error': None,
+    }
+    html_string = render_to_string('conducta/reporte_general.html', context)
+    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
+    response = HttpResponse(pdf_file, content_type='application/pdf')
+    response['Content-Disposition'] = f'filename="reporte_conductual_{reporte.pk}.pdf"'
+    return response
 @login_required
 def editar_progress_report(request, pk):
     return HttpResponse("Editar Progress Report #{}".format(pk))
@@ -534,3 +547,42 @@ def historial_alumno_coordinador(request, alumno_id):
     }
     html = render_to_string('conducta/lista_reportes.html', context)
     return HttpResponse(html)
+
+@login_required
+def reporte_general_tres_faltas(request, area):
+    """
+    Reporte de 3 strikes (area: bilingue o colegio).
+    Muestra los 3 reportes conductuales de ese alumno en formato de acta/PDF.
+    """
+    alumno_id = request.GET.get('alumno_id')
+    if not alumno_id:
+        return render(request, 'conducta/reporte_general.html', {
+            'error': 'No se proporcionó un alumno.',
+            'area': area,
+        })
+
+    # Filtrar reportes de esa área y alumno
+    reportes = ReporteConductual.objects.filter(
+        area=area,
+        alumno_id=alumno_id
+    ).order_by('fecha')[:3]
+
+    if reportes.count() < 3:
+        return render(request, 'conducta/reporte_general.html', {
+            'error': 'Este alumno aún no tiene 3 reportes conductuales.',
+            'area': area,
+        })
+
+    alumno_nombre = reportes[0].alumno_nombre if reportes else ''
+    # Título según área
+    if area == "bilingue":
+        titulo = "Nuevo Amanecer School"
+    else:
+        titulo = "C.E.M.N.G Nuevo Amanecer"
+
+    return render(request, 'conducta/reporte_general.html', {
+        'reportes': reportes,
+        'alumno_nombre': alumno_nombre,
+        'area': area,
+        'titulo_area': titulo,
+    })

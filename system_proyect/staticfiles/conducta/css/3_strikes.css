@@ -1,0 +1,81 @@
+body {
+    font-family: Arial, sans-serif;
+    background: #fff;
+    margin: 25px 32px;
+    font-size: 16px;
+    color: #18191A;
+}
+.logo {
+    text-align: center;
+}
+.logo img {
+    height: 62px;
+    margin-bottom: 5px;
+}
+.titulo {
+    text-align: center;
+    font-weight: bold;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    font-size: 20px;
+}
+.subtitulo {
+    text-align: center;
+    font-size: 15px;
+    margin-bottom: 14px;
+}
+.bloque-reporte {
+    margin-bottom: 18px;
+    page-break-inside: avoid;
+}
+.bloque-reporte .label {
+    font-weight: bold;
+    margin-right: 4px;
+}
+.linea {
+    display: inline-block;
+    border-bottom: 1px solid #222;
+    min-width: 140px;
+    max-width: 220px;
+    height: 12px;
+    vertical-align: middle;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+.linea-larga {
+    border-bottom: 1px solid #222;
+    width: 98%;
+    margin: 5px 0 7px 0;
+    height: 12px;
+    display: block;
+}
+.descripcion-lineas {
+    min-height: 38px;
+    border-bottom: 1px solid #222;
+    margin-bottom: 5px;
+}
+.firmas {
+    margin-top: 35px;
+    display: flex;
+    justify-content: space-between;
+}
+.firma-block {
+    text-align: center;
+    width: 30%;
+}
+.firma-line {
+    border-bottom: 1px solid #222;
+    width: 88%;
+    margin: 18px auto 6px auto;
+    height: 12px;
+}
+.firma-label {
+    font-size: 14px;
+}
+.error-msg {
+    color: #c00;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 38px;
+    font-size: 1.25em;
+}

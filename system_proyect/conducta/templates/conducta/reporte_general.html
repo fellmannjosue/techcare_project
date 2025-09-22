@@ -1,0 +1,67 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte conductual – Tres Faltas</title>
+<link href="{% static 'conducta/css/3_strikes.css' %}" rel="stylesheet"/>
+
+</head>
+<body>
+    <div class="logo">
+        <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo Nuevo Amanecer">
+    </div>
+    <div class="titulo">{{ titulo_area }}</div>
+    <div class="subtitulo">Reporte conductual – Tres Faltas</div>
+
+    {% if error %}
+        <div class="error-msg">{{ error }}</div>
+    {% else %}
+        {% for r in reportes %}
+            <div class="bloque-reporte">
+                <div class="label">Reporte #{{ forloop.counter }}</div>
+                <div>
+                    <span class="label">nombre:</span>
+                    <span class="linea">{{ r.alumno_nombre }}</span>
+                    <span class="label">grado:</span>
+                    <span class="linea">{{ r.grado }}</span>
+                </div>
+                <div>
+                    <span class="label">docente/materia:</span>
+                    <span class="linea">{{ r.docente }}</span>
+                    <span class="label">fecha:</span>
+                    <span class="linea">{{ r.fecha|date:"d/m/Y" }}</span>
+                </div>
+                <div>
+                    <span class="label">inciso:</span>
+                </div>
+                <!-- Incisos como líneas vacías -->
+                <div class="linea-larga"></div>
+                <div class="linea-larga"></div>
+                <div class="linea-larga"></div>
+                <div>
+                    <span class="label">descripcion:</span>
+                </div>
+                <div class="linea-larga"></div>
+                <div class="linea-larga"></div>
+                <div class="linea-larga"></div>
+            </div>
+        {% endfor %}
+
+        <div class="firmas">
+            <div class="firma-block">
+                <div class="firma-line"></div>
+                <div class="firma-label">Firma padre de familia</div>
+            </div>
+            <div class="firma-block">
+                <div class="firma-line"></div>
+                <div class="firma-label">firma del docente</div>
+            </div>
+            <div class="firma-block">
+                <div class="firma-line"></div>
+                <div class="firma-label">firma del coordinador</div>
+            </div>
+        </div>
+    {% endif %}
+</body>
+</html>

@@ -6,9 +6,12 @@ urlpatterns = [
     path('dashboard/maestro/', views.dashboard_maestro, name='dashboard_maestro'),
     path('coordinador/<str:area>/', views.dashboard_coordinador, name='dashboard_coordinador'),
 
-
     path('coordinador/historial/alumno/<str:alumno_id>/', views.historial_alumno_coordinador, name='historial_alumno_coordinador'),
-
+    path(
+        'coordinador/reporte_general/tres_faltas/<str:area>/',
+        views.reporte_general_tres_faltas,
+        name='reporte_general_tres_faltas'
+    ),
     # Formularios de reportes
     path('reporte/conductual/bilingue/', views.reporte_conductual_bilingue, name='reporte_conductual_bilingue'),
     path('reporte/conductual/colegio/', views.reporte_conductual_colegio, name='reporte_conductual_colegio'),

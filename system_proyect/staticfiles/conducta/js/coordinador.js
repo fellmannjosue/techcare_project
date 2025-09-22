@@ -1,13 +1,17 @@
-$(document).ready(function() {
-    // Inicializa DataTable
-    $('#tabla-coordinador').DataTable({
-        "order": [[2, "desc"]],
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-        }
-    });
+// static/conducta/js/coordinador.js
 
-    // Acción para el botón historial (abrir modal y cargar datos vía AJAX)
+$(function() {
+    // Inicializar DataTable en la tabla principal
+    if ($('#tabla-coordinador').length) {
+        $('#tabla-coordinador').DataTable({
+            "order": [[2, "desc"]],
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+            }
+        });
+    }
+
+    // Acción para mostrar historial del alumno en modal
     $(document).on('click', '.btn-historial', function() {
         let alumno_id = $(this).data('alumno');
         $('#historial-content').html('<div class="text-center text-muted py-3">Cargando historial...</div>');
