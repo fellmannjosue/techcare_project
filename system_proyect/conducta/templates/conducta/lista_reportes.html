@@ -1,0 +1,62 @@
+{# Historial de reportes de un alumno (informativo, conductual, progress) #}
+<table class="table table-striped table-sm">
+    <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Fecha</th>
+            <th>Docente</th>
+            <th>Grado</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for r in informativos %}
+        <tr>
+            <td><span class="badge bg-info">Informativo</span></td>
+            <td>{{ r.fecha|date:"d/m/Y" }}</td>
+            <td>{{ r.docente }}</td>
+            <td>{{ r.grado }}</td>
+            <td><span class="badge bg-success">Activo</span></td>
+            <td>
+                <a href="{% url 'descargar_pdf_informativo' r.pk %}" class="btn btn-secondary btn-sm" title="Descargar PDF/QR">
+                    <i class="bi bi-qr-code"></i>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    {% for r in conductuales %}
+        <tr>
+            <td><span class="badge bg-warning text-dark">Conductual</span></td>
+            <td>{{ r.fecha|date:"d/m/Y" }}</td>
+            <td>{{ r.docente }}</td>
+            <td>{{ r.grado }}</td>
+            <td><span class="badge bg-success">Activo</span></td>
+            <td>
+                <a href="{% url 'descargar_pdf_conductual' r.pk %}" class="btn btn-secondary btn-sm" title="Descargar PDF/QR">
+                    <i class="bi bi-qr-code"></i>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    {% for r in progress %}
+        <tr>
+            <td><span class="badge bg-primary">Progress</span></td>
+            <td>{{ r.fecha|date:"d/m/Y" }}</td>
+            <td>{{ r.usuario }}</td>
+            <td>{{ r.grado }}</td>
+            <td><span class="badge bg-success">Activo</span></td>
+            <td>
+                <a href="{% url 'descargar_pdf_progress' r.pk %}" class="btn btn-secondary btn-sm" title="Descargar PDF/QR">
+                    <i class="bi bi-qr-code"></i>
+                </a>
+            </td>
+        </tr>
+    {% endfor %}
+    {% if informativos|length == 0 and conductuales|length == 0 and progress|length == 0 %}
+        <tr>
+            <td colspan="6" class="text-center text-muted">Sin reportes registrados para este alumno.</td>
+        </tr>
+    {% endif %}
+    </tbody>
+</table>

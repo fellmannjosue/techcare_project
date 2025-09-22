@@ -182,22 +182,23 @@
           </div>
         </div>
       {% endif %}
-            {% if show_coordinador_bilingue %}
-        <div class="col-6 col-sm-4 col-md-3">
-          <div class="menu-item" onclick="window.location='{% url 'dashboard_coordinador_bilingue' %}'">
-            <img src="{% static 'accounts/img/coordinador_bilingue.png' %}" alt="Coord. Bilingüe">
-            <span>Coord. Bilingüe</span>
-          </div>
-        </div>
-      {% endif %}
-      {% if show_coordinador_colegio %}
-        <div class="col-6 col-sm-4 col-md-3">
-          <div class="menu-item" onclick="window.location='{% url 'dashboard_coordinador_colegio' %}'">
-            <img src="{% static 'accounts/img/coordinador_colegio.png' %}" alt="Coord. Colegio/CFP">
-            <span>Coord. Colegio/CFP</span>
-          </div>
-        </div>
-      {% endif %}
+           {% if show_coordinador_bilingue %}
+<div class="col-6 col-sm-4 col-md-3">
+  <div class="menu-item" onclick="window.location='{% url 'dashboard_coordinador' area='bilingue' %}'">
+    <img src="{% static 'accounts/img/coordinador_bilingue.png' %}" alt="Coord. Bilingüe">
+    <span>Coord. Bilingüe</span>
+  </div>
+</div>
+{% endif %}
+{% if show_coordinador_colegio %}
+<div class="col-6 col-sm-4 col-md-3">
+  <div class="menu-item" onclick="window.location='{% url 'dashboard_coordinador' area='colegio' %}'">
+    <img src="{% static 'accounts/img/coordinador_colegio.png' %}" alt="Coord. Colegio/CFP">
+    <span>Coord. Colegio</span>
+  </div>
+</div>
+{% endif %}
+
     </div>
   </div>
 

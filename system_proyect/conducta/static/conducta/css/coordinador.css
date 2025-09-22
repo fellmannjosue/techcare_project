@@ -1,0 +1,35 @@
+/* coordinador.css */
+body {
+    background: #f6f7fb;
+}
+
+h2 {
+    font-weight: 600;
+    color: #222e3c;
+}
+
+.table th, .table td {
+    vertical-align: middle !important;
+}
+
+.badge {
+    font-size: 0.95em;
+}
+
+.btn-historial i {
+    font-size: 1.1em;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border-radius: 7px;
+    padding: 2px 8px;
+}
+
+.table-responsive {
+    border-radius: 16px;
+    box-shadow: 0 0 20px 0 #dde1e6a8;
+}
+
+.btn {
+    margin-right: 2px;
+}

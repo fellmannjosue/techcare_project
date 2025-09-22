@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
+from django.template.loader import render_to_string
+from django.http import HttpResponse
 from django.contrib import messages
 from django.db import connections
+from django.db.models import Count
 from django.utils import timezone
 from .forms import (
     ReporteInformativoForm,
@@ -481,52 +484,53 @@ def descargar_pdf_progress(request, pk):
 
 
 #--------------  DASHBOARD COORDINADOR -----------------
+@login_required
+def dashboard_coordinador(request, area):
+    """
+    Dashboard coordinador: muestra todos los reportes de Informativo, Conductual y Progress
+    según el área.
+    """
+    # Traer todos los reportes por área
+    if area == 'bilingue':
+        reportes_informativo = ReporteInformativo.objects.filter(area='bilingue')
+        reportes_conductual = ReporteConductual.objects.filter(area='bilingue')
+        reportes_progress = ProgressReport.objects.all()  # solo bilingüe tiene progress
+    elif area == 'colegio':
+        reportes_informativo = ReporteInformativo.objects.filter(area='colegio')
+        reportes_conductual = ReporteConductual.objects.filter(area='colegio')
+        reportes_progress = []  # colegio NO tiene progress
+    else:
+        return redirect('menu')  # área inválida
+
+    # Calcula "strikes" (conteo de reportes conductuales por alumno)
+    # Dict { alumno_id: count }
+    strikes = {}
+    qs = reportes_conductual.values('alumno_id').annotate(total=Count('id')).filter(total__gte=3)
+    for row in qs:
+        strikes[row['alumno_id']] = row['total']
+
+    contexto = {
+        'area': area,
+        'reportes_informativo': reportes_informativo,
+        'reportes_conductual': reportes_conductual,
+        'reportes_progress': reportes_progress,
+        'strikes': strikes,
+    }
+    return render(request, 'conducta/dashboard_coordinador.html', contexto)
 
 @login_required
-def dashboard_coordinador_bilingue(request):
-    return render(request, 'conducta/dashboard_coordinador_bilingue.html')
-
-@login_required
-def dashboard_coordinador_colegio(request):
-    return render(request, 'conducta/dashboard_coordinador_colegio.html')
-
-
-@login_required
-def historial_conductual_coordinador_bilingue(request):
-    return render(request, 'conducta/lista_reportes.html')
-
-@login_required
-def historial_conductual_coordinador_colegio(request):
-    return render(request, 'conducta/lista_reportes.html')
-
-@login_required
-def historial_informativo_coordinador_bilingue(request):
-    return render(request, 'conducta/lista_reportes.html')
-
-@login_required
-def historial_informativo_coordinador_colegio(request):
-    return render(request, 'conducta/lista_reportes.html')
-
-@login_required
-def historial_progress_coordinador_bilingue(request):
-    return render(request, 'conducta/lista_reportes.html')
-
-@login_required
-def reporte_general_tres_faltas_bilingue(request):
-    return render(request, 'conducta/reporte_general.html')
-
-@login_required
-def reporte_general_tres_faltas_colegio(request):
-    return render(request, 'conducta/reporte_general.html')
-
-@login_required
-def detalle_reporte(request, pk):
-    return render(request, 'conducta/detalle_reporte.html')
-
-@login_required
-def editar_reporte(request, pk):
-    return render(request, 'conducta/editar_reporte.html')
-
-@login_required
-def descargar_pdf_reporte(request, pk):
-    return render(request, 'conducta/descargar_pdf.html')
+def historial_alumno_coordinador(request, alumno_id):
+    """
+    Devuelve el historial de reportes (informativo, conductual, progress)
+    para un alumno específico. Se usa en el modal del dashboard coordinador.
+    """
+    informativos = ReporteInformativo.objects.filter(alumno_id=alumno_id).order_by('-fecha')
+    conductuales = ReporteConductual.objects.filter(alumno_id=alumno_id).order_by('-fecha')
+    progress = ProgressReport.objects.filter(alumno_id=alumno_id).order_by('-fecha')
+    context = {
+        'informativos': informativos,
+        'conductuales': conductuales,
+        'progress': progress,
+    }
+    html = render_to_string('conducta/lista_reportes.html', context)
+    return HttpResponse(html)
