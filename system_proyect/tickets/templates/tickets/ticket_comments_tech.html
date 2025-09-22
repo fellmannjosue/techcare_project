@@ -14,6 +14,19 @@
     <!-- CSS Personalizado -->
     <link rel="stylesheet" href="{% static 'tickets/css/comments.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .form-update-status {
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,.07);
+            padding: 18px 24px;
+            margin-bottom: 24px;
+            max-width: 480px;
+        }
+        .form-update-status label { font-weight: 500; }
+        .chat-container { max-width: 660px; margin: auto; }
+        .footer { margin-top: 30px; text-align: center; color: #666; font-size: 14px; }
+    </style>
 </head>
 <body>
 <div class="chat-container">
@@ -21,10 +34,11 @@
         ← Volver al Panel Técnico
     </a>
 
+    <!-- Panel información ticket -->
     <div class="ticket-info mb-2">
         <b>Ticket:</b> {{ ticket.ticket_id }}<br>
         <b>Estado:</b>
-        <span class="badge bg-light text-dark">{{ ticket.status }}</span>
+        <span class="badge bg-light text-dark" id="badge-status">{{ ticket.status }}</span>
         <b>| Nombre:</b> {{ ticket.name }}
         <b>| Correo:</b> {{ ticket.email }}
     </div>
@@ -37,17 +51,25 @@
         </div>
     {% endif %}
 
-    <!-- SELECT PARA CAMBIAR STATUS -->
-    <form method="post" action="{% url 'update_ticket' ticket.id %}" class="my-3">
+    <!-- FORMULARIO DE ESTADO Y COMENTARIOS GENERALES -->
+    <form id="form-status-ticket" class="form-update-status">
         {% csrf_token %}
-        <div class="input-group" style="max-width:340px;">
-            <label class="input-group-text" for="status"><b>Estado</b></label>
-            <select class="form-select" id="id_status" name="status">
-                        <option value="Pendiente" {% if ticket.status == "Pendiente" %}selected{% endif %}>Pendiente</option>
-                        <option value="En Proceso" {% if ticket.status == "En Proceso" %}selected{% endif %}>En Proceso</option>
-                        <option value="Resuelto" {% if ticket.status == "Resuelto" %}selected{% endif %}>Resuelto</option>
-                    </select>
-            <button type="submit" class="btn btn-outline-primary">Actualizar</button>
+        <div class="row g-2 align-items-center">
+            <div class="col-6">
+                <label for="chat-status-select" class="form-label mb-0">Estado del Ticket:</label>
+                <select class="form-select" id="chat-status-select" name="status">
+                    <option value="Pendiente" {% if ticket.status == "Pendiente" %}selected{% endif %}>Pendiente</option>
+                    <option value="En Proceso" {% if ticket.status == "En Proceso" %}selected{% endif %}>En Proceso</option>
+                    <option value="Resuelto" {% if ticket.status == "Resuelto" %}selected{% endif %}>Resuelto</option>
+                </select>
+            </div>
+            <div class="col-6">
+                <label for="ticket-comments" class="form-label mb-0">Comentarios Generales:</label>
+                <textarea class="form-control" name="comments" id="ticket-comments" rows="1" placeholder="Agrega comentarios generales">{{ ticket.comments }}</textarea>
+            </div>
+        </div>
+        <div class="mt-2 text-end">
+            <button type="submit" class="btn btn-outline-primary btn-sm">Actualizar Estado</button>
         </div>
     </form>
 
@@ -81,6 +103,10 @@
             </div>
         </form>
     </div>
+</div>
+
+<div class="footer">
+    <p>© {{ year|default:"2025" }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
 </div>
 
 <!-- Bootstrap Bundle -->

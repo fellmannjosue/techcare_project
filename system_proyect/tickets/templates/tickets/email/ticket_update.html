@@ -19,10 +19,31 @@
                             <p><strong>Estimado Usuario:</strong></p>
                             <p>Su ticket ha sido actualizado con el siguiente estado:</p>
                             <p><strong>Nuevo Estado:</strong> {{ ticket.status }}</p>
-                            <p><strong>Comentarios del Técnico:</strong> {{ ticket.comments }}</p>
+                            <p><strong>Comentarios del Técnico:</strong> {{ ticket.comments|default:"(Sin comentarios adicionales)" }}</p>
                             <p>Gracias por su paciencia. Estamos trabajando en su solicitud.</p>
                         </td>
                     </tr>
+
+                    {# ----- HISTORIAL DE CONVERSACIÓN (solo si existe) ----- #}
+                    {% if chat_conversacion %}
+                    <tr>
+                        <td style="padding: 16px 20px 10px 20px;">
+                            <h3 style="font-size:18px; color:#333; margin-bottom:8px;">Historial de Conversación</h3>
+                            <table width="100%" style="border-collapse: collapse; background: #f9fafb; border-radius:7px;">
+                              {% for c in chat_conversacion %}
+                                <tr>
+                                    <td style="border-bottom:1px solid #eee; padding:8px 0;">
+                                        <b style="color:#1976d2;">{{ c.autor }}</b>
+                                        <span style="color:#999; font-size:12px;">{{ c.fecha }}</span><br>
+                                        <span style="font-size:15px; color:#222;">{{ c.mensaje|linebreaksbr }}</span>
+                                    </td>
+                                </tr>
+                              {% endfor %}
+                            </table>
+                        </td>
+                    </tr>
+                    {% endif %}
+
                     <tr>
                         <td style="padding: 20px; text-align: center; font-family: Arial, sans-serif; font-size: 14px; color: #777;">
                             <p>Atentamente,<br>Equipo de Soporte Técnico de Nuevo Amanecer</p>

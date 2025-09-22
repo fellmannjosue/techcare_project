@@ -9,6 +9,7 @@ from .models import Ticket, TicketComment
 from .forms import TicketForm, TicketCommentForm
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.views.decorators.http import require_POST, require_GET
 import os
 import json
 from threading import Thread
@@ -91,31 +92,6 @@ def technician_dashboard(request):
     messages.info(request, 'Bienvenido al Dashboard de Técnico.')
     return render(request, 'tickets/technician_dashboard.html', {'tickets': tickets})
 
-@login_required
-def update_ticket(request, ticket_id):
-    ticket = get_object_or_404(Ticket, id=ticket_id)
-    if request.method == 'POST':
-        new_status = request.POST.get('status')
-        new_comments = request.POST.get('comments')
-        if new_status and new_status != ticket.status:
-            ticket.status = new_status
-        if new_comments is not None:
-            ticket.comments = new_comments
-        ticket.save()
-        subject_update = f'Ticket #{ticket.ticket_id} - Estado Actualizado'
-        message_update = render_to_string(
-            'tickets/email/ticket_update.html',
-            {
-                'ticket': ticket,
-                'technician_name': 'Equipo Técnico',
-                'comments': ticket.comments,
-                'img_url': PUBLIC_IMAGE_URL
-            }
-        )
-        send_email_async(subject_update, message_update, [ticket.email])
-        messages.success(request, f'El estado del ticket #{ticket.ticket_id} se actualizó correctamente.')
-        return redirect('technician_dashboard')
-    return render(request, 'tickets/update_ticket.html', {'ticket': ticket})
 
 @login_required
 def ticket_comments(request, ticket_id):
@@ -143,59 +119,80 @@ def ticket_comments(request, ticket_id):
             comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
 
     # ========== BLOQUEO SI TICKET RESUELTO ==========
-    # Este chequeo es seguro contra mayúsculas/minúsculas y espacios
     status_resuelto = ticket.status.strip().lower() == "resuelto"
-    
-    if request.method == 'POST':
-        # Bloqueo adicional: No dejar enviar mensajes si el ticket está resuelto
-        if status_resuelto and not (request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists()):
-            # Solo bloquea usuarios normales (los técnicos sí pueden comentar si quieres)
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({'ok': False, 'error': 'Este ticket está cerrado. No puedes enviar más comentarios.'}, status=403)
-            else:
-                messages.error(request, "Este ticket está cerrado. No puedes enviar más comentarios.")
-                return redirect('ticket_comments', ticket_id=ticket.id)
 
-        try:
-            form = TicketCommentForm(request.POST)
-            if form.is_valid():
-                comentario = form.save(commit=False)
-                comentario.ticket = ticket
-                comentario.usuario = request.user
-                comentario.save()
-                # Enviar correo (manejo de error silencioso)
-                try:
-                    subject = f"Nuevo comentario en Ticket #{ticket.ticket_id}"
-                    html_message = render_to_string(
-                        'tickets/email/nuevo_comentario.html',
-                        {'ticket': ticket, 'comentario': comentario, 'autor': request.user}
-                    )
-                    send_email_async(subject, html_message, [ticket.email])
-                except Exception as e:
-                    print("Error enviando correo:", e)
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'ok': True, 'mensaje': 'Comentario agregado correctamente.'})
-                else:
-                    messages.success(request, "Comentario agregado y notificado por correo.")
-                    return redirect('ticket_comments', ticket_id=ticket.id)
-            else:
-                if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                    return JsonResponse({'ok': False, 'error': form.errors.as_json()}, status=400)
-                else:
-                    messages.error(request, "Error en el formulario.")
-        except Exception as ex:
-            import traceback
-            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
-                return JsonResponse({
-                    'ok': False,
-                    'error': str(ex),
-                    'trace': traceback.format_exc()
-                }, status=500)
-            else:
-                raise ex
+    # ----- PROCESAR POST: Cambio de estado y/o mensaje -----
+    if request.method == 'POST':
+        # ---- Cambiar estado del ticket si viene en el POST ----
+        new_status = request.POST.get('status')
+        status_cambiado = False
+        enviar_historial = False
+
+        if new_status and new_status != ticket.status:
+            ticket.status = new_status
+            ticket.save()
+            status_cambiado = True
+            # Si el nuevo estado es Resuelto, enviamos historial
+            if new_status.strip().lower() == "resuelto":
+                enviar_historial = True
+
+        # ---- Procesar comentario (si existe) ----
+        mensaje = request.POST.get('mensaje', '').strip()
+        form = TicketCommentForm(request.POST)
+        comentario = None
+
+        if form.is_valid() and mensaje:
+            comentario = form.save(commit=False)
+            comentario.ticket = ticket
+            comentario.usuario = request.user
+            comentario.save()
+            # Notificar nuevo comentario (no historial aún)
+            try:
+                subject = f"Nuevo comentario en Ticket #{ticket.ticket_id}"
+                html_message = render_to_string(
+                    'tickets/email/nuevo_comentario.html',
+                    {'ticket': ticket, 'comentario': comentario, 'autor': request.user}
+                )
+                send_email_async(subject, html_message, [ticket.email])
+            except Exception as e:
+                print("Error enviando correo:", e)
+
+        # ---- Si cambió el estado, enviar correo con historial de chat ----
+        if status_cambiado:
+            # Recopila historial de chat
+            historial_chat = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
+            chat_conversacion = [
+                {
+                    "autor": c.usuario.username if c.usuario else "Soporte Técnico",
+                    "mensaje": c.mensaje,
+                    "fecha": c.fecha.strftime("%d/%m/%Y %H:%M"),
+                }
+                for c in historial_chat
+            ]
+            subject_update = f'Ticket #{ticket.ticket_id} - Estado Actualizado ({ticket.status})'
+            message_update = render_to_string(
+                'tickets/email/ticket_update.html',
+                {
+                    'ticket': ticket,
+                    'technician_name': 'Equipo Técnico',
+                    'comments': ticket.comments,
+                    'img_url': PUBLIC_IMAGE_URL,
+                    'chat_conversacion': chat_conversacion,
+                }
+            )
+            send_email_async(subject_update, message_update, [ticket.email])
+
+        # ---- Redirección AJAX o normal ----
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True, 'mensaje': 'Comentario y/o estado actualizado correctamente.'})
+        else:
+            messages.success(request, "Comentario y/o estado actualizado correctamente.")
+            return redirect('ticket_comments', ticket_id=ticket.id)
+
     else:
         form = TicketCommentForm()
 
+    # Render según tipo usuario (técnico/usuario)
     if request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists():
         template = 'tickets/ticket_comments_tech.html'
     else:
@@ -205,8 +202,9 @@ def ticket_comments(request, ticket_id):
         'ticket': ticket,
         'comentarios': comentarios,
         'form': form,
-        'status_resuelto': status_resuelto,  # pásalo al template por si quieres deshabilitar el form
+        'status_resuelto': status_resuelto,  # Para deshabilitar el form en el template si está resuelto
     })
+
 
 @login_required
 def ticket_comments_ajax(request, ticket_id):
@@ -221,3 +219,61 @@ def ticket_comments_ajax(request, ticket_id):
         'request': request,
     })
     return JsonResponse({'html': html})
+
+
+@require_POST
+@login_required
+def ticket_status_update_ajax(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    new_status = request.POST.get("status")
+    comments = request.POST.get("comments", "").strip()
+    correo_enviado = False
+
+    if new_status and new_status in ["Pendiente", "En Proceso", "Resuelto"]:
+        # Actualiza status y comments generales
+        ticket.status = new_status
+        ticket.comments = comments
+        ticket.save()
+
+        # Si es RESUELTO, manda el correo con historial del chat
+        if new_status == "Resuelto":
+            # Prepara historial del chat
+            historial_chat = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
+            chat_conversacion = [
+                {
+                    "autor": c.usuario.username if c.usuario else "Soporte Técnico",
+                    "mensaje": c.mensaje,
+                    "fecha": c.fecha.strftime("%d/%m/%Y %H:%M"),
+                }
+                for c in historial_chat
+            ]
+            subject_update = f'Ticket #{ticket.ticket_id} - Estado Actualizado (Resuelto)'
+            message_update = render_to_string(
+                'tickets/email/ticket_update.html',
+                {
+                    'ticket': ticket,
+                    'technician_name': 'Equipo Técnico',
+                    'comments': ticket.comments,
+                    'img_url': PUBLIC_IMAGE_URL,
+                    'chat_conversacion': chat_conversacion,
+                }
+            )
+            send_email_async(subject_update, message_update, [ticket.email])
+            correo_enviado = True
+
+        return JsonResponse({
+            "ok": True,
+            "status": ticket.status,
+            "comments": ticket.comments,
+            "correo_enviado": correo_enviado
+        })
+    return JsonResponse({"ok": False, "error": "Estado inválido"}, status=400)
+
+@require_GET
+@login_required
+def ticket_status_get_ajax(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    return JsonResponse({
+        "status": ticket.status,
+        "comments": ticket.comments  # <-- esto refresca el textarea!
+    })
