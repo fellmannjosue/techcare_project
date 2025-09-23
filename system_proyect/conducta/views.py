@@ -577,8 +577,21 @@ def descargar_pdf_conductual(request, pk):
     for idx, rep in enumerate(reportes, 1):
         y_actual -= 2*mm
         pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(32*mm, y_actual, f"Reporte #{idx}")
+
+        # Determinar tipo de falta
+        tipos = []
+        if rep.incisos_leve.exists():
+            tipos.append("Leve")
+        if rep.incisos_grave.exists():
+            tipos.append("Grave")
+        if rep.incisos_muygrave.exists():
+            tipos.append("Muy Grave")
+        tipo_str = ", ".join(tipos) if tipos else "—"
+
+        # Reporte # con tipo
+        pdf.drawString(32*mm, y_actual, f"Reporte #{idx} ({tipo_str})")
         y_actual -= 7*mm
+
         pdf.setFont("Helvetica", 10)
         pdf.drawString(32*mm, y_actual, f"Nombre: {rep.alumno_nombre}")
         pdf.drawString(110*mm, y_actual, f"Grado: {rep.grado}")
@@ -621,7 +634,11 @@ def descargar_pdf_conductual(request, pk):
     # FIRMAS (alineadas)
     y_firmas = 25*mm
     x_firma = [34*mm, 91*mm, 146*mm]
-    etiquetas = ["Firma Padre de Familia", "Firma del Docente/Orientación", "Firma del Coordinador"]
+    if reporte.area == "colegio":
+        etiquetas = ["Firma Padre de Familia", "Firma del Docente/Orientación", "Firma de Consejería"]
+    else:  # bilingue
+        etiquetas = ["Firma Padre de Familia", "Firma del Docente", "Firma del Coordinador"]
+
     for i in range(3):
         pdf.setStrokeColor(colors.black)
         pdf.line(x_firma[i], y_firmas, x_firma[i]+42*mm, y_firmas)
@@ -631,7 +648,6 @@ def descargar_pdf_conductual(request, pk):
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
-
 
 @login_required
 def descargar_pdf_progress(request, pk):
