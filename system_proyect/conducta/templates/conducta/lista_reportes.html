@@ -2,6 +2,7 @@
 <table class="table table-striped table-sm">
     <thead>
         <tr>
+            <th>Estudiante</th>
             <th>Tipo</th>
             <th>Fecha</th>
             <th>Docente</th>
@@ -13,6 +14,7 @@
     <tbody>
     {% for r in informativos %}
         <tr>
+            <td>{{ r.alumno_nombre }}</td>
             <td><span class="badge bg-info">Informativo</span></td>
             <td>{{ r.fecha|date:"d/m/Y" }}</td>
             <td>{{ r.docente }}</td>
@@ -27,6 +29,7 @@
     {% endfor %}
     {% for r in conductuales %}
         <tr>
+            <td>{{ r.alumno_nombre }}</td>
             <td><span class="badge bg-warning text-dark">Conductual</span></td>
             <td>{{ r.fecha|date:"d/m/Y" }}</td>
             <td>{{ r.docente }}</td>
@@ -41,6 +44,7 @@
     {% endfor %}
     {% for r in progress %}
         <tr>
+            <td>{{ r.alumno_nombre }}</td>
             <td><span class="badge bg-primary">Progress</span></td>
             <td>{{ r.fecha|date:"d/m/Y" }}</td>
             <td>{{ r.usuario }}</td>

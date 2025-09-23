@@ -51,7 +51,6 @@ class ReporteConductualForm(forms.Form):
         required=False,
         label="Comentario"
     )
-    # Nuevos campos:
     coordinador_firma = forms.ChoiceField(
         label="Coordinador que aprueba",
         choices=get_coordinadores_choices(),
@@ -64,13 +63,24 @@ class ReporteConductualForm(forms.Form):
         required=True,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    comentario_coordinador = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        required=False,
+        label="Comentario del Coordinador"
+    )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, es_coordinador=False, **kwargs):
         alumnos_choices = kwargs.pop('alumnos_choices', [])
         materia_docente_choices = kwargs.pop('materia_docente_choices', [])
         super().__init__(*args, **kwargs)
         self.fields['alumno'].choices = alumnos_choices
         self.fields['materia_docente'].choices = materia_docente_choices
+        # Solo permite edición a los coordinadores
+        if not es_coordinador:
+            for name, field in self.fields.items():
+                if name not in ('coordinador_firma', 'estado', 'comentario_coordinador'):
+                    field.widget.attrs['readonly'] = True
+                    field.widget.attrs['disabled'] = True
 
 class ReporteInformativoForm(forms.Form):
     fecha = forms.DateTimeField(
@@ -106,13 +116,23 @@ class ReporteInformativoForm(forms.Form):
         required=True,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    comentario_coordinador = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        required=False,
+        label="Comentario del Coordinador"
+    )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, es_coordinador=False, **kwargs):
         alumnos_choices = kwargs.pop('alumnos_choices', [])
         materia_docente_choices = kwargs.pop('materia_docente_choices', [])
         super().__init__(*args, **kwargs)
         self.fields['alumno'].choices = alumnos_choices
         self.fields['materia_docente'].choices = materia_docente_choices
+        if not es_coordinador:
+            for name, field in self.fields.items():
+                if name not in ('coordinador_firma', 'estado', 'comentario_coordinador'):
+                    field.widget.attrs['readonly'] = True
+                    field.widget.attrs['disabled'] = True
 
 class ProgressReportForm(forms.Form):
     fecha = forms.DateTimeField(
@@ -152,8 +172,18 @@ class ProgressReportForm(forms.Form):
         required=True,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
+    comentario_coordinador = forms.CharField(
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        required=False,
+        label="Comentario del Coordinador"
+    )
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, es_coordinador=False, **kwargs):
         alumnos_choices = kwargs.pop('alumnos_choices', [])
         super().__init__(*args, **kwargs)
         self.fields['alumno'].choices = alumnos_choices
+        if not es_coordinador:
+            for name, field in self.fields.items():
+                if name not in ('coordinador_firma', 'estado', 'comentario_coordinador'):
+                    field.widget.attrs['readonly'] = True
+                    field.widget.attrs['disabled'] = True

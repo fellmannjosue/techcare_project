@@ -456,117 +456,114 @@ def es_coordinador(user):
 
 @login_required
 def editar_reporte_conductual(request, pk):
-    reporte = get_object_or_404(ReporteConductual, pk=pk)
-    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
-    materia_docente_choices = [(reporte.materia, f"{reporte.materia} – {reporte.docente}")]
+    try:
+        reporte = get_object_or_404(ReporteConductual, pk=pk)
+        alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+        materia_docente_choices = [(reporte.materia, f"{reporte.materia} – {reporte.docente}")]
+        if request.method == 'POST':
+            form = ReporteConductualForm(request.POST, alumnos_choices=alumnos_choices, materia_docente_choices=materia_docente_choices)
+            if form.is_valid():
+                reporte.comentario = form.cleaned_data['comentario']
+                if es_coordinador(request.user):
+                    reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                    reporte.estado = form.cleaned_data['estado']
+                reporte.save()
+                messages.success(request, "Reporte conductual actualizado correctamente.")
+                return redirect('dashboard_coordinador', area=reporte.area)
+        else:
+            initial = {
+                'fecha': reporte.fecha,
+                'alumno': reporte.alumno_id,
+                'grado': reporte.grado,
+                'materia_docente': reporte.materia,
+                'comentario': reporte.comentario,
+                'coordinador_firma': reporte.coordinador_firma,
+                'estado': reporte.estado,
+            }
+            form = ReporteConductualForm(initial=initial, alumnos_choices=alumnos_choices, materia_docente_choices=materia_docente_choices)
+        return render(request, 'conducta/editor_conductual.html', {
+            'form': form,
+            'reporte': reporte,
+            'es_coordinador': es_coordinador(request.user),
+        })
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"<pre>{e}\n\n{traceback.format_exc()}</pre>")
 
-    if request.method == 'POST':
-        form = ReporteConductualForm(request.POST,
-                                     alumnos_choices=alumnos_choices,
-                                     materia_docente_choices=materia_docente_choices)
-        if form.is_valid():
-            reporte.comentario = form.cleaned_data['comentario']
-            if es_coordinador(request.user):
-                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
-                reporte.estado = form.cleaned_data['estado']
-            reporte.save()
-            messages.success(request, "Reporte conductual actualizado correctamente.")
-            return redirect('dashboard_conductual')  # Ajusta según tu proyecto
-    else:
-        initial = {
-            'fecha': reporte.fecha,
-            'alumno': reporte.alumno_id,
-            'grado': reporte.grado,
-            'materia_docente': reporte.materia,
-            'comentario': reporte.comentario,
-            'coordinador_firma': reporte.coordinador_firma,
-            'estado': reporte.estado,
-        }
-        form = ReporteConductualForm(
-            initial=initial,
-            alumnos_choices=alumnos_choices,
-            materia_docente_choices=materia_docente_choices
-        )
-
-    return render(request, 'conducta/editar_conductual.html', {
-        'form': form,
-        'reporte': reporte,
-        'es_coordinador': es_coordinador(request.user),
-    })
 
 @login_required
 def editar_reporte_informativo(request, pk):
-    reporte = get_object_or_404(ReporteInformativo, pk=pk)
-    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
-    materia_docente_choices = [(reporte.materia, f"{reporte.materia} – {reporte.docente}")]
+    try:
+        reporte = get_object_or_404(ReporteInformativo, pk=pk)
+        alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+        materia_docente_choices = [(reporte.materia, f"{reporte.materia} – {reporte.docente}")]
+        if request.method == 'POST':
+            form = ReporteInformativoForm(request.POST, alumnos_choices=alumnos_choices, materia_docente_choices=materia_docente_choices)
+            if form.is_valid():
+                reporte.comentario = form.cleaned_data['comentario']
+                if es_coordinador(request.user):
+                    reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                    reporte.estado = form.cleaned_data['estado']
+                reporte.save()
+                messages.success(request, "Reporte informativo actualizado correctamente.")
+                return redirect('dashboard_coordinador', area=reporte.area)
+        else:
+            initial = {
+                'fecha': reporte.fecha,
+                'alumno': reporte.alumno_id,
+                'grado': reporte.grado,
+                'materia_docente': reporte.materia,
+                'comentario': reporte.comentario,
+                'coordinador_firma': reporte.coordinador_firma,
+                'estado': reporte.estado,
+            }
+            form = ReporteInformativoForm(initial=initial, alumnos_choices=alumnos_choices, materia_docente_choices=materia_docente_choices)
+        return render(request, 'conducta/editor_informativo.html', {
+            'form': form,
+            'reporte': reporte,
+            'es_coordinador': es_coordinador(request.user),
+        })
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"<pre>{e}\n\n{traceback.format_exc()}</pre>")
 
-    if request.method == 'POST':
-        form = ReporteInformativoForm(request.POST,
-                                      alumnos_choices=alumnos_choices,
-                                      materia_docente_choices=materia_docente_choices)
-        if form.is_valid():
-            reporte.comentario = form.cleaned_data['comentario']
-            if es_coordinador(request.user):
-                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
-                reporte.estado = form.cleaned_data['estado']
-            reporte.save()
-            messages.success(request, "Reporte informativo actualizado correctamente.")
-            return redirect('dashboard_informativo')
-    else:
-        initial = {
-            'fecha': reporte.fecha,
-            'alumno': reporte.alumno_id,
-            'grado': reporte.grado,
-            'materia_docente': reporte.materia,
-            'comentario': reporte.comentario,
-            'coordinador_firma': reporte.coordinador_firma,
-            'estado': reporte.estado,
-        }
-        form = ReporteInformativoForm(
-            initial=initial,
-            alumnos_choices=alumnos_choices,
-            materia_docente_choices=materia_docente_choices
-        )
-
-    return render(request, 'conducta/editar_informativo.html', {
-        'form': form,
-        'reporte': reporte,
-        'es_coordinador': es_coordinador(request.user),
-    })
 
 @login_required
 def editar_progress_report(request, pk):
-    reporte = get_object_or_404(ProgressReport, pk=pk)
-    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+    try:
+        reporte = get_object_or_404(ProgressReport, pk=pk)
+        alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+        if request.method == 'POST':
+            form = ProgressReportForm(request.POST, alumnos_choices=alumnos_choices)
+            if form.is_valid():
+                reporte.comentario_general = form.cleaned_data['comentario_general']
+                if es_coordinador(request.user):
+                    reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                    reporte.estado = form.cleaned_data['estado']
+                reporte.save()
+                messages.success(request, "Progress report actualizado correctamente.")
+                return redirect('dashboard_coordinador', area='bilingue')
+        else:
+            initial = {
+                'fecha': reporte.fecha,
+                'alumno': reporte.alumno_id,
+                'grado': reporte.grado,
+                'semana_inicio': reporte.semana_inicio,
+                'semana_fin': reporte.semana_fin,
+                'comentario_general': reporte.comentario_general,
+                'coordinador_firma': reporte.coordinador_firma,
+                'estado': reporte.estado,
+            }
+            form = ProgressReportForm(initial=initial, alumnos_choices=alumnos_choices)
+        return render(request, 'conducta/editor_progress.html', {
+            'form': form,
+            'reporte': reporte,
+            'es_coordinador': es_coordinador(request.user),
+        })
+    except Exception as e:
+        import traceback
+        return HttpResponse(f"<pre>{e}\n\n{traceback.format_exc()}</pre>")
 
-    if request.method == 'POST':
-        form = ProgressReportForm(request.POST, alumnos_choices=alumnos_choices)
-        if form.is_valid():
-            reporte.comentario_general = form.cleaned_data['comentario_general']
-            if es_coordinador(request.user):
-                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
-                reporte.estado = form.cleaned_data['estado']
-            reporte.save()
-            messages.success(request, "Progress report actualizado correctamente.")
-            return redirect('dashboard_progress')
-    else:
-        initial = {
-            'fecha': reporte.fecha,
-            'alumno': reporte.alumno_id,
-            'grado': reporte.grado,
-            'semana_inicio': reporte.semana_inicio,
-            'semana_fin': reporte.semana_fin,
-            'comentario_general': reporte.comentario_general,
-            'coordinador_firma': reporte.coordinador_firma,
-            'estado': reporte.estado,
-        }
-        form = ProgressReportForm(initial=initial, alumnos_choices=alumnos_choices)
-
-    return render(request, 'progress/editar_progress.html', {
-        'form': form,
-        'reporte': reporte,
-        'es_coordinador': es_coordinador(request.user),
-    })
 
 # -----------  DESCARGA EN PDF  -----------
 
@@ -638,9 +635,39 @@ def descargar_pdf_informativo(request, pk):
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
 
+def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, bold=False, italic=False, leading=13):
+    """
+    Dibuja un párrafo con saltos de línea y justificación manual en ReportLab.
+    """
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    fontname = font
+    if bold and italic:
+        fontname = "Helvetica-BoldOblique"
+    elif bold:
+        fontname = "Helvetica-Bold"
+    elif italic:
+        fontname = "Helvetica-Oblique"
+    pdf.setFont(fontname, font_size)
+    lines = []
+    for raw_line in text.split('\n'):
+        line = ""
+        for word in raw_line.split():
+            test_line = f"{line} {word}".strip()
+            if stringWidth(test_line, fontname, font_size) < max_width:
+                line = test_line
+            else:
+                lines.append(line)
+                line = word
+        lines.append(line)
+    for l in lines:
+        pdf.drawString(x, y, l)
+        y -= leading
+    return y
+
+
 @login_required
-def descargar_pdf_conductual(request, pk):
-    # Recuperar el reporte y sus tres strikes
+def descargar_pdf_conductual_3_strikes(request, pk):
+    from .models import ReporteConductual
     reporte = get_object_or_404(ReporteConductual, pk=pk)
     reportes = list(ReporteConductual.objects.filter(
         area=reporte.area,
@@ -669,7 +696,7 @@ def descargar_pdf_conductual(request, pk):
             height=height_logo,
             mask='auto'
         )
-    y_actual = h - 46 * mm
+    y_actual = h - 47 * mm
 
     # Título
     pdf.setFont("Helvetica-Bold", 16)
@@ -677,74 +704,88 @@ def descargar_pdf_conductual(request, pk):
     pdf.drawCentredString(w/2, y_actual, titulo)
     y_actual -= 12*mm
     pdf.setFont("Helvetica", 13)
-    pdf.drawCentredString(w/2, y_actual, "Reporte conductual")
-    y_actual -= 8*mm
+    pdf.drawCentredString(w/2, y_actual, "Reporte conductual – 3 Strikes")
+    y_actual -= 10*mm
 
-    # Cada reporte
-    pdf.setFont("Helvetica", 11)
+    # --- CADA REPORTE ---
     for idx, rep in enumerate(reportes, 1):
-        y_actual -= 2*mm
-        pdf.setFont("Helvetica-Bold", 11)
-
-        # Determinar tipo de falta
-        tipos = []
-        if rep.incisos_leve.exists():
-            tipos.append("Leve")
-        if rep.incisos_grave.exists():
-            tipos.append("Grave")
-        if rep.incisos_muygrave.exists():
-            tipos.append("Muy Grave")
-        tipo_str = ", ".join(tipos) if tipos else "—"
-
-        # Reporte # con tipo
-        pdf.drawString(32*mm, y_actual, f"Reporte #{idx} ({tipo_str})")
-        y_actual -= 7*mm
-
-        pdf.setFont("Helvetica", 10)
-        pdf.drawString(32*mm, y_actual, f"Nombre: {rep.alumno_nombre}")
-        pdf.drawString(110*mm, y_actual, f"Grado: {rep.grado}")
-        y_actual -= 6*mm
-        pdf.drawString(32*mm, y_actual, f"Docente/materia: {rep.docente}")
-        pdf.drawString(110*mm, y_actual, f"Fecha: {rep.fecha.strftime('%d/%m/%Y')}")
-        y_actual -= 7*mm
-
-        # Inciso
-        pdf.setFont("Helvetica-Bold", 10)
-        pdf.drawString(32*mm, y_actual, "Inciso:")
-        incisos = []
-        incisos += [i.descripcion for i in rep.incisos_leve.all()]
-        incisos += [i.descripcion for i in rep.incisos_grave.all()]
-        incisos += [i.descripcion for i in rep.incisos_muygrave.all()]
-        incisos_text = "; ".join(incisos)
-        pdf.setFont("Helvetica-Oblique", 9.5)
-        y_actual -= 5*mm
-        pdf.drawString(38*mm, y_actual, incisos_text[:110])
-        if len(incisos_text) > 110:
-            y_actual -= 4*mm
-            pdf.drawString(38*mm, y_actual, incisos_text[110:220])
+        pdf.setFont("Helvetica-Bold", 12)
+        pdf.drawString(32*mm, y_actual, f"Reporte #{idx} ({', '.join(['Leve' if rep.incisos_leve.exists() else '', 'Grave' if rep.incisos_grave.exists() else '', 'Muy Grave' if rep.incisos_muygrave.exists() else '']).replace(',,',',').strip(', ')})")
         y_actual -= 8*mm
 
-        # Descripción
+        # Fila: Nombre/Grado/Docente/Fecha
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, "Nombre:")
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(60*mm, y_actual, rep.alumno_nombre)
+
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(120*mm, y_actual, "Grado:")
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(140*mm, y_actual, rep.grado)
+        y_actual -= 6*mm
+
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, "Docente/Materia:")
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(75*mm, y_actual, rep.docente)
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(120*mm, y_actual, "Fecha:")
+        pdf.setFont("Helvetica", 11)
+        pdf.drawString(140*mm, y_actual, rep.fecha.strftime('%d/%m/%Y'))
+        y_actual -= 7*mm
+
+        # Incisos (párrafo)
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(32*mm, y_actual, "Inciso:")
+        y_actual -= 6*mm
+
+        incisos = [i.descripcion for i in rep.incisos_leve.all()] + [i.descripcion for i in rep.incisos_grave.all()] + [i.descripcion for i in rep.incisos_muygrave.all()]
+        if incisos:
+            text_obj = pdf.beginText(38*mm, y_actual)
+            text_obj.setFont("Helvetica-BoldOblique", 10)
+            wrap_len = 95  # Ajusta a gusto (número de caracteres por línea)
+            for inciso in incisos:
+                lines = [inciso[i:i+wrap_len] for i in range(0, len(inciso), wrap_len)]
+                for ln in lines:
+                    text_obj.textLine(ln)
+                    y_actual -= 5*mm
+            pdf.drawText(text_obj)
+            y_actual = text_obj.getY() - 1*mm
+        else:
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(38*mm, y_actual, "-")
+            y_actual -= 5*mm
+
+        # Descripción (Comentario)
         pdf.setFont("Helvetica-Bold", 10)
         pdf.drawString(32*mm, y_actual, "Descripción:")
-        pdf.setFont("Helvetica-Oblique", 9.5)
         y_actual -= 5*mm
-        for line in rep.comentario.split("\n"):
-            pdf.drawString(38*mm, y_actual, line)
-            y_actual -= 4.5*mm
-        y_actual -= 4*mm
+        if rep.comentario:
+            text_obj = pdf.beginText(38*mm, y_actual)
+            text_obj.setFont("Helvetica-Oblique", 10)
+            for line in rep.comentario.split("\n"):
+                text_obj.textLine(line)
+                y_actual -= 5*mm
+            pdf.drawText(text_obj)
+            y_actual = text_obj.getY() - 1*mm
+        else:
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(38*mm, y_actual, "-")
+            y_actual -= 5*mm
 
-        # Línea divisoria
+        # Espacio entre reportes
+        y_actual -= 4*mm
         pdf.setStrokeColor(colors.grey)
         pdf.line(30*mm, y_actual, w-30*mm, y_actual)
         y_actual -= 8*mm
 
-    # FIRMAS (alineadas)
-    y_firmas = 25*mm
+    # FIRMAS PARA LLENAR EN FÍSICO
+    y_firmas = 20*mm
     x_firma = [34*mm, 91*mm, 146*mm]
     if reporte.area == "colegio":
         etiquetas = ["Firma Padre de Familia", "Firma del Docente/Orientación", "Firma de Consejería"]
-    else:  # bilingue
+    else:
         etiquetas = ["Firma Padre de Familia", "Firma del Docente", "Firma del Coordinador"]
 
     for i in range(3):
@@ -756,6 +797,122 @@ def descargar_pdf_conductual(request, pk):
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
+
+
+@login_required
+def descargar_pdf_conductual(request, pk):
+    from .models import ReporteConductual
+    reporte = get_object_or_404(ReporteConductual, pk=pk)
+    buf = io.BytesIO()
+    w, h = letter
+    pdf = canvas.Canvas(buf, pagesize=letter)
+    pdf.setTitle("reporte_conductual.pdf")
+
+    width_logo = 35 * mm
+    height_logo = 35 * mm
+    x_logo = (w - width_logo) / 2
+    logo_path = os.path.join(settings.STATIC_ROOT, "conducta/img/ana-transformed.png")
+    if os.path.exists(logo_path):
+        pdf.drawImage(
+            logo_path,
+            x=x_logo,
+            y=h-40*mm,
+            width=width_logo,
+            height=height_logo,
+            mask='auto'
+        )
+    y_actual = h - 48*mm
+
+    # --- Título y cabecera ---
+    pdf.setFont("Helvetica-Bold", 16)
+    titulo = "Nuevo Amanecer School" if reporte.area == "bilingue" else "C.E.M.N.G Nuevo Amanecer"
+    pdf.drawCentredString(w/2, y_actual, titulo)
+    y_actual -= 12*mm
+    pdf.setFont("Helvetica", 13)
+    pdf.drawCentredString(w/2, y_actual, "Reporte conductual")
+    y_actual -= 10*mm
+
+    # Datos generales (alineados)
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Nombre:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(60*mm, y_actual, reporte.alumno_nombre)
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(110*mm, y_actual, "Grado:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(130*mm, y_actual, reporte.grado)
+    y_actual -= 7*mm
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Docente:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(60*mm, y_actual, reporte.docente or "")
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(110*mm, y_actual, "Fecha:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(130*mm, y_actual, reporte.fecha.strftime('%d/%m/%Y') if reporte.fecha else '')
+    y_actual -= 9*mm
+
+    # Incisos (Leve, Grave, Muy grave)
+    maxw = w - 50*mm
+    for tipo, label in [("incisos_leve", "Leve"), ("incisos_grave", "Grave"), ("incisos_muygrave", "Muy Grave")]:
+        incisos = getattr(reporte, tipo).all()
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, f"Incisos {label}:")
+        y_actual -= 6*mm
+        if incisos:
+            for i in incisos:
+                y_actual = draw_paragraph(
+                    pdf, i.descripcion, x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, bold=True, italic=True, leading=11
+                )
+        else:
+            pdf.setFont("Helvetica-Oblique", 10)
+            pdf.drawString(38*mm, y_actual, "-")
+            y_actual -= 6*mm
+        y_actual -= 3*mm
+
+    # Comentario Docente
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Comentario del Docente:")
+    y_actual -= 6*mm
+    y_actual = draw_paragraph(
+        pdf, reporte.comentario or "-", x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, italic=True, leading=11
+    )
+
+    # Comentario Coordinador (si existe)
+    if hasattr(reporte, 'comentario_coordinador') and reporte.comentario_coordinador:
+        pdf.setFont("Helvetica-Bold", 11)
+        y_actual -= 4*mm
+        pdf.drawString(32*mm, y_actual, "Comentario del Coordinador:")
+        y_actual -= 6*mm
+        y_actual = draw_paragraph(
+            pdf, reporte.comentario_coordinador, x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, italic=True, leading=11
+        )
+
+    # ====== FIRMAS DOCENTE Y COORDINADOR (baja si falta espacio) ======
+    y_firma = max(y_actual - 18*mm, 32*mm)
+    x_firma_doc = 38 * mm
+    x_firma_coord = 110 * mm
+    largo_firma = 60 * mm
+
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.7)
+    pdf.line(x_firma_doc, y_firma, x_firma_doc + largo_firma, y_firma)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_doc, y_firma - 5*mm, "Firma del Docente:")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_doc + 32*mm, y_firma - 5*mm, f"{reporte.docente or ''}")
+
+    pdf.setStrokeColor(colors.black)
+    pdf.line(x_firma_coord, y_firma, x_firma_coord + largo_firma, y_firma)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_coord, y_firma - 5*mm, "Firma del Coordinador:")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_coord + 32*mm, y_firma - 5*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
+
+    pdf.save()
+    buf.seek(0)
+    return HttpResponse(buf, content_type="application/pdf")
+
 
 @login_required
 def descargar_pdf_progress(request, pk):

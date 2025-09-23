@@ -125,8 +125,6 @@
                                 <td>{{ r.docente }}</td>
                                 <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    <a href="{% url 'editar_reporte_informativo' r.id %}"
-                                        class="btn btn-sm btn-outline-primary">Editar</a>
                                     <a href="{% url 'descargar_pdf_informativo' r.id %}"
                                         class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
                                 </td>
@@ -153,7 +151,8 @@
                                 <th>Materia</th>
                                 <th>Docente</th>
                                 <th>Fecha</th>
-                                <th>Acciones</th>
+                                <th>Individual</th>
+                                <th>Tres Strikes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -166,10 +165,13 @@
                                 <td>{{ r.docente }}</td>
                                 <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    <a href="{% url 'editar_reporte_conductual' r.id %}"
-                                        class="btn btn-sm btn-outline-primary">Editar</a>
                                     <a href="{% url 'descargar_pdf_conductual' r.id %}"
-                                        class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
+                                        class="btn btn-sm btn-outline-secondary" target="_blank">Ver PDF</a>
+                                </td>
+                                <td>
+                                    <a href="{% url 'descargar_pdf_conductual_3_strikes' r.id %}" 
+                                    class="btn btn-sm btn-outline-danger">PDF 3 Strikes</a>
+
                                 </td>
                             </tr>
                             {% empty %}
@@ -208,8 +210,6 @@
                                 <td>{{ r.semana_fin }}</td>
                                 <td>{{ r.fecha|date:"Y-m-d H:i" }}</td>
                                 <td>
-                                    <a href="{% url 'editar_progress_report' r.id %}"
-                                        class="btn btn-sm btn-outline-primary">Editar</a>
                                     <a href="{% url 'descargar_pdf_progress' r.id %}"
                                         class="btn btn-sm btn-outline-danger" target="_blank">Ver PDF</a>
                                 </td>
