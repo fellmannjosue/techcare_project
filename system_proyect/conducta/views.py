@@ -600,36 +600,73 @@ def descargar_pdf_informativo(request, pk):
     pdf.drawCentredString(w/2, y_actual, "Reporte informativo")
     y_actual -= 15*mm
 
-    pdf.setFont("Helvetica", 11)
-    pdf.drawString(32*mm, y_actual, f"Nombre: {reporte.alumno_nombre}")
-    pdf.drawString(110*mm, y_actual, f"Grado: {reporte.grado}")
-    y_actual -= 8*mm
-    pdf.drawString(32*mm, y_actual, f"Docente: {reporte.docente or ''}")
-    pdf.drawString(110*mm, y_actual, f"Fecha: {reporte.fecha.strftime('%d/%m/%Y') if reporte.fecha else ''}")
-    y_actual -= 8*mm
-    pdf.drawString(32*mm, y_actual, "Comentario:")
-    y_actual -= 7*mm
+    # Datos alumno
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Nombre:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(60*mm, y_actual, reporte.alumno_nombre)
 
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(110*mm, y_actual, "Grado:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(130*mm, y_actual, reporte.grado)
+    y_actual -= 6*mm
+
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Docente:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(65*mm, y_actual, reporte.docente or '')
+
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(90*mm, y_actual, "Fecha:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(110*mm, y_actual, reporte.fecha.strftime('%d/%m/%Y') if reporte.fecha else '')
+    y_actual -= 8*mm
+
+    # Comentario del docente
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Comentario del Docente:")
+    y_actual -= 6*mm
     pdf.setFont("Helvetica-Oblique", 10)
-    for line in reporte.comentario.split('\n'):
+    comentario_lines = (reporte.comentario or '').split('\n')
+    for line in comentario_lines:
         pdf.drawString(38*mm, y_actual, line)
         y_actual -= 5*mm
 
-    # -------- FIRMA DOCENTE --------
+    # Comentario del coordinador si existe
+    if hasattr(reporte, 'comentario_coordinador') and reporte.comentario_coordinador:
+        y_actual -= 5*mm
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, "Comentario del Coordinador:")
+        y_actual -= 6*mm
+        pdf.setFont("Helvetica-Oblique", 10)
+        for line in (reporte.comentario_coordinador or "").split('\n'):
+            pdf.drawString(38*mm, y_actual, line)
+            y_actual -= 5*mm
+
+    # ====== FIRMAS DOCENTE Y COORDINADOR (línea sobre el nombre) ======
     y_firma = 35 * mm
-    x_firma = 38 * mm
+    x_firma_doc = 38 * mm
+    x_firma_coord = 110 * mm
     largo_firma = 60 * mm
 
-    # Línea de firma
+    # Línea firma docente
     pdf.setStrokeColor(colors.black)
     pdf.setLineWidth(0.7)
-    pdf.line(x_firma, y_firma, x_firma + largo_firma, y_firma)
-
-    # Texto debajo de la línea (firma del docente)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma, y_firma - 5*mm, "Firma del Docente:")
     pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma + 32*mm, y_firma - 5*mm, f"{reporte.docente or ''}")
+    pdf.drawString(x_firma_doc, y_firma, "Firma del Docente:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_doc + 40*mm, y_firma, f"{reporte.docente or ''}")
+    pdf.line(x_firma_doc, y_firma + -3*mm, x_firma_doc + largo_firma, y_firma + -3*mm)  # Línea encima del texto
+
+    # Línea firma coordinador
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.7)
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_coord, y_firma, "Firma del Coordinador:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_coord + 40*mm, y_firma, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
+    pdf.line(x_firma_coord, y_firma + -3*mm, x_firma_coord + largo_firma, y_firma + -3*mm)
 
     pdf.save()
     buf.seek(0)
@@ -663,7 +700,6 @@ def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, b
         pdf.drawString(x, y, l)
         y -= leading
     return y
-
 
 @login_required
 def descargar_pdf_conductual_3_strikes(request, pk):
@@ -798,7 +834,6 @@ def descargar_pdf_conductual_3_strikes(request, pk):
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
 
-
 @login_required
 def descargar_pdf_conductual(request, pk):
     from .models import ReporteConductual
@@ -912,7 +947,6 @@ def descargar_pdf_conductual(request, pk):
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
-
 
 @login_required
 def descargar_pdf_progress(request, pk):
