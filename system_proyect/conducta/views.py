@@ -566,6 +566,35 @@ def editar_progress_report(request, pk):
 
 
 # -----------  DESCARGA EN PDF  -----------
+def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, bold=False, italic=False, leading=13):
+    """
+    Dibuja un párrafo con saltos de línea y justificación manual en ReportLab.
+    """
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    fontname = font
+    if bold and italic:
+        fontname = "Helvetica-BoldOblique"
+    elif bold:
+        fontname = "Helvetica-Bold"
+    elif italic:
+        fontname = "Helvetica-Oblique"
+    pdf.setFont(fontname, font_size)
+    lines = []
+    for raw_line in text.split('\n'):
+        line = ""
+        for word in raw_line.split():
+            test_line = f"{line} {word}".strip()
+            if stringWidth(test_line, fontname, font_size) < max_width:
+                line = test_line
+            else:
+                lines.append(line)
+                line = word
+        lines.append(line)
+    for l in lines:
+        pdf.drawString(x, y, l)
+        y -= leading
+    return y
+
 
 @login_required
 def descargar_pdf_informativo(request, pk):
@@ -644,6 +673,19 @@ def descargar_pdf_informativo(request, pk):
             pdf.drawString(38*mm, y_actual, line)
             y_actual -= 5*mm
 
+    # Comentario coordinador (si existe)
+    if hasattr(reporte, 'comentario_coordinador') and reporte.comentario_coordinador:
+        y_actual -= 5*mm
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, "Comentario del Coordinador:")
+        y_actual -= 6*mm
+        pdf.setFont("Helvetica-Oblique", 10)
+        for line in (reporte.comentario_coordinador or "").split('\n'):
+            pdf.drawString(38*mm, y_actual, line)
+            y_actual -= 5*mm
+
+
+
     # ====== FIRMAS DOCENTE Y COORDINADOR (línea sobre el nombre) ======
     y_firma = 35 * mm
     x_firma_doc = 38 * mm
@@ -672,34 +714,139 @@ def descargar_pdf_informativo(request, pk):
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
 
-def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, bold=False, italic=False, leading=13):
-    """
-    Dibuja un párrafo con saltos de línea y justificación manual en ReportLab.
-    """
-    from reportlab.pdfbase.pdfmetrics import stringWidth
-    fontname = font
-    if bold and italic:
-        fontname = "Helvetica-BoldOblique"
-    elif bold:
-        fontname = "Helvetica-Bold"
-    elif italic:
-        fontname = "Helvetica-Oblique"
-    pdf.setFont(fontname, font_size)
-    lines = []
-    for raw_line in text.split('\n'):
-        line = ""
-        for word in raw_line.split():
-            test_line = f"{line} {word}".strip()
-            if stringWidth(test_line, fontname, font_size) < max_width:
-                line = test_line
-            else:
-                lines.append(line)
-                line = word
-        lines.append(line)
-    for l in lines:
-        pdf.drawString(x, y, l)
-        y -= leading
-    return y
+
+@login_required
+def descargar_pdf_conductual(request, pk):
+    from .models import ReporteConductual
+    reporte = get_object_or_404(ReporteConductual, pk=pk)
+    buf = io.BytesIO()
+    w, h = letter
+    pdf = canvas.Canvas(buf, pagesize=letter)
+    pdf.setTitle("reporte_conductual.pdf")
+
+    width_logo = 35 * mm
+    height_logo = 35 * mm
+    x_logo = (w - width_logo) / 2
+    logo_path = os.path.join(settings.STATIC_ROOT, "conducta/img/ana-transformed.png")
+    if os.path.exists(logo_path):
+        pdf.drawImage(
+            logo_path,
+            x=x_logo,
+            y=h-40*mm,
+            width=width_logo,
+            height=height_logo,
+            mask='auto'
+        )
+    y_actual = h - 48*mm
+
+    # --- Título y cabecera ---
+    pdf.setFont("Helvetica-Bold", 16)
+    titulo = "Nuevo Amanecer School" if reporte.area == "bilingue" else "C.E.M.N.G Nuevo Amanecer"
+    pdf.drawCentredString(w/2, y_actual, titulo)
+    y_actual -= 12*mm
+    pdf.setFont("Helvetica", 13)
+    pdf.drawCentredString(w/2, y_actual, "Reporte conductual")
+    y_actual -= 10*mm
+
+    # Datos generales (alineados)
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Nombre:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(60*mm, y_actual, reporte.alumno_nombre)
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(110*mm, y_actual, "Grado:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(130*mm, y_actual, reporte.grado)
+    y_actual -= 7*mm
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Docente:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(60*mm, y_actual, reporte.docente or "")
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(110*mm, y_actual, "Fecha:")
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(130*mm, y_actual, reporte.fecha.strftime('%d/%m/%Y') if reporte.fecha else '')
+    y_actual -= 9*mm
+
+    # Incisos (Leve, Grave, Muy grave)
+    maxw = w - 50*mm
+    for tipo, label in [("incisos_leve", "Leve"), ("incisos_grave", "Grave"), ("incisos_muygrave", "Muy Grave")]:
+        incisos = getattr(reporte, tipo).all()
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, f"Incisos {label}:")
+        y_actual -= 6*mm
+        if incisos:
+            for i in incisos:
+                y_actual = draw_paragraph(
+                    pdf, i.descripcion, x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, bold=True, italic=True, leading=11
+                )
+        else:
+            pdf.setFont("Helvetica-Oblique", 10)
+            pdf.drawString(38*mm, y_actual, "-")
+            y_actual -= 6*mm
+        y_actual -= 3*mm
+
+    # Comentario Docente
+    pdf.setFont("Helvetica-Bold", 11)
+    pdf.drawString(32*mm, y_actual, "Comentario del Docente:")
+    y_actual -= 6*mm
+    y_actual = draw_paragraph(
+        pdf, reporte.comentario or "-", x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, italic=True, leading=11
+    )
+
+    # Comentario Coordinador (si existe)
+    if hasattr(reporte, 'comentario_coordinador') and reporte.comentario_coordinador:
+        pdf.setFont("Helvetica-Bold", 11)
+        y_actual -= 4*mm
+        pdf.drawString(32*mm, y_actual, "Comentario del Coordinador:")
+        y_actual -= 6*mm
+        y_actual = draw_paragraph(
+            pdf, reporte.comentario_coordinador, x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, italic=True, leading=11
+        )
+
+
+
+    # Comentario del Coordinador (si existe)
+    if hasattr(reporte, 'comentario_coordinador') and reporte.comentario_coordinador:
+        y_actual -= 8*mm
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, "Comentario del Coordinador:")
+        y_actual -= 6*mm
+        pdf.setFont("Helvetica-Oblique", 10)
+    for line in (reporte.comentario_coordinador or "").split('\n'):
+        pdf.drawString(38*mm, y_actual, line)
+        y_actual -= 5*mm
+
+    # ====== FIRMAS DOCENTE Y COORDINADOR (baja si falta espacio) ======
+    y_firma = max(y_actual - 18*mm, 32*mm)
+    x_firma_doc = 38 * mm
+    x_firma_coord = 110 * mm
+    largo_firma = 60 * mm
+
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.7)
+    pdf.line(x_firma_doc, y_firma, x_firma_doc + largo_firma, y_firma)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_doc, y_firma - 5*mm, "Firma del Docente:")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_doc + 32*mm, y_firma - 5*mm, f"{reporte.docente or ''}")
+
+    pdf.setStrokeColor(colors.black)
+    pdf.line(x_firma_coord, y_firma, x_firma_coord + largo_firma, y_firma)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_coord, y_firma - 5*mm, "Firma del Coordinador:")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_coord + 32*mm, y_firma - 5*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
+
+    pdf.save()
+    buf.seek(0)
+    return HttpResponse(buf, content_type="application/pdf")
+
+
+@login_required
+def descargar_pdf_progress(request, pk):
+    return HttpResponse("PDF Progress Report #{}".format(pk))
+
 
 @login_required
 def descargar_pdf_conductual_3_strikes(request, pk):
@@ -833,124 +980,6 @@ def descargar_pdf_conductual_3_strikes(request, pk):
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
-
-@login_required
-def descargar_pdf_conductual(request, pk):
-    from .models import ReporteConductual
-    reporte = get_object_or_404(ReporteConductual, pk=pk)
-    buf = io.BytesIO()
-    w, h = letter
-    pdf = canvas.Canvas(buf, pagesize=letter)
-    pdf.setTitle("reporte_conductual.pdf")
-
-    width_logo = 35 * mm
-    height_logo = 35 * mm
-    x_logo = (w - width_logo) / 2
-    logo_path = os.path.join(settings.STATIC_ROOT, "conducta/img/ana-transformed.png")
-    if os.path.exists(logo_path):
-        pdf.drawImage(
-            logo_path,
-            x=x_logo,
-            y=h-40*mm,
-            width=width_logo,
-            height=height_logo,
-            mask='auto'
-        )
-    y_actual = h - 48*mm
-
-    # --- Título y cabecera ---
-    pdf.setFont("Helvetica-Bold", 16)
-    titulo = "Nuevo Amanecer School" if reporte.area == "bilingue" else "C.E.M.N.G Nuevo Amanecer"
-    pdf.drawCentredString(w/2, y_actual, titulo)
-    y_actual -= 12*mm
-    pdf.setFont("Helvetica", 13)
-    pdf.drawCentredString(w/2, y_actual, "Reporte conductual")
-    y_actual -= 10*mm
-
-    # Datos generales (alineados)
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(32*mm, y_actual, "Nombre:")
-    pdf.setFont("Helvetica", 11)
-    pdf.drawString(60*mm, y_actual, reporte.alumno_nombre)
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(110*mm, y_actual, "Grado:")
-    pdf.setFont("Helvetica", 11)
-    pdf.drawString(130*mm, y_actual, reporte.grado)
-    y_actual -= 7*mm
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(32*mm, y_actual, "Docente:")
-    pdf.setFont("Helvetica", 11)
-    pdf.drawString(60*mm, y_actual, reporte.docente or "")
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(110*mm, y_actual, "Fecha:")
-    pdf.setFont("Helvetica", 11)
-    pdf.drawString(130*mm, y_actual, reporte.fecha.strftime('%d/%m/%Y') if reporte.fecha else '')
-    y_actual -= 9*mm
-
-    # Incisos (Leve, Grave, Muy grave)
-    maxw = w - 50*mm
-    for tipo, label in [("incisos_leve", "Leve"), ("incisos_grave", "Grave"), ("incisos_muygrave", "Muy Grave")]:
-        incisos = getattr(reporte, tipo).all()
-        pdf.setFont("Helvetica-Bold", 11)
-        pdf.drawString(32*mm, y_actual, f"Incisos {label}:")
-        y_actual -= 6*mm
-        if incisos:
-            for i in incisos:
-                y_actual = draw_paragraph(
-                    pdf, i.descripcion, x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, bold=True, italic=True, leading=11
-                )
-        else:
-            pdf.setFont("Helvetica-Oblique", 10)
-            pdf.drawString(38*mm, y_actual, "-")
-            y_actual -= 6*mm
-        y_actual -= 3*mm
-
-    # Comentario Docente
-    pdf.setFont("Helvetica-Bold", 11)
-    pdf.drawString(32*mm, y_actual, "Comentario del Docente:")
-    y_actual -= 6*mm
-    y_actual = draw_paragraph(
-        pdf, reporte.comentario or "-", x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, italic=True, leading=11
-    )
-
-    # Comentario Coordinador (si existe)
-    if hasattr(reporte, 'comentario_coordinador') and reporte.comentario_coordinador:
-        pdf.setFont("Helvetica-Bold", 11)
-        y_actual -= 4*mm
-        pdf.drawString(32*mm, y_actual, "Comentario del Coordinador:")
-        y_actual -= 6*mm
-        y_actual = draw_paragraph(
-            pdf, reporte.comentario_coordinador, x=38*mm, y=y_actual, max_width=maxw, font="Helvetica", font_size=10, italic=True, leading=11
-        )
-
-    # ====== FIRMAS DOCENTE Y COORDINADOR (baja si falta espacio) ======
-    y_firma = max(y_actual - 18*mm, 32*mm)
-    x_firma_doc = 38 * mm
-    x_firma_coord = 110 * mm
-    largo_firma = 60 * mm
-
-    pdf.setStrokeColor(colors.black)
-    pdf.setLineWidth(0.7)
-    pdf.line(x_firma_doc, y_firma, x_firma_doc + largo_firma, y_firma)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma_doc, y_firma - 5*mm, "Firma del Docente:")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma_doc + 32*mm, y_firma - 5*mm, f"{reporte.docente or ''}")
-
-    pdf.setStrokeColor(colors.black)
-    pdf.line(x_firma_coord, y_firma, x_firma_coord + largo_firma, y_firma)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma_coord, y_firma - 5*mm, "Firma del Coordinador:")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma_coord + 32*mm, y_firma - 5*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
-
-    pdf.save()
-    buf.seek(0)
-    return HttpResponse(buf, content_type="application/pdf")
-
-@login_required
-def descargar_pdf_progress(request, pk):
-    return HttpResponse("PDF Progress Report #{}".format(pk))
 
 #--------------  DASHBOARD COORDINADOR -----------------
 @login_required
