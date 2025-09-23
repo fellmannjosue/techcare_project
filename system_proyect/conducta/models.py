@@ -1,10 +1,16 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# Áreas posibles para los reportes
 AREA_CHOICES = (
     ('bilingue', 'Bilingüe'),
     ('colegio', 'Colegio/CFP'),
+)
+
+ESTADO_CHOICES = (
+    ('enviado', 'Enviado'),
+    ('revisando', 'Revisando'),
+    ('revisado', 'Revisado'),
+    ('aprobado', 'Aprobado'),
 )
 
 # ─────────────────────────────
@@ -73,7 +79,7 @@ class ReporteConductual(models.Model):
     docente = models.CharField(max_length=100, verbose_name="Docente")
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
 
-    # Nuevo: Incisos múltiple por severidad
+    # Incisos por severidad
     incisos_leve = models.ManyToManyField(
         IncisoConductual,
         blank=True,
@@ -98,6 +104,23 @@ class ReporteConductual(models.Model):
 
     comentario = models.TextField(blank=True, null=True, verbose_name="Comentario adicional")
 
+    # === NUEVO CAMPO: FIRMA DEL COORDINADOR ===
+    coordinador_firma = models.CharField(
+        "Coordinador que aprueba",
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Nombre del coordinador que aprobó/firmó el reporte."
+    )
+
+    # === NUEVO CAMPO: ESTADO DEL REPORTE ===
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='enviado',
+        verbose_name="Estado del reporte"
+    )
+
     def __str__(self):
         return f'{self.alumno_nombre} - {self.materia} - {self.usuario.username} ({self.get_area_display()})'
 
@@ -105,7 +128,6 @@ class ReporteConductual(models.Model):
         verbose_name = "Reporte Conductual"
         verbose_name_plural = "Reportes Conductuales"
         ordering = ['-fecha']
-
 
 # ─────────────────────────────
 # Reporte Informativo
@@ -120,6 +142,23 @@ class ReporteInformativo(models.Model):
     docente = models.CharField(max_length=100, verbose_name="Docente")
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
     comentario = models.TextField(blank=True, null=True, verbose_name="Comentario")
+
+    # === NUEVO CAMPO: FIRMA DEL COORDINADOR ===
+    coordinador_firma = models.CharField(
+        "Coordinador que aprueba",
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Nombre del coordinador que aprobó/firmó el reporte."
+    )
+
+    # === NUEVO CAMPO: ESTADO DEL REPORTE ===
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='enviado',
+        verbose_name="Estado del reporte"
+    )
 
     def __str__(self):
         return f'{self.alumno_nombre} - {self.materia} - {self.usuario.username} ({self.get_area_display()})'
@@ -142,6 +181,23 @@ class ProgressReport(models.Model):
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
     materias_json = models.JSONField(verbose_name="Detalle materias", blank=True, null=True)
     comentario_general = models.TextField(blank=True, null=True, verbose_name="Comentario General")
+
+    # === NUEVO CAMPO: FIRMA DEL COORDINADOR ===
+    coordinador_firma = models.CharField(
+        "Coordinador que aprueba",
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="Nombre del coordinador que aprobó/firmó el reporte."
+    )
+
+    # === NUEVO CAMPO: ESTADO DEL REPORTE ===
+    estado = models.CharField(
+        max_length=20,
+        choices=ESTADO_CHOICES,
+        default='enviado',
+        verbose_name="Estado del reporte"
+    )
 
     def __str__(self):
         return f'Progress {self.alumno_nombre} ({self.semana_inicio} - {self.semana_fin})'

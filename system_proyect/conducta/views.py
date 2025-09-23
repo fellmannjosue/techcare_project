@@ -450,18 +450,125 @@ def historial_maestro_colegio(request):
         'area': 'colegio',
     })
 
-# ----------- funciones secundarias -----------
-@login_required
-def editar_reporte_informativo(request, pk):
-    return HttpResponse("Editar Reporte Informativo #{}".format(pk))
+# ----------- EDITOR DE REPORTES ( SOLO COORDINADOR) -----------
+def es_coordinador(user):
+    return user.groups.filter(name="Coordinador").exists()
 
 @login_required
 def editar_reporte_conductual(request, pk):
-    return HttpResponse("Editar Reporte Conductual #{}".format(pk))
+    reporte = get_object_or_404(ReporteConductual, pk=pk)
+    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+    materia_docente_choices = [(reporte.materia, f"{reporte.materia} – {reporte.docente}")]
+
+    if request.method == 'POST':
+        form = ReporteConductualForm(request.POST,
+                                     alumnos_choices=alumnos_choices,
+                                     materia_docente_choices=materia_docente_choices)
+        if form.is_valid():
+            reporte.comentario = form.cleaned_data['comentario']
+            if es_coordinador(request.user):
+                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                reporte.estado = form.cleaned_data['estado']
+            reporte.save()
+            messages.success(request, "Reporte conductual actualizado correctamente.")
+            return redirect('dashboard_conductual')  # Ajusta según tu proyecto
+    else:
+        initial = {
+            'fecha': reporte.fecha,
+            'alumno': reporte.alumno_id,
+            'grado': reporte.grado,
+            'materia_docente': reporte.materia,
+            'comentario': reporte.comentario,
+            'coordinador_firma': reporte.coordinador_firma,
+            'estado': reporte.estado,
+        }
+        form = ReporteConductualForm(
+            initial=initial,
+            alumnos_choices=alumnos_choices,
+            materia_docente_choices=materia_docente_choices
+        )
+
+    return render(request, 'conducta/editar_conductual.html', {
+        'form': form,
+        'reporte': reporte,
+        'es_coordinador': es_coordinador(request.user),
+    })
+
+@login_required
+def editar_reporte_informativo(request, pk):
+    reporte = get_object_or_404(ReporteInformativo, pk=pk)
+    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+    materia_docente_choices = [(reporte.materia, f"{reporte.materia} – {reporte.docente}")]
+
+    if request.method == 'POST':
+        form = ReporteInformativoForm(request.POST,
+                                      alumnos_choices=alumnos_choices,
+                                      materia_docente_choices=materia_docente_choices)
+        if form.is_valid():
+            reporte.comentario = form.cleaned_data['comentario']
+            if es_coordinador(request.user):
+                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                reporte.estado = form.cleaned_data['estado']
+            reporte.save()
+            messages.success(request, "Reporte informativo actualizado correctamente.")
+            return redirect('dashboard_informativo')
+    else:
+        initial = {
+            'fecha': reporte.fecha,
+            'alumno': reporte.alumno_id,
+            'grado': reporte.grado,
+            'materia_docente': reporte.materia,
+            'comentario': reporte.comentario,
+            'coordinador_firma': reporte.coordinador_firma,
+            'estado': reporte.estado,
+        }
+        form = ReporteInformativoForm(
+            initial=initial,
+            alumnos_choices=alumnos_choices,
+            materia_docente_choices=materia_docente_choices
+        )
+
+    return render(request, 'conducta/editar_informativo.html', {
+        'form': form,
+        'reporte': reporte,
+        'es_coordinador': es_coordinador(request.user),
+    })
 
 @login_required
 def editar_progress_report(request, pk):
-    return HttpResponse("Editar Progress Report #{}".format(pk))
+    reporte = get_object_or_404(ProgressReport, pk=pk)
+    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+
+    if request.method == 'POST':
+        form = ProgressReportForm(request.POST, alumnos_choices=alumnos_choices)
+        if form.is_valid():
+            reporte.comentario_general = form.cleaned_data['comentario_general']
+            if es_coordinador(request.user):
+                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                reporte.estado = form.cleaned_data['estado']
+            reporte.save()
+            messages.success(request, "Progress report actualizado correctamente.")
+            return redirect('dashboard_progress')
+    else:
+        initial = {
+            'fecha': reporte.fecha,
+            'alumno': reporte.alumno_id,
+            'grado': reporte.grado,
+            'semana_inicio': reporte.semana_inicio,
+            'semana_fin': reporte.semana_fin,
+            'comentario_general': reporte.comentario_general,
+            'coordinador_firma': reporte.coordinador_firma,
+            'estado': reporte.estado,
+        }
+        form = ProgressReportForm(initial=initial, alumnos_choices=alumnos_choices)
+
+    return render(request, 'progress/editar_progress.html', {
+        'form': form,
+        'reporte': reporte,
+        'es_coordinador': es_coordinador(request.user),
+    })
+
+# -----------  DESCARGA EN PDF  -----------
 
 @login_required
 def descargar_pdf_informativo(request, pk):

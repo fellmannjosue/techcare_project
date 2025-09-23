@@ -1,48 +1,44 @@
 from django.contrib import admin
 from .models import (
     IncisoConductual,
+    MateriaDocenteBilingue,
+    MateriaDocenteColegio,
     ReporteConductual,
     ReporteInformativo,
     ProgressReport,
-    MateriaDocenteBilingue,
-    MateriaDocenteColegio
 )
-
-@admin.register(IncisoConductual)
-class IncisoConductualAdmin(admin.ModelAdmin):
-    list_display = ('descripcion', 'tipo', 'activo')
-    list_filter = ('tipo', 'activo')
-    search_fields = ('descripcion',)
-
-@admin.register(MateriaDocenteBilingue)
-class MateriaDocenteBilingueAdmin(admin.ModelAdmin):
-    list_display = ('materia', 'docente', 'activo')
-    list_filter = ('materia', 'docente', 'activo')
-    search_fields = ('materia', 'docente')
-
-@admin.register(MateriaDocenteColegio)
-class MateriaDocenteColegioAdmin(admin.ModelAdmin):
-    list_display = ('materia', 'docente', 'activo')
-    list_filter = ('materia', 'docente', 'activo')
-    search_fields = ('materia', 'docente')
 
 @admin.register(ReporteConductual)
 class ReporteConductualAdmin(admin.ModelAdmin):
-    list_display = ('id', 'alumno_nombre', 'grado', 'materia', 'docente', 'area', 'usuario', 'fecha')
-    search_fields = ('alumno_nombre', 'materia', 'docente', 'usuario__username')
-    list_filter = ('area', 'fecha', 'materia', 'docente', 'usuario')
+    list_display = (
+        'alumno_nombre', 'grado', 'materia', 'docente', 'fecha', 'area',
+        'coordinador_firma', 'estado'
+    )
+    search_fields = ('alumno_nombre', 'grado', 'materia', 'docente', 'comentario')
+    list_filter = ('area', 'grado', 'fecha', 'docente', 'coordinador_firma', 'estado')
     readonly_fields = ('fecha',)
 
 @admin.register(ReporteInformativo)
 class ReporteInformativoAdmin(admin.ModelAdmin):
-    list_display = ('id', 'alumno_nombre', 'grado', 'materia', 'docente', 'area', 'usuario', 'fecha')
-    search_fields = ('alumno_nombre', 'materia', 'docente', 'usuario__username')
-    list_filter = ('area', 'fecha', 'materia', 'docente', 'usuario')
+    list_display = (
+        'alumno_nombre', 'grado', 'materia', 'docente', 'fecha', 'area',
+        'coordinador_firma', 'estado'
+    )
+    search_fields = ('alumno_nombre', 'grado', 'materia', 'docente', 'comentario')
+    list_filter = ('area', 'grado', 'fecha', 'docente', 'coordinador_firma', 'estado')
     readonly_fields = ('fecha',)
 
 @admin.register(ProgressReport)
 class ProgressReportAdmin(admin.ModelAdmin):
-    list_display = ('id', 'alumno_nombre', 'grado', 'usuario', 'semana_inicio', 'semana_fin', 'fecha')
-    search_fields = ('alumno_nombre', 'usuario__username')
-    list_filter = ('fecha', 'grado', 'usuario')
+    list_display = (
+        'alumno_nombre', 'grado', 'semana_inicio', 'semana_fin', 'fecha',
+        'coordinador_firma', 'estado'
+    )
+    search_fields = ('alumno_nombre', 'grado', 'comentario_general')
+    list_filter = ('grado', 'semana_inicio', 'semana_fin', 'fecha', 'coordinador_firma', 'estado')
     readonly_fields = ('fecha',)
+
+# Los registros básicos
+admin.site.register(IncisoConductual)
+admin.site.register(MateriaDocenteBilingue)
+admin.site.register(MateriaDocenteColegio)

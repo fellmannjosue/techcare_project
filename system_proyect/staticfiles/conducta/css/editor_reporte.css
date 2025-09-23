@@ -1,0 +1,23 @@
+.editor-reporte-box {
+    background: #f9fafc;
+    border-radius: 1.25rem;
+    padding: 2.2rem 2rem 1.3rem 2rem;
+    box-shadow: 0 4px 24px rgba(44,62,80,0.13);
+    max-width: 680px;
+    margin: auto;
+}
+.editor-reporte-box h2 {
+    margin-bottom: 1.3rem;
+    color: #3f3f4c;
+    font-weight: bold;
+}
+.editor-reporte-box label {
+    font-weight: 600;
+    color: #234a60;
+}
+.btn-success {
+    margin-right: 1rem;
+}
+@media (max-width: 650px) {
+    .editor-reporte-box { padding: 1.3rem; }
+}
