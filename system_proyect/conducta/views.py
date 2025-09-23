@@ -3,7 +3,12 @@ from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.shortcuts import render, get_object_or_404
-from weasyprint import HTML
+import io, os
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import mm
+from reportlab.lib import colors
+from django.conf import settings
 from django.http import HttpResponse
 from django.contrib import messages
 from django.db import connections
@@ -463,32 +468,170 @@ from django.http import HttpResponse
 def editar_reporte_informativo(request, pk):
     return HttpResponse("Editar Reporte Informativo #{}".format(pk))
 
-@login_required
-def descargar_pdf_informativo(request, pk):
-    return HttpResponse("PDF Reporte Informativo #{}".format(pk))
 
 @login_required
 def editar_reporte_conductual(request, pk):
     return HttpResponse("Editar Reporte Conductual #{}".format(pk))
 
 @login_required
-def descargar_pdf_conductual(request, pk):
-    reporte = get_object_or_404(ReporteConductual, pk=pk)
-    reportes = list(ReporteConductual.objects.filter(alumno_id=reporte.alumno_id).order_by('-fecha')[:3])
-
-    context = {
-        'titulo_area': "Nuevo Amanecer School" if reporte.area == "bilingue" else "Nuevo Amanecer",
-        'reportes': reportes,
-        'error': None,
-    }
-    html_string = render_to_string('conducta/reporte_general.html', context)
-    pdf_file = HTML(string=html_string, base_url=request.build_absolute_uri()).write_pdf()
-    response = HttpResponse(pdf_file, content_type='application/pdf')
-    response['Content-Disposition'] = f'filename="reporte_conductual_{reporte.pk}.pdf"'
-    return response
-@login_required
 def editar_progress_report(request, pk):
     return HttpResponse("Editar Progress Report #{}".format(pk))
+
+@login_required
+def descargar_pdf_informativo(request, pk):
+    from .models import ReporteInformativo
+    reporte = get_object_or_404(ReporteInformativo, pk=pk)
+    buf = io.BytesIO()
+    w, h = letter
+    pdf = canvas.Canvas(buf, pagesize=letter)
+    pdf.setTitle("reporte_informativo.pdf")
+
+    # Logo centrado
+    width_logo = 35 * mm
+    height_logo = 35 * mm
+    x_logo = (w - width_logo) / 2
+    logo_path = os.path.join(settings.STATIC_ROOT, "conducta/img/ana-transformed.png")
+    if os.path.exists(logo_path):
+        pdf.drawImage(
+            logo_path,
+            x=x_logo,
+            y=h-40*mm,
+            width=width_logo,
+            height=height_logo,
+            mask='auto'
+        )
+    y_actual = h - 48*mm
+
+    # Título y datos
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawCentredString(w/2, y_actual, "Nuevo Amanecer School" if reporte.area == "bilingue" else "C.E.M.N.G Nuevo Amanecer")
+    y_actual -= 12*mm
+    pdf.setFont("Helvetica", 13)
+    pdf.drawCentredString(w/2, y_actual, "Reporte informativo")
+    y_actual -= 15*mm
+
+    pdf.setFont("Helvetica", 11)
+    pdf.drawString(32*mm, y_actual, f"Nombre: {reporte.alumno_nombre}")
+    pdf.drawString(110*mm, y_actual, f"Grado: {reporte.grado}")
+    y_actual -= 8*mm
+    pdf.drawString(32*mm, y_actual, f"Docente: {reporte.docente or ''}")
+    pdf.drawString(110*mm, y_actual, f"Fecha: {reporte.fecha.strftime('%d/%m/%Y') if reporte.fecha else ''}")
+    y_actual -= 8*mm
+    pdf.drawString(32*mm, y_actual, "Comentario:")
+    y_actual -= 7*mm
+
+    pdf.setFont("Helvetica-Oblique", 10)
+    for line in reporte.comentario.split('\n'):
+        pdf.drawString(38*mm, y_actual, line)
+        y_actual -= 5*mm
+
+    pdf.save()
+    buf.seek(0)
+    return HttpResponse(buf, content_type="application/pdf")
+
+
+@login_required
+def descargar_pdf_conductual(request, pk):
+    # Recuperar el reporte y sus tres strikes
+    reporte = get_object_or_404(ReporteConductual, pk=pk)
+    reportes = list(ReporteConductual.objects.filter(
+        area=reporte.area,
+        alumno_id=reporte.alumno_id
+    ).order_by('fecha')[:3])
+
+    if len(reportes) < 3:
+        return HttpResponse("Este alumno aún no tiene 3 reportes conductuales.", content_type="text/plain")
+
+    buf = io.BytesIO()
+    w, h = letter
+    pdf = canvas.Canvas(buf, pagesize=letter)
+    pdf.setTitle("reporte_conductual_3_strikes.pdf")
+
+    # Logo centrado
+    width_logo = 35 * mm
+    height_logo = 35 * mm
+    x_logo = (w - width_logo) / 2
+    logo_path = os.path.join(settings.STATIC_ROOT, "conducta/img/ana-transformed.png")
+    if os.path.exists(logo_path):
+        pdf.drawImage(
+            logo_path,
+            x=x_logo,
+            y=h-40*mm,
+            width=width_logo,
+            height=height_logo,
+            mask='auto'
+        )
+    y_actual = h - 46 * mm
+
+    # Título
+    pdf.setFont("Helvetica-Bold", 16)
+    titulo = "Nuevo Amanecer School" if reporte.area == "bilingue" else "C.E.M.N.G Nuevo Amanecer"
+    pdf.drawCentredString(w/2, y_actual, titulo)
+    y_actual -= 12*mm
+    pdf.setFont("Helvetica", 13)
+    pdf.drawCentredString(w/2, y_actual, "Reporte conductual")
+    y_actual -= 8*mm
+
+    # Cada reporte
+    pdf.setFont("Helvetica", 11)
+    for idx, rep in enumerate(reportes, 1):
+        y_actual -= 2*mm
+        pdf.setFont("Helvetica-Bold", 11)
+        pdf.drawString(32*mm, y_actual, f"Reporte #{idx}")
+        y_actual -= 7*mm
+        pdf.setFont("Helvetica", 10)
+        pdf.drawString(32*mm, y_actual, f"Nombre: {rep.alumno_nombre}")
+        pdf.drawString(110*mm, y_actual, f"Grado: {rep.grado}")
+        y_actual -= 6*mm
+        pdf.drawString(32*mm, y_actual, f"Docente/materia: {rep.docente}")
+        pdf.drawString(110*mm, y_actual, f"Fecha: {rep.fecha.strftime('%d/%m/%Y')}")
+        y_actual -= 7*mm
+
+        # Inciso
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(32*mm, y_actual, "Inciso:")
+        incisos = []
+        incisos += [i.descripcion for i in rep.incisos_leve.all()]
+        incisos += [i.descripcion for i in rep.incisos_grave.all()]
+        incisos += [i.descripcion for i in rep.incisos_muygrave.all()]
+        incisos_text = "; ".join(incisos)
+        pdf.setFont("Helvetica-Oblique", 9.5)
+        y_actual -= 5*mm
+        pdf.drawString(38*mm, y_actual, incisos_text[:110])
+        if len(incisos_text) > 110:
+            y_actual -= 4*mm
+            pdf.drawString(38*mm, y_actual, incisos_text[110:220])
+        y_actual -= 8*mm
+
+        # Descripción
+        pdf.setFont("Helvetica-Bold", 10)
+        pdf.drawString(32*mm, y_actual, "Descripción:")
+        pdf.setFont("Helvetica-Oblique", 9.5)
+        y_actual -= 5*mm
+        for line in rep.comentario.split("\n"):
+            pdf.drawString(38*mm, y_actual, line)
+            y_actual -= 4.5*mm
+        y_actual -= 4*mm
+
+        # Línea divisoria
+        pdf.setStrokeColor(colors.grey)
+        pdf.line(30*mm, y_actual, w-30*mm, y_actual)
+        y_actual -= 8*mm
+
+    # FIRMAS (alineadas)
+    y_firmas = 25*mm
+    x_firma = [34*mm, 91*mm, 146*mm]
+    etiquetas = ["Firma Padre de Familia", "Firma del Docente/Orientación", "Firma del Coordinador"]
+    for i in range(3):
+        pdf.setStrokeColor(colors.black)
+        pdf.line(x_firma[i], y_firmas, x_firma[i]+42*mm, y_firmas)
+        pdf.setFont("Helvetica", 10)
+        pdf.drawCentredString(x_firma[i]+21*mm, y_firmas-5*mm, etiquetas[i])
+
+    pdf.save()
+    buf.seek(0)
+    return HttpResponse(buf, content_type="application/pdf")
+
 
 @login_required
 def descargar_pdf_progress(request, pk):
@@ -547,42 +690,3 @@ def historial_alumno_coordinador(request, alumno_id):
     }
     html = render_to_string('conducta/lista_reportes.html', context)
     return HttpResponse(html)
-
-@login_required
-def reporte_general_tres_faltas(request, area):
-    """
-    Reporte de 3 strikes (area: bilingue o colegio).
-    Muestra los 3 reportes conductuales de ese alumno en formato de acta/PDF.
-    """
-    alumno_id = request.GET.get('alumno_id')
-    if not alumno_id:
-        return render(request, 'conducta/reporte_general.html', {
-            'error': 'No se proporcionó un alumno.',
-            'area': area,
-        })
-
-    # Filtrar reportes de esa área y alumno
-    reportes = ReporteConductual.objects.filter(
-        area=area,
-        alumno_id=alumno_id
-    ).order_by('fecha')[:3]
-
-    if reportes.count() < 3:
-        return render(request, 'conducta/reporte_general.html', {
-            'error': 'Este alumno aún no tiene 3 reportes conductuales.',
-            'area': area,
-        })
-
-    alumno_nombre = reportes[0].alumno_nombre if reportes else ''
-    # Título según área
-    if area == "bilingue":
-        titulo = "Nuevo Amanecer School"
-    else:
-        titulo = "C.E.M.N.G Nuevo Amanecer"
-
-    return render(request, 'conducta/reporte_general.html', {
-        'reportes': reportes,
-        'alumno_nombre': alumno_nombre,
-        'area': area,
-        'titulo_area': titulo,
-    })
