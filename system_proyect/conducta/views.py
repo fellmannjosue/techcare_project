@@ -33,7 +33,6 @@ from tickets.models import Ticket
 # ---------------------------
 # FUNCIONES AUXILIARES
 # ---------------------------
-
 def obtener_alumnos_bilingue():
     query = """
     SELECT d.PersonaID, 
@@ -112,7 +111,6 @@ def get_materia_docente_choices(area):
 # ---------------------------
 # DASHBOARDS Y FORMULARIOS
 # ---------------------------
-
 @login_required
 def dashboard_maestro(request):
     user = request.user
@@ -124,7 +122,6 @@ def dashboard_maestro(request):
     return render(request, 'conducta/dashboard_maestros.html', {'area': area})
 
 # ------------ REPORTE INFORMATIVO  ------------
-
 @login_required
 def reporte_informativo_bilingue(request):
     area = 'bilingue'
@@ -206,7 +203,6 @@ def reporte_informativo_colegio(request):
     })
 
 # ------------ REPORTE CONDUCTUAL  ------------
-
 @login_required
 def reporte_conductual_bilingue(request):
     area = 'bilingue'
@@ -333,9 +329,7 @@ def reporte_conductual_colegio(request):
         'incisos_muygrave': incisos_muygrave,
     })
 
-
 #-------------- PROGRESS REPORT -----------------
-
 @login_required
 def progress_report_bilingue(request):
     MATERIAS_PRIMARIA = [
@@ -421,9 +415,7 @@ def progress_report_bilingue(request):
         'grado': grado,
     })
 
-
 #-------------- HISTORIAL MAESTROS -----------------
-
 @login_required
 def historial_maestro_bilingue(request):
     usuario = request.user
@@ -442,7 +434,6 @@ def historial_maestro_bilingue(request):
         'area': 'bilingue',
     })
 
-
 @login_required
 def historial_maestro_colegio(request):
     usuario = request.user
@@ -459,15 +450,10 @@ def historial_maestro_colegio(request):
         'area': 'colegio',
     })
 
-
-
 # ----------- funciones secundarias -----------
-from django.http import HttpResponse
-
 @login_required
 def editar_reporte_informativo(request, pk):
     return HttpResponse("Editar Reporte Informativo #{}".format(pk))
-
 
 @login_required
 def editar_reporte_conductual(request, pk):
@@ -525,10 +511,25 @@ def descargar_pdf_informativo(request, pk):
         pdf.drawString(38*mm, y_actual, line)
         y_actual -= 5*mm
 
+    # -------- FIRMA DOCENTE --------
+    y_firma = 35 * mm
+    x_firma = 38 * mm
+    largo_firma = 60 * mm
+
+    # Línea de firma
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.7)
+    pdf.line(x_firma, y_firma, x_firma + largo_firma, y_firma)
+
+    # Texto debajo de la línea (firma del docente)
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma, y_firma - 5*mm, "Firma del Docente:")
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma + 32*mm, y_firma - 5*mm, f"{reporte.docente or ''}")
+
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
-
 
 @login_required
 def descargar_pdf_conductual(request, pk):
@@ -652,8 +653,6 @@ def descargar_pdf_conductual(request, pk):
 @login_required
 def descargar_pdf_progress(request, pk):
     return HttpResponse("PDF Progress Report #{}".format(pk))
-
-
 
 #--------------  DASHBOARD COORDINADOR -----------------
 @login_required

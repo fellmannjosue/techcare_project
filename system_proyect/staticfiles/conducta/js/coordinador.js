@@ -22,4 +22,10 @@ $(function() {
             $('#historial-content').html('<div class="alert alert-danger">Error al cargar historial.</div>');
         });
     });
+
+    // Mostrar el modal de advertencia si el usuario intenta descargar PDF sin 3 reportes
+    $(document).on('click', '.btn-pdf-disabled', function(e) {
+        e.preventDefault();
+        $('#modalTresFaltas').modal('show');
+    });
 });
