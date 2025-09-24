@@ -12,95 +12,92 @@
 <body>
 <div class="container py-4">
     <a href="{% url 'dashboard_coordinador' reporte.area %}" class="btn btn-outline-secondary mb-3">&larr; Volver al Dashboard</a>
-    <div class="editor-reporte-box">
+    <form method="post" class="editor-reporte-box" autocomplete="off">
         <h2>Editar Reporte Conductual</h2>
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }}">{{ message }}</div>
             {% endfor %}
         {% endif %}
-
-        <form method="post" autocomplete="off">
-            {% csrf_token %}
-
-            <!-- ALUMNO -->
-            <div class="mb-3">
-                <label class="form-label">Alumno:</label>
-                <input class="form-control" value="{{ reporte.alumno_nombre }}" readonly>
+        {% csrf_token %}
+        <!-- Datos originales solo lectura -->
+        <div class="mb-2">
+            <span class="campo-label">Alumno:</span>
+            <div class="campo-lectura">{{ reporte.alumno_nombre }}</div>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Grado:</span>
+            <div class="campo-lectura">{{ reporte.grado }}</div>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Materia / Docente:</span>
+            <div class="campo-lectura">{{ reporte.materia }} — {{ reporte.docente }}</div>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Fecha de registro:</span>
+            <div class="campo-lectura">{{ reporte.fecha|date:"d/m/Y H:i" }}</div>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Incisos Leve:</span>
+            <div class="campo-lectura">
+                {% for inciso in reporte.incisos_leve.all %}
+                    <div><strong>•</strong> {{ inciso.descripcion }}</div>
+                {% empty %}
+                    <span>-</span>
+                {% endfor %}
             </div>
-            <!-- GRADO -->
-            <div class="mb-3">
-                <label class="form-label">Grado:</label>
-                <input class="form-control" value="{{ reporte.grado }}" readonly>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Incisos Grave:</span>
+            <div class="campo-lectura">
+                {% for inciso in reporte.incisos_grave.all %}
+                    <div><strong>•</strong> {{ inciso.descripcion }}</div>
+                {% empty %}
+                    <span>-</span>
+                {% endfor %}
             </div>
-            <!-- MATERIA / DOCENTE -->
-            <div class="mb-3">
-                <label class="form-label">Materia / Docente:</label>
-                <input class="form-control" value="{{ reporte.materia }} — {{ reporte.docente }}" readonly>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Incisos Muy Grave:</span>
+            <div class="campo-lectura">
+                {% for inciso in reporte.incisos_muygrave.all %}
+                    <div><strong>•</strong> {{ inciso.descripcion }}</div>
+                {% empty %}
+                    <span>-</span>
+                {% endfor %}
             </div>
-            <!-- FECHA -->
-            <div class="mb-3">
-                <label class="form-label">Fecha de registro:</label>
-                <input class="form-control" value="{{ reporte.fecha|date:"d/m/Y H:i" }}" readonly>
-            </div>
-            <!-- INCISOS -->
-            <div class="mb-3">
-                <label class="form-label">Incisos Leve:</label>
-                <div class="form-control-plaintext" style="white-space: pre-line;">
-                    {% for inciso in reporte.incisos_leve.all %}
-                        {{ inciso.descripcion }}{% if not forloop.last %}; {% endif %}
-                    {% empty %}
-                        <span class="text-muted">Ninguno</span>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Incisos Grave:</label>
-                <div class="form-control-plaintext" style="white-space: pre-line;">
-                    {% for inciso in reporte.incisos_grave.all %}
-                        {{ inciso.descripcion }}{% if not forloop.last %}; {% endif %}
-                    {% empty %}
-                        <span class="text-muted">Ninguno</span>
-                    {% endfor %}
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Incisos Muy Grave:</label>
-                <div class="form-control-plaintext" style="white-space: pre-line;">
-                    {% for inciso in reporte.incisos_muygrave.all %}
-                        {{ inciso.descripcion }}{% if not forloop.last %}; {% endif %}
-                    {% empty %}
-                        <span class="text-muted">Ninguno</span>
-                    {% endfor %}
-                </div>
-            </div>
-            <!-- COMENTARIO DOCENTE -->
-            <div class="mb-3">
-                <label class="form-label">Comentario del Docente:</label>
-                <textarea class="form-control" rows="2" readonly>{{ reporte.comentario }}</textarea>
-            </div>
-            <hr>
-            <!-- COMENTARIO COORDINADOR -->
-            <div class="mb-3">
-                <label class="form-label">Comentario del Coordinador:</label>
-                {{ form.comentario_coordinador }}
-            </div>
-            <!-- ESTADO -->
-            <div class="mb-3">
-                <label class="form-label">Estado del Reporte:</label>
-                {{ form.estado }}
-            </div>
-            <!-- FIRMA COORDINADOR -->
-            <div class="mb-3">
-                <label class="form-label">Firma del Coordinador:</label>
-                {{ form.coordinador_firma }}
-            </div>
-
-            <button class="btn btn-success mt-3">Guardar Cambios</button>
-        </form>
-    </div>
+        </div>
+        <div class="mb-2">
+            <span class="campo-label">Comentario del Docente:</span>
+            <div class="campo-lectura" style="white-space: pre-line;">{{ reporte.comentario|default:"—" }}</div>
+        </div>
+        <hr>
+        <!-- Campos editables para el coordinador -->
+        <div class="mb-3">
+            <label class="form-label"><strong>Comentario del Coordinador:</strong></label>
+            <textarea class="form-control" name="comentario_coordinador" rows="3">{{ reporte.comentario_coordinador|default_if_none:"" }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label"><strong>Estado del Reporte:</strong></label>
+            <select name="estado" class="form-select">
+                <option value="enviado" {% if reporte.estado == "enviado" %}selected{% endif %}>Enviado</option>
+                <option value="revisando" {% if reporte.estado == "revisando" %}selected{% endif %}>Revisando</option>
+                <option value="revisado" {% if reporte.estado == "revisado" %}selected{% endif %}>Revisado</option>
+                <option value="aprobado" {% if reporte.estado == "aprobado" %}selected{% endif %}>Aprobado</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label"><strong>Firma del Coordinador:</strong></label>
+            <select name="coordinador_firma" class="form-select">
+                <option value="">---------</option>
+                {% for coord in coordinadores %}
+                    <option value="{{ coord }}" {% if reporte.coordinador_firma == coord %}selected{% endif %}>{{ coord }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-success mt-3">Guardar Cambios</button>
+    </form>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{% static 'conducta/js/editor_reporte.js' %}"></script>
 </body>

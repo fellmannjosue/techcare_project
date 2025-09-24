@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+# ────────────────
+# Choices globales
+# ────────────────
 AREA_CHOICES = (
     ('bilingue', 'Bilingüe'),
     ('colegio', 'Colegio/CFP'),
@@ -12,6 +15,17 @@ ESTADO_CHOICES = (
     ('revisado', 'Revisado'),
     ('aprobado', 'Aprobado'),
 )
+
+COORDINADORES_BL = [
+    ("Mrs. Osorto", "Mrs. Osorto"),
+    ("Miss Alcerro", "Miss Alcerro"),
+    ("Miss Angela", "Miss Angela"),
+]
+COORDINADORES_COL = [
+    ("profe. Licona", "Profe. Licona"),
+    ("profe. Felipe", "Profe. Felipe"),
+    ("profe. Gabriela", "Profe. Gabriela"),
+]
 
 # ────────────────
 # Inciso Conductual

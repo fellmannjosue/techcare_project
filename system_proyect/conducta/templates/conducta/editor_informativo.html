@@ -20,7 +20,7 @@
             {% endfor %}
         {% endif %}
         {% csrf_token %}
-        <!-- Datos originales en modo solo lectura -->
+        <!-- Datos originales solo lectura -->
         <div class="mb-2">
             <span class="campo-label">Alumno:</span>
             <div class="campo-lectura">{{ reporte.alumno_nombre }}</div>
@@ -45,15 +45,25 @@
         <!-- Campos editables para el coordinador -->
         <div class="mb-3">
             <label class="form-label"><strong>Comentario del Coordinador:</strong></label>
-            {{ form.comentario_coordinador }}
+            <textarea class="form-control" name="comentario_coordinador" rows="3">{{ reporte.comentario_coordinador|default_if_none:"" }}</textarea>
         </div>
         <div class="mb-3">
             <label class="form-label"><strong>Estado del Reporte:</strong></label>
-            {{ form.estado }}
+            <select name="estado" class="form-select">
+                <option value="enviado" {% if reporte.estado == "enviado" %}selected{% endif %}>Enviado</option>
+                <option value="revisando" {% if reporte.estado == "revisando" %}selected{% endif %}>Revisando</option>
+                <option value="revisado" {% if reporte.estado == "revisado" %}selected{% endif %}>Revisado</option>
+                <option value="aprobado" {% if reporte.estado == "aprobado" %}selected{% endif %}>Aprobado</option>
+            </select>
         </div>
         <div class="mb-3">
             <label class="form-label"><strong>Firma del Coordinador:</strong></label>
-            {{ form.coordinador_firma }}
+            <select name="coordinador_firma" class="form-select">
+                <option value="">---------</option>
+                {% for coord in coordinadores %}
+                    <option value="{{ coord }}" {% if reporte.coordinador_firma == coord %}selected{% endif %}>{{ coord }}</option>
+                {% endfor %}
+            </select>
         </div>
         <button class="btn btn-success mt-3">Guardar Cambios</button>
     </form>
