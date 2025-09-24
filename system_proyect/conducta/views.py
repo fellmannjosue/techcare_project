@@ -668,30 +668,34 @@ def descargar_pdf_informativo(request, pk):
         y_actual -= 8*mm
 
     # ====== FIRMAS DOCENTE Y COORDINADOR ======
-    y_firma = min(y_actual - 28*mm, 55*mm)
+    y_firma = 40 * mm  # o el valor que uses para que siempre quede abajo
     x_firma_doc = 38 * mm
     x_firma_coord = 110 * mm
-    largo_firma = 60 * mm
+    largo_firma = 65 * mm  # Puedes usar el mismo largo para ambos
 
-    # Línea firma docente
+    # Firma docente
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_doc, y_firma + 5*mm, "Firma:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_doc + 35*mm, y_firma + 5*mm, f"{reporte.docente or ''}")
     pdf.setStrokeColor(colors.black)
     pdf.setLineWidth(0.7)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma_doc, y_firma - 7*mm, "Firma del Docente:")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma_doc + 32*mm, y_firma - 7*mm, f"{reporte.docente or ''}")
     pdf.line(x_firma_doc, y_firma, x_firma_doc + largo_firma, y_firma)
 
-    # Línea firma coordinador
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma_coord, y_firma - 7*mm, "Firma Coordinador:")
+    # Firma coordinador
     pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma_coord + 32*mm, y_firma - 7*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
+    pdf.drawString(x_firma_coord, y_firma + 5*mm, "Firma:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_coord + 38*mm, y_firma + 5*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
+    pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.7)
     pdf.line(x_firma_coord, y_firma, x_firma_coord + largo_firma, y_firma)
+
 
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
+
 
 @login_required
 def descargar_pdf_conductual(request, pk):
@@ -795,26 +799,30 @@ def descargar_pdf_conductual(request, pk):
     #  FIRMA (siempre abajo)
     # ======================
 
-    y_firma = 40 * mm   # 🔥 SIEMPRE deja la firma abajo. Puedes subir/bajar este valor según tu hoja.
+    y_firma = 40 * mm   # Puedes subir/bajar este valor según tu hoja.
     x_firma_doc = 38 * mm
     x_firma_coord = 110 * mm
-    largo_firma = 60 * mm
+    largo_firma = 65 * mm  # Puedes hacer la línea un poco más larga si lo deseas
 
+    # ------ FIRMA DOCENTE ------
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_doc, y_firma + 5*mm, "Firma:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_doc + 22*mm, y_firma + 5*mm, f"{reporte.docente or ''}")
+    # Línea exactamente debajo
     pdf.setStrokeColor(colors.black)
     pdf.setLineWidth(0.7)
     pdf.line(x_firma_doc, y_firma, x_firma_doc + largo_firma, y_firma)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma_doc, y_firma - 7*mm, "Firma del Docente:")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma_doc + 32*mm, y_firma - 7*mm, f"{reporte.docente or ''}")
 
+    # ------ FIRMA COORDINADOR ------
+    pdf.setFont("Helvetica-Bold", 10)
+    pdf.drawString(x_firma_coord, y_firma + 5*mm, "Firma:")
+    pdf.setFont("Helvetica", 10)
+    pdf.drawString(x_firma_coord + 22*mm, y_firma + 5*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
     pdf.setStrokeColor(colors.black)
+    pdf.setLineWidth(0.7)
     pdf.line(x_firma_coord, y_firma, x_firma_coord + largo_firma, y_firma)
-    pdf.setFont("Helvetica", 10)
-    pdf.drawString(x_firma_coord, y_firma - 7*mm, "Firma Coordinador:")
-    pdf.setFont("Helvetica-Bold", 10)
-    pdf.drawString(x_firma_coord + 32*mm, y_firma - 7*mm, f"{getattr(reporte, 'coordinador_firma', '') or ''}")
-
+    
     pdf.save()
     buf.seek(0)
     return HttpResponse(buf, content_type="application/pdf")
