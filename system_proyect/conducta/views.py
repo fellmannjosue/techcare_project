@@ -1,20 +1,23 @@
-import io
-import os
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
+import io, os
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
-from django.shortcuts import render, get_object_or_404
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
-from reportlab.lib import colors
-from django.conf import settings
-from django.http import HttpResponse
 from django.contrib import messages
 from django.db import connections
 from django.db.models import Count
 from django.utils import timezone
+from django.conf import settings
+
+# PDF y PowerPoint
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.units import mm
+from reportlab.lib import colors
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.enum.text import PP_ALIGN
+
 from .forms import (
     ReporteInformativoForm,
     ReporteConductualForm,
@@ -528,40 +531,38 @@ def editar_reporte_informativo(request, pk):
 
 @login_required
 def editar_progress_report(request, pk):
-    try:
-        reporte = get_object_or_404(ProgressReport, pk=pk)
-        alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
-        if request.method == 'POST':
-            form = ProgressReportForm(request.POST, alumnos_choices=alumnos_choices)
-            if form.is_valid():
-                reporte.comentario_general = form.cleaned_data['comentario_general']
-                if es_coordinador(request.user):
-                    reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
-                    reporte.estado = form.cleaned_data['estado']
-                reporte.save()
-                messages.success(request, "Progress report actualizado correctamente.")
-                return redirect('dashboard_coordinador', area='bilingue')
-        else:
-            initial = {
-                'fecha': reporte.fecha,
-                'alumno': reporte.alumno_id,
-                'grado': reporte.grado,
-                'semana_inicio': reporte.semana_inicio,
-                'semana_fin': reporte.semana_fin,
-                'comentario_general': reporte.comentario_general,
-                'coordinador_firma': reporte.coordinador_firma,
-                'estado': reporte.estado,
-            }
-            form = ProgressReportForm(initial=initial, alumnos_choices=alumnos_choices)
-        return render(request, 'conducta/editor_progress.html', {
-            'form': form,
-            'reporte': reporte,
-            'es_coordinador': es_coordinador(request.user),
-        })
-    except Exception as e:
-        import traceback
-        return HttpResponse(f"<pre>{e}\n\n{traceback.format_exc()}</pre>")
-
+    reporte = get_object_or_404(ProgressReport, pk=pk)
+    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
+    es_coord = es_coordinador(request.user)
+    if request.method == 'POST':
+        form = ProgressReportForm(request.POST, alumnos_choices=alumnos_choices, modo_coordinador=es_coord)
+        if form.is_valid():
+            # Actualiza campos
+            reporte.comentario_general = form.cleaned_data['comentario_general']
+            if es_coord:
+                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
+                reporte.estado = form.cleaned_data['estado']
+                reporte.comentario_coordinador = form.cleaned_data['comentario_coordinador']
+            reporte.save()
+            messages.success(request, "Progress report actualizado correctamente.")
+            return redirect('dashboard_coordinador', area='bilingue')
+    else:
+        initial = {
+            'alumno': reporte.alumno_id,
+            'grado': reporte.grado,
+            'semana_inicio': reporte.semana_inicio,
+            'semana_fin': reporte.semana_fin,
+            'comentario_general': reporte.comentario_general,
+            'coordinador_firma': reporte.coordinador_firma,
+            'estado': reporte.estado,
+            'comentario_coordinador': reporte.comentario_coordinador,
+        }
+        form = ProgressReportForm(initial=initial, alumnos_choices=alumnos_choices, modo_coordinador=es_coord)
+    return render(request, 'conducta/editor_progress.html', {
+        'form': form,
+        'reporte': reporte,
+        'es_coordinador': es_coord,
+    })
 
 # -----------  DESCARGA EN PDF  -----------
 def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, bold=False, italic=False, leading=13):
@@ -837,8 +838,52 @@ def descargar_pdf_conductual(request, pk):
 
 @login_required
 def descargar_pdf_progress(request, pk):
-    return HttpResponse("PDF Progress Report #{}".format(pk))
+    reporte = get_object_or_404(ProgressReport, pk=pk)
+    materias = reporte.materias_json or []
 
+    fondo_path = os.path.join(settings.BASE_DIR, '/home/admin2/techcare_project/system_proyect/conducta/static/conducta/img/plantilla.jpg')
+    if not os.path.exists(fondo_path):
+        return HttpResponse(f"NO se encontró el fondo: {fondo_path}", status=500)
+
+    prs = Presentation()
+    slide_layout = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(slide_layout)
+    slide.shapes.add_picture(fondo_path, 0, 0, width=prs.slide_width, height=prs.slide_height)
+
+    slide.shapes.add_textbox(Inches(2.0), Inches(0.12), Inches(3.8), Inches(0.4)).text_frame.text = f"Name: {reporte.alumno_nombre}"
+    slide.shapes.add_textbox(Inches(2.0), Inches(0.5), Inches(2.5), Inches(0.3)).text_frame.text = f"Grade: {reporte.grado}"
+    slide.shapes.add_textbox(Inches(5.1), Inches(0.12), Inches(3.5), Inches(0.4)).text_frame.text = (
+        f"Weeks: {reporte.semana_inicio.strftime('%b %d')} - {reporte.semana_fin.strftime('%b %d, %Y')}"
+    )
+
+    num_rows = len(materias) + 1
+    num_cols = 3
+    left = Inches(0.25)
+    top = Inches(1.05)
+    width = Inches(9.2)
+    height = Inches(5.7)
+    table = slide.shapes.add_table(num_rows, num_cols, left, top, width, height).table
+
+    headers = ["Materia", "Asignación", "Comentario/Observación"]
+    for idx, title in enumerate(headers):
+        cell = table.cell(0, idx)
+        cell.text = title
+        cell.text_frame.paragraphs[0].font.bold = True
+        cell.text_frame.paragraphs[0].font.size = Pt(20)
+        cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+
+    for row, mat in enumerate(materias, start=1):
+        table.cell(row, 0).text = mat.get("materia", "")
+        table.cell(row, 1).text = mat.get("asignacion", "")
+        table.cell(row, 2).text = mat.get("comentario", "")
+        for col in range(num_cols):
+            table.cell(row, col).text_frame.paragraphs[0].font.size = Pt(15)
+
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
+    filename = f'progress_{reporte.alumno_nombre.replace(" ", "_")}.pptx'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    prs.save(response)
+    return response
 
 @login_required
 def descargar_pdf_conductual_3_strikes(request, pk):

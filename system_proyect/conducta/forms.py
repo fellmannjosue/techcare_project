@@ -157,7 +157,6 @@ class ProgressReportForm(forms.Form):
         required=False,
         label="Comentario General"
     )
-    # Solo coordinador puede editar estos
     coordinador_firma = forms.ChoiceField(
         label="Coordinador que aprueba",
         choices=get_coordinadores_choices(),
@@ -167,8 +166,8 @@ class ProgressReportForm(forms.Form):
     estado = forms.ChoiceField(
         label="Estado",
         choices=ESTADO_CHOICES,
-        required=False,  # Cambia a False; solo coordinador puede requerir
-        widget=forms.HiddenInput()
+        required=False,
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
     comentario_coordinador = forms.CharField(
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -176,8 +175,11 @@ class ProgressReportForm(forms.Form):
         label="Comentario del Coordinador"
     )
 
-    def __init__(self, *args, alumnos_choices=None, modo_coordinador=False, **kwargs):
+    def __init__(self, *args, **kwargs):
+        alumnos_choices = kwargs.pop('alumnos_choices', None)
+        modo_coordinador = kwargs.pop('modo_coordinador', False)
         super().__init__(*args, **kwargs)
+        # Carga alumnos
         self.fields['alumno'].choices = alumnos_choices or []
         # Solo coordinador puede editar estado y firma
         if not modo_coordinador:
