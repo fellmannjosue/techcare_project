@@ -162,7 +162,7 @@ class ProgressReport(models.Model):
     semana_inicio = models.DateField(verbose_name="Semana inicio")
     semana_fin = models.DateField(verbose_name="Semana fin")
     fecha = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de registro")
-    materias_json = models.JSONField(verbose_name="Detalle materias", blank=True, null=True)
+    materias_json = models.JSONField(verbose_name="Detalle materias", blank=True, default=list)
     comentario_general = models.TextField(blank=True, null=True, verbose_name="Comentario General")
 
     coordinador_firma = models.CharField("Coordinador que aprueba", max_length=100, blank=True, null=True, help_text="Nombre del coordinador que aprobó/firmó el reporte.")

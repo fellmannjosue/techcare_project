@@ -12,16 +12,28 @@
 <body>
   <div class="container my-4">
     <h2 class="mb-4">Progress Report</h2>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-success">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        {{ form.errors }}
+      </div>
+    {% endif %}
+
     <form id="progressForm" method="post" autocomplete="off">
       {% csrf_token %}
 
       <div class="row mb-3">
         <div class="col-md-6">
           <label class="form-label">Estudiante:</label>
-          <select id="id_alumno" name="alumno" class="form-select" required>
+          <select id="id_alumno" name="alumno" class="form-select" >
             <option value="">-- Selecciona un estudiante --</option>
             {% for s in students %}
-            <option value="{{ s.id }}" data-grado="{{ s.grado }}">{{ s.label }}</option>
+              <option value="{{ s.id }}" data-grado="{{ s.grado }}">{{ s.label }}</option>
             {% endfor %}
           </select>
         </div>
@@ -35,11 +47,11 @@
       <div class="row mb-3">
         <div class="col-md-6">
           <label class="form-label">Semana inicio:</label>
-          <input type="date" id="id_semana_inicio" name="semana_inicio" class="form-control" required>
+          <input type="date" id="id_semana_inicio" name="semana_inicio" class="form-control" >
         </div>
         <div class="col-md-6">
           <label class="form-label">Semana fin:</label>
-          <input type="date" id="id_semana_fin" name="semana_fin" class="form-control" required>
+          <input type="date" id="id_semana_fin" name="semana_fin" class="form-control" >
         </div>
       </div>
 
@@ -64,7 +76,7 @@
         <textarea name="comentario_general" id="id_comentario_general" rows="3" class="form-control"></textarea>
       </div>
 
-      <button class="btn btn-primary w-100">Guardar Progress Report</button>
+      <button type="submit" class="btn btn-primary w-100">Guardar Progress Report</button>
     </form>
     <a href="/conducta/dashboard/maestro/" class="btn btn-link mt-3">&larr; Regresar al Dashboard</a>
   </div>

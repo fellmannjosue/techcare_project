@@ -362,19 +362,17 @@ def progress_report_bilingue(request):
             materias = MATERIAS_COLEGIO
 
         if form.is_valid():
-            # Procesar materias
+            # --- PROCESAR MATERIAS ---
             materias_list = []
             for materia in materias:
                 if materia == "Asociadas":
-                    # Inputs dinámicos: asociadas[], asociadas_comentario[]
-                    asociadas = request.POST.getlist('asociadas[]')
-                    asociadas_comentario = request.POST.getlist('asociadas_comentario[]')
-                    for idx in range(len(asociadas)):
-                        nombre = asociadas[idx]
-                        comentario = asociadas_comentario[idx] if idx < len(asociadas_comentario) else ""
+                    asignaciones = request.POST.getlist('asignacion_Asociadas[]')
+                    comentarios = request.POST.getlist('comentario_Asociadas[]')
+                    for idx, asignacion in enumerate(asignaciones):
+                        comentario = comentarios[idx] if idx < len(comentarios) else ""
                         materias_list.append({
                             'materia': 'Asociadas',
-                            'asignacion': nombre,
+                            'asignacion': asignacion,
                             'comentario': comentario,
                         })
                 else:
@@ -385,6 +383,7 @@ def progress_report_bilingue(request):
                         'asignacion': asignacion,
                         'comentario': comentario,
                     })
+            # --- DATOS GENERALES ---
             semana_inicio = form.cleaned_data.get('semana_inicio')
             semana_fin = form.cleaned_data.get('semana_fin')
             comentario_general = form.cleaned_data.get('comentario_general', "")
@@ -392,7 +391,8 @@ def progress_report_bilingue(request):
             alumno_obj = next((s for s in students if s['id'] == alumno_id), None)
             alumno_label = alumno_obj['label'] if alumno_obj else ""
             grado = form.cleaned_data.get('grado')
-            # Guarda el ProgressReport con JSON
+
+            # --- CREAR REPORTE ---
             ProgressReport.objects.create(
                 usuario=request.user,
                 alumno_id=alumno_id,
@@ -401,7 +401,7 @@ def progress_report_bilingue(request):
                 semana_inicio=semana_inicio,
                 semana_fin=semana_fin,
                 comentario_general=comentario_general,
-                materias_json=materias_list
+                materias_json=materias_list  # <-- SE GUARDA EL JSON AQUÍ
             )
             messages.success(request, "¡Progress report registrado correctamente!")
             return redirect('progress_report_bilingue')
@@ -415,6 +415,7 @@ def progress_report_bilingue(request):
         'students': students,
         'grado': grado,
     })
+
 
 #-------------- HISTORIAL MAESTROS -----------------
 @login_required
@@ -462,6 +463,7 @@ COORDINADORES_COLEGIO = ["Profe. Licona", "Profe. Felipe", "Profe. Gabriela"]
 # ────────────────
 # EDITAR CONDUCTUAL
 # ────────────────
+
 @login_required
 def editar_reporte_conductual(request, pk):
     reporte = get_object_or_404(ReporteConductual, pk=pk)
@@ -493,6 +495,7 @@ def editar_reporte_conductual(request, pk):
 # ────────────────
 # EDITAR INFORMATIVO
 # ────────────────
+
 @login_required
 def editar_reporte_informativo(request, pk):
     reporte = get_object_or_404(ReporteInformativo, pk=pk)
@@ -518,6 +521,10 @@ def editar_reporte_informativo(request, pk):
         "reporte": reporte,
         "coordinadores": coordinadores,
     })
+
+# ────────────────
+# EDITAR PROGRESS
+# ────────────────
 
 @login_required
 def editar_progress_report(request, pk):

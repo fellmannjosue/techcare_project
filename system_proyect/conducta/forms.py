@@ -135,13 +135,10 @@ class ReporteInformativoForm(forms.Form):
                     field.widget.attrs['disabled'] = True
 
 class ProgressReportForm(forms.Form):
-    fecha = forms.DateTimeField(
-        label="Fecha",
-        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
-        required=True,
-        initial=timezone.now
+    alumno = forms.ChoiceField(
+        label="Estudiante",
+        widget=forms.Select(attrs={'class': 'form-select'})
     )
-    alumno = forms.ChoiceField(label="Estudiante", widget=forms.Select(attrs={'class': 'form-select'}))
     grado = forms.CharField(
         label="Grado",
         required=False,
@@ -160,6 +157,7 @@ class ProgressReportForm(forms.Form):
         required=False,
         label="Comentario General"
     )
+    # Solo coordinador puede editar estos
     coordinador_firma = forms.ChoiceField(
         label="Coordinador que aprueba",
         choices=get_coordinadores_choices(),
@@ -169,8 +167,8 @@ class ProgressReportForm(forms.Form):
     estado = forms.ChoiceField(
         label="Estado",
         choices=ESTADO_CHOICES,
-        required=True,
-        widget=forms.Select(attrs={'class': 'form-select'})
+        required=False,  # Cambia a False; solo coordinador puede requerir
+        widget=forms.HiddenInput()
     )
     comentario_coordinador = forms.CharField(
         widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
@@ -178,12 +176,13 @@ class ProgressReportForm(forms.Form):
         label="Comentario del Coordinador"
     )
 
-    def __init__(self, *args, es_coordinador=False, **kwargs):
-        alumnos_choices = kwargs.pop('alumnos_choices', [])
+    def __init__(self, *args, alumnos_choices=None, modo_coordinador=False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['alumno'].choices = alumnos_choices
-        if not es_coordinador:
-            for name, field in self.fields.items():
-                if name not in ('coordinador_firma', 'estado', 'comentario_coordinador'):
-                    field.widget.attrs['readonly'] = True
-                    field.widget.attrs['disabled'] = True
+        self.fields['alumno'].choices = alumnos_choices or []
+        # Solo coordinador puede editar estado y firma
+        if not modo_coordinador:
+            self.fields['estado'].widget = forms.HiddenInput()
+            self.fields['coordinador_firma'].widget = forms.HiddenInput()
+            self.fields['comentario_coordinador'].widget = forms.HiddenInput()
+        else:
+            self.fields['estado'].required = True

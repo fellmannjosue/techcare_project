@@ -1,32 +1,38 @@
 // Materias por tipo de grado
 const MATERIAS_PRIMARIA = [
-  "Math", "Phonics", "Spelling", "Reading", "Language", "Science", "Español", "CCSS", "Asociadas"
+  "Math", "Phonics", "Spelling", "Reading", "Language",
+  "Science", "Español", "CCSS", "Asociadas"
 ];
 const MATERIAS_COLEGIO = [
-  "Math", "Spelling", "Reading", "Language", "Science", "Español", "CCSS", "Cívica", "Asociadas"
+  "Math", "Spelling", "Reading", "Language", "Science",
+  "Español", "CCSS", "Cívica", "Asociadas"
 ];
 
 // Devuelve si un grado es primaria
 function esPrimaria(grado) {
   if (!grado) return false;
-  return grado.toLowerCase().includes('primariabl');
+  return grado.toLowerCase().includes('primariabl') || grado.toLowerCase().includes('preescolar');
 }
 
 // Genera filas según grado
 function generarFilasTablaMaterias(grado, values = {}) {
   let materias = esPrimaria(grado) ? MATERIAS_PRIMARIA : MATERIAS_COLEGIO;
   let html = '';
-  materias.forEach((mat, idx) => {
+  materias.forEach(mat => {
     if (mat !== "Asociadas") {
       html += `
         <tr>
           <td><strong>${mat}</strong></td>
-          <td><input type="text" name="asignacion_${mat}[]" class="form-control" autocomplete="off"></td>
-          <td><input type="text" name="comentario_${mat}[]" class="form-control" autocomplete="off"></td>
+          <td>
+            <input type="text" name="asignacion_${mat}" class="form-control" autocomplete="off">
+          </td>
+          <td>
+            <input type="text" name="comentario_${mat}" class="form-control" autocomplete="off">
+          </td>
         </tr>
       `;
     } else {
-      // Solo una fila para "Asociadas", con botón +
+      // Solo para "Asociadas", los name llevan []
       html += `
         <tr id="fila-asociadas">
           <td><strong>Asociadas</strong></td>
@@ -86,7 +92,6 @@ $('#tabla-materias').on('keydown', '.input-asociadas', function (e) {
   if (e.key === 'Enter') {
     e.preventDefault();
     $('#fila-asociadas .add-asociada').trigger('click');
-    // Focus en el nuevo input
     setTimeout(function () {
       $('#fila-asociadas').next('.asociada-extra').find('input[type="text"]').first().focus();
     }, 100);
