@@ -17,6 +17,9 @@ from reportlab.lib import colors
 from pptx import Presentation
 from pptx.util import Inches, Pt
 from pptx.enum.text import PP_ALIGN
+from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
+from pptx.util import Pt
 
 from .forms import (
     ReporteInformativoForm,
@@ -840,11 +843,6 @@ def descargar_pdf_conductual(request, pk):
 
 @login_required
 def descargar_pdf_progress(request, pk):
-    from pptx.dml.color import RGBColor
-    from pptx.enum.shapes import MSO_SHAPE
-    from pptx.enum.text import PP_ALIGN
-    from pptx.util import Pt
-
     reporte = get_object_or_404(ProgressReport, pk=pk)
     materias = reporte.materias_json or []
 
@@ -864,7 +862,7 @@ def descargar_pdf_progress(request, pk):
     p.text = "Progress Report"
     p.font.size = Pt(40)
     p.font.bold = True
-    p.font.name = "Arial Black"  # Usa Arial Black o una fuente bien visible
+    p.font.name = "French Script MT"  # Usa Arial Black o una fuente bien visible
     p.alignment = PP_ALIGN.LEFT
 
     # -- Name: <cursiva>   (en la misma línea)
@@ -876,15 +874,15 @@ def descargar_pdf_progress(request, pk):
     run1 = tf.paragraphs[0].add_run()
     run1.text = "Name: "
     run1.font.bold = True
-    run1.font.size = Pt(28)
-    run1.font.name = "Arial Black"
+    run1.font.size = Pt(18)
+    run1.font.name = "Arial (Cuerpo) "
 
     # El nombre en cursiva/script (usa "Brush Script MT", o prueba con "Segoe Script" o similar)
     run2 = tf.paragraphs[0].add_run()
     run2.text = reporte.alumno_nombre
     run2.font.size = Pt(28)
-    run2.font.italic = True
-    run2.font.name = "Brush Script MT"  # Cambia aquí si no tienes esta fuente
+    run2.font.bold = True
+    run2.font.name = "Edwardian Script ITC"  # Cambia aquí si no tienes esta fuente
 
     tf.paragraphs[0].alignment = PP_ALIGN.LEFT
 
@@ -895,9 +893,9 @@ def descargar_pdf_progress(request, pk):
     semanas_tf.word_wrap = True
     p = semanas_tf.paragraphs[0]
     p.text = f"Weeks: {reporte.semana_inicio.strftime('%b %d')} - {reporte.semana_fin.strftime('%b %d, %Y')}"
-    p.font.bold = True
-    p.font.size = Pt(22)
-    p.font.name = "Arial"
+    p.font.italic = True
+    p.font.size = Pt(18)
+    p.font.name = "Bahnschrift Light SemiCondensed"
     p.alignment = PP_ALIGN.RIGHT
 
     # -- Grado
@@ -906,17 +904,17 @@ def descargar_pdf_progress(request, pk):
     grado_tf.clear()
     p = grado_tf.paragraphs[0]
     p.text = f"Grade: {reporte.grado}"
-    p.font.size = Pt(24)
-    p.font.name = "Arial"
+    p.font.size = Pt(18)
+    p.font.name = "Bahnschrift SemiBold SemiConden"
     p.alignment = PP_ALIGN.LEFT
 
     # -- TABLA de materias (fondos blancos, cabecera en negrita)
     num_rows = len(materias) + 1
     num_cols = 3
-    left = Inches(0.35)
-    top = Inches(1.7)
-    width = Inches(9.1)
-    height = Inches(5.5)
+    left = Inches(3.15)
+    top = Inches(1.57)
+    width = Inches(6.496063)
+    height = Inches(5.11811)
 
     table = slide.shapes.add_table(num_rows, num_cols, left, top, width, height).table
 
@@ -925,12 +923,19 @@ def descargar_pdf_progress(request, pk):
     for idx, title in enumerate(headers):
         cell = table.cell(0, idx)
         cell.text = title
-        cell.text_frame.paragraphs[0].font.bold = True
-        cell.text_frame.paragraphs[0].font.size = Pt(22)
-        cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        # --- ESTILO DE CABECERA ---
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = RGBColor(220, 220, 220)  # Gris claro
+        p = cell.text_frame.paragraphs[0]
+        p.font.bold = False
+        p.font.size = Pt(18)
+        p.font.name = "Arial (Cuerpo)"
+        p.font.color.rgb = RGBColor(0, 0, 0)  # NEGRO
+        p.alignment = PP_ALIGN.CENTER
+
         # Fondo blanco y bordes (no azul)
         cell.fill.solid()
-        cell.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        cell.fill.fore_color.rgb = RGBColor(236, 236, 233)
         for border in cell._tc.xpath('.//a:tcPr/a:ln'):
             border.set('w', '12700')  # Ajusta borde si deseas más grueso
 
@@ -939,22 +944,22 @@ def descargar_pdf_progress(request, pk):
         # Materia en negrita
         cell_materia = table.cell(row, 0)
         cell_materia.text = mat.get("materia", "")
-        cell_materia.text_frame.paragraphs[0].font.bold = True
-        cell_materia.text_frame.paragraphs[0].font.size = Pt(18)
+        cell_materia.text_frame.paragraphs[0].font.bold = False
+        cell_materia.text_frame.paragraphs[0].font.size = Pt(17)
         cell_materia.fill.solid()
-        cell_materia.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        cell_materia.fill.fore_color.rgb = RGBColor(236, 236, 233)
         # Asignación
         cell_asignacion = table.cell(row, 1)
         cell_asignacion.text = mat.get("asignacion", "")
         cell_asignacion.text_frame.paragraphs[0].font.size = Pt(17)
         cell_asignacion.fill.solid()
-        cell_asignacion.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        cell_asignacion.fill.fore_color.rgb = RGBColor(236, 236, 233)
         # Comentario
         cell_comentario = table.cell(row, 2)
         cell_comentario.text = mat.get("comentario", "")
         cell_comentario.text_frame.paragraphs[0].font.size = Pt(17)
         cell_comentario.fill.solid()
-        cell_comentario.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        cell_comentario.fill.fore_color.rgb = RGBColor(236, 236, 233)
         # Quitar bordes azules si aparecen (PowerPoint suele ponerlos por defecto)
         for cell in [cell_materia, cell_asignacion, cell_comentario]:
             for border in cell._tc.xpath('.//a:tcPr/a:ln'):
