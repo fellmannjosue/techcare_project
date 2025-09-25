@@ -30,9 +30,10 @@ urlpatterns = [
     path('reporte-informativo/<int:pk>/editar/', views.editar_reporte_informativo, name='editar_reporte_informativo'),
     path('reporte-informativo/<int:pk>/pdf/', views.descargar_pdf_informativo, name='descargar_pdf_informativo'),
 
-    # --- PROGRESS ---
+        # --- PROGRESS ---
     path('progress-report/<int:pk>/editar/', views.editar_progress_report, name='editar_progress_report'),
     path('progress-report/<int:pk>/pdf/', views.descargar_pdf_progress, name='descargar_pdf_progress'),
+
 
     # Otros endpoints PDF y features especiales puedes ponerlos aquí...
 ]

@@ -1,6 +1,6 @@
-import io, os
+import io, os, json
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required
 from django.template.loader import render_to_string
 from django.contrib import messages
@@ -429,20 +429,40 @@ def progress_report_bilingue(request):
 @login_required
 def historial_maestro_bilingue(request):
     usuario = request.user
+    usuario_actual = usuario.get_full_name()
     reportes_informativo = ReporteInformativo.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
     reportes_conductual = ReporteConductual.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
-    reportes_progress = ProgressReport.objects.filter(usuario=usuario).order_by('-fecha')
 
-    # AGREGA ESTA LÍNEA (ajusta el filtro si tienes FK usuario)
+    # ———— NUEVO: FILTRA LOS PROGRESS DONDE EL USUARIO HA SIDO DOCENTE DE UNA MATERIA ————
+    todos_progress = ProgressReport.objects.all().order_by('-fecha')
+    reportes_progress = []
+    for pr in todos_progress:
+        materias = pr.materias_json
+        if isinstance(materias, str):
+            try:
+                materias = json.loads(materias)
+            except Exception:
+                materias = []
+        if materias is None:
+            materias = []
+        for mat in materias:
+            if mat.get("docente", "") == usuario_actual:
+                reportes_progress.append(pr)
+                break
+        # Extra: si quieres que también aparezca si él fue quien lo creó, agrega esto:
+        if pr.usuario == usuario and pr not in reportes_progress:
+            reportes_progress.append(pr)
+
     tickets_usuario = Ticket.objects.filter(email=usuario.email).order_by('-created_at')
 
     return render(request, 'conducta/historial_maestro.html', {
         'reportes_informativo': reportes_informativo,
         'reportes_conductual': reportes_conductual,
         'reportes_progress': reportes_progress,
-        'tickets_usuario': tickets_usuario,      # <- AGREGA AQUÍ
+        'tickets_usuario': tickets_usuario,
         'area': 'bilingue',
     })
+
 
 @login_required
 def historial_maestro_colegio(request):
@@ -462,7 +482,8 @@ def historial_maestro_colegio(request):
 
 # ----------- EDITOR DE REPORTES ( SOLO COORDINADOR) -----------
 def es_coordinador(user):
-    return user.groups.filter(name="Coordinador").exists()
+    return user.is_staff or user.groups.filter(name__icontains="coordinador").exists()
+
 
 # Cambia estos según tu lógica o roles
 COORDINADORES_BL = ["Mrs. Osorto", "Miss Alcerro", "Miss Angela"]
@@ -536,38 +557,72 @@ def editar_reporte_informativo(request, pk):
 
 @login_required
 def editar_progress_report(request, pk):
+    # --- Lista de coordinadores SOLO bilingüe ---
+    COORDINADORES_BL = ["Mrs. Osorto", "Miss Alcerro", "Miss Angela"]
+    coordinadores = COORDINADORES_BL
+
     reporte = get_object_or_404(ProgressReport, pk=pk)
-    alumnos_choices = [(reporte.alumno_id, reporte.alumno_nombre)]
     es_coord = es_coordinador(request.user)
+    usuario_actual = request.user.get_full_name()  # O usa el campo que identifica a los maestros en tu sistema
+
+    # --- Decodificar materias ---
+    materias = reporte.materias_json
+    if isinstance(materias, str):
+        try:
+            materias = json.loads(materias)
+        except Exception:
+            materias = []
+    if materias is None:
+        materias = []
+
+    # --- Determina para cada materia si el usuario la puede editar ---
+    for mat in materias:
+        # Permitir editar:
+        # - Si es coordinador
+        # - Si la materia NO tiene docente asignado aún (primer registro)
+        # - Si el docente es el usuario actual
+        if es_coord or not mat.get("docente") or mat.get("docente", "") == usuario_actual:
+            mat["editable"] = True
+        else:
+            mat["editable"] = False
+
     if request.method == 'POST':
-        form = ProgressReportForm(request.POST, alumnos_choices=alumnos_choices, modo_coordinador=es_coord)
-        if form.is_valid():
-            # Actualiza campos
-            reporte.comentario_general = form.cleaned_data['comentario_general']
-            if es_coord:
-                reporte.coordinador_firma = form.cleaned_data['coordinador_firma']
-                reporte.estado = form.cleaned_data['estado']
-                reporte.comentario_coordinador = form.cleaned_data['comentario_coordinador']
-            reporte.save()
-            messages.success(request, "Progress report actualizado correctamente.")
+        nuevas_materias = []
+        for mat in materias:
+            materia = mat.get('materia', '')
+            if mat["editable"]:
+                asignacion = request.POST.get(f'asignacion_{materia}', mat.get('asignacion', ''))
+                comentario = request.POST.get(f'comentario_{materia}', mat.get('comentario', ''))
+                mat['asignacion'] = asignacion
+                mat['comentario'] = comentario
+                mat['docente'] = usuario_actual
+            nuevas_materias.append(mat)
+        reporte.materias_json = nuevas_materias
+
+        # Actualizar comentario general (todos pueden)
+        reporte.comentario_general = request.POST.get('comentario_general', reporte.comentario_general)
+        
+        # Si es coordinador, puede actualizar campos de coordinación
+        if es_coord:
+            reporte.coordinador_firma = request.POST.get('coordinador_firma', reporte.coordinador_firma)
+            reporte.estado = request.POST.get('estado', reporte.estado)
+            reporte.comentario_coordinador = request.POST.get('comentario_coordinador', reporte.comentario_coordinador)
+
+        reporte.save()
+        messages.success(request, "¡Reporte actualizado correctamente!")
+        if es_coord:
             return redirect('dashboard_coordinador', area='bilingue')
-    else:
-        initial = {
-            'alumno': reporte.alumno_id,
-            'grado': reporte.grado,
-            'semana_inicio': reporte.semana_inicio,
-            'semana_fin': reporte.semana_fin,
-            'comentario_general': reporte.comentario_general,
-            'coordinador_firma': reporte.coordinador_firma,
-            'estado': reporte.estado,
-            'comentario_coordinador': reporte.comentario_coordinador,
-        }
-        form = ProgressReportForm(initial=initial, alumnos_choices=alumnos_choices, modo_coordinador=es_coord)
+        else:
+            return redirect('historial_maestro_bilingue')
+
     return render(request, 'conducta/editor_progress.html', {
-        'form': form,
         'reporte': reporte,
+        'materias': materias,
         'es_coordinador': es_coord,
+        'usuario_actual': usuario_actual,
+        'coordinadores': coordinadores,   # <-- Esto permite el dropdown en el template
     })
+
 
 # -----------  DESCARGA EN PDF  -----------
 def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, bold=False, italic=False, leading=13):

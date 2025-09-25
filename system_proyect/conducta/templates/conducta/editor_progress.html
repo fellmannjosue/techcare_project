@@ -12,81 +12,111 @@
 <body>
   <div class="container my-4">
     <h2 class="mb-4">Editar Progress Report</h2>
+
     {% if messages %}
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        <div class="alert alert-success">{{ message }}</div>
       {% endfor %}
     {% endif %}
 
     <form method="post" autocomplete="off">
       {% csrf_token %}
-      <!-- Errores de formulario -->
-      {% if form.errors %}
-        <div class="alert alert-danger">
-          <ul>
-          {% for field in form %}
-            {% for error in field.errors %}
-              <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-            {% endfor %}
-          {% endfor %}
-          {% for error in form.non_field_errors %}
-            <li>{{ error }}</li>
-          {% endfor %}
-          </ul>
-        </div>
-      {% endif %}
 
+      <!-- Datos generales -->
       <div class="row mb-3">
         <div class="col-md-6">
-          {{ form.alumno.label_tag }}
-          {{ form.alumno }}
+          <label class="form-label">Estudiante:</label>
+          <input type="text" class="form-control" value="{{ reporte.alumno_nombre }}" readonly>
         </div>
         <div class="col-md-6">
-          {{ form.grado.label_tag }}
-          {{ form.grado }}
+          <label class="form-label">Grado:</label>
+          <input type="text" class="form-control" value="{{ reporte.grado }}" readonly>
         </div>
       </div>
 
       <div class="row mb-3">
         <div class="col-md-6">
-          {{ form.semana_inicio.label_tag }}
-          {{ form.semana_inicio }}
+          <label class="form-label">Semana inicio:</label>
+          <input type="date" class="form-control" value="{{ reporte.semana_inicio|date:'Y-m-d' }}" readonly>
         </div>
         <div class="col-md-6">
-          {{ form.semana_fin.label_tag }}
-          {{ form.semana_fin }}
+          <label class="form-label">Semana fin:</label>
+          <input type="date" class="form-control" value="{{ reporte.semana_fin|date:'Y-m-d' }}" readonly>
         </div>
+      </div>
+
+      <!-- Tabla de materias -->
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle" id="tabla-materias">
+          <thead class="table-light">
+            <tr>
+              <th style="width:180px;">Materia</th>
+              <th style="width:230px;">Asignación</th>
+              <th>Comentario/Observación</th>
+              <th style="width:160px;">Docente</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for mat in materias %}
+            <tr>
+              <td>
+                <input type="text" class="form-control" value="{{ mat.materia }}" readonly>
+              </td>
+              <td>
+                <input type="text" name="asignacion_{{ mat.materia }}" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+              </td>
+              <td>
+                <input type="text" name="comentario_{{ mat.materia }}" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+              </td>
+              <td>
+                <input type="text" class="form-control" value="{{ mat.docente }}" readonly>
+                {% if mat.editable and not mat.docente %}
+                  <small class="text-success">Serás registrado como: {{ usuario_actual }}</small>
+                {% elif mat.editable and mat.docente == usuario_actual %}
+                  <small class="text-info">Editando como: {{ usuario_actual }}</small>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
 
       <div class="mb-3">
-        {{ form.comentario_general.label_tag }}
-        {{ form.comentario_general }}
+        <label class="form-label">Comentario General:</label>
+        <textarea name="comentario_general" id="id_comentario_general" rows="3" class="form-control">{{ reporte.comentario_general }}</textarea>
       </div>
 
       {% if es_coordinador %}
-        <div class="row mb-3">
-          <div class="col-md-4">
-            {{ form.coordinador_firma.label_tag }}
-            {{ form.coordinador_firma }}
-          </div>
-          <div class="col-md-4">
-            {{ form.estado.label_tag }}
-            {{ form.estado }}
-          </div>
-          <div class="col-md-4">
-            {{ form.comentario_coordinador.label_tag }}
-            {{ form.comentario_coordinador }}
-          </div>
-        </div>
-      {% else %}
-        {{ form.coordinador_firma }}
-        {{ form.estado }}
-        {{ form.comentario_coordinador }}
+      <div class="mb-3">
+        <label class="form-label">Estado:</label>
+        <select name="estado" class="form-select">
+          <option value="enviado" {% if reporte.estado == 'enviado' %}selected{% endif %}>Enviado</option>
+          <option value="pendiente" {% if reporte.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+          <option value="aprobado" {% if reporte.estado == 'aprobado' %}selected{% endif %}>Aprobado</option>
+          <option value="rechazado" {% if reporte.estado == 'rechazado' %}selected{% endif %}>Rechazado</option>
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Firma Coordinador:</label>
+        <select name="coordinador_firma" class="form-select">
+          <option value="">-- Selecciona --</option>
+          {% for c in coordinadores %}
+            <option value="{{ c }}" {% if reporte.coordinador_firma == c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Comentario del Coordinador:</label>
+        <textarea name="comentario_coordinador" rows="3" class="form-control">{{ reporte.comentario_coordinador }}</textarea>
+      </div>
       {% endif %}
 
-      <button type="submit" class="btn btn-primary w-100">Guardar Cambios</button>
+      <button type="submit" class="btn btn-primary w-100">Guardar cambios</button>
     </form>
-    <a href="/conducta/dashboard/maestro/" class="btn btn-link mt-3">&larr; Regresar al Dashboard</a>
+    <a href="{% if es_coordinador %}{% url 'dashboard_coordinador' 'bilingue' %}{% else %}{% url 'historial_maestro_bilingue' %}{% endif %}" class="btn btn-link mt-3">&larr; Regresar</a>
   </div>
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
