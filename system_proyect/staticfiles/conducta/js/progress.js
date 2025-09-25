@@ -1,4 +1,8 @@
-// Materias por tipo de grado
+// ===========================
+//  PROGRESS.JS — PROGRESS REPORT
+// ===========================
+
+// --- MATERIAS POR GRADO ---
 const MATERIAS_PRIMARIA = [
   "Math", "Phonics", "Spelling", "Reading", "Language",
   "Science", "Español", "CCSS", "Asociadas"
@@ -8,13 +12,13 @@ const MATERIAS_COLEGIO = [
   "Español", "CCSS", "Cívica", "Asociadas"
 ];
 
-// Devuelve si un grado es primaria
+// --- DETERMINA SI ES PRIMARIA ---
 function esPrimaria(grado) {
   if (!grado) return false;
   return grado.toLowerCase().includes('primariabl') || grado.toLowerCase().includes('preescolar');
 }
 
-// Genera filas según grado
+// --- GENERA LA TABLA DE MATERIAS ---
 function generarFilasTablaMaterias(grado, values = {}) {
   let materias = esPrimaria(grado) ? MATERIAS_PRIMARIA : MATERIAS_COLEGIO;
   let html = '';
@@ -32,7 +36,6 @@ function generarFilasTablaMaterias(grado, values = {}) {
         </tr>
       `;
     } else {
-      // Solo para "Asociadas", los name llevan []
       html += `
         <tr id="fila-asociadas">
           <td><strong>Asociadas</strong></td>
@@ -50,16 +53,18 @@ function generarFilasTablaMaterias(grado, values = {}) {
   $("#tabla-materias-body").html(html);
 }
 
-// Evento para actualizar grado
-$('#id_alumno').on('change', function () {
-  let grado = $(this).find('option:selected').data('grado') || '';
-  $('#grado-display').val(grado);
-  $('#id_grado').val(grado);
-  generarFilasTablaMaterias(grado);
-});
-
-// Inicializar tabla al cargar si hay alumno seleccionado
+// =========== INICIALIZAR ==============
 $(document).ready(function () {
+  // --- ACTIVAR SELECT2 EN ALUMNO ---
+  $('#id_alumno').select2({
+    placeholder: "-- Selecciona un estudiante --",
+    minimumResultsForSearch: 0,    // SIEMPRE mostrar buscador
+    width: '100%',
+    allowClear: true,
+    dropdownParent: $('#id_alumno').parent() // Previene bugs en modals
+  });
+
+  // --- Inicializar la tabla si ya hay alumno seleccionado ---
   let $alumno = $('#id_alumno');
   let initialGrado = $alumno.find('option:selected').data('grado') || '';
   $('#grado-display').val(initialGrado);
@@ -67,7 +72,15 @@ $(document).ready(function () {
   if (initialGrado) generarFilasTablaMaterias(initialGrado);
 });
 
-// Delegar evento para agregar más filas de "Asociadas"
+// =========== CAMBIO DE ALUMNO ==========
+$('#id_alumno').on('change', function () {
+  let grado = $(this).find('option:selected').data('grado') || '';
+  $('#grado-display').val(grado);
+  $('#id_grado').val(grado);
+  generarFilasTablaMaterias(grado);
+});
+
+// ========== ASOCIADAS: AGREGAR FILAS EXTRA ===========
 $('#tabla-materias').on('click', '.add-asociada', function () {
   let nuevaFila = `
     <tr class="asociada-extra">
@@ -82,12 +95,12 @@ $('#tabla-materias').on('click', '.add-asociada', function () {
   $('#fila-asociadas').after(nuevaFila);
 });
 
-// Delegar evento para eliminar filas extra de "Asociadas"
+// ========== ASOCIADAS: ELIMINAR FILA ===========
 $('#tabla-materias').on('click', '.remove-asociada', function () {
   $(this).closest('tr').remove();
 });
 
-// Enter en input de asociadas agrega nueva fila
+// ========== ASOCIADAS: ENTER CREA FILA ===========
 $('#tabla-materias').on('keydown', '.input-asociadas', function (e) {
   if (e.key === 'Enter') {
     e.preventDefault();

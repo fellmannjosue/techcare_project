@@ -68,6 +68,7 @@ def obtener_alumnos_bilingue():
         print(">>> ERROR SQL BILINGUE:", e)
     return alumnos
 
+
 def obtener_alumnos_colegio():
     query = """
     SELECT TOP (100) PERCENT d.PersonaID,
@@ -99,6 +100,7 @@ def obtener_alumnos_colegio():
     except Exception as e:
         print(">>> ERROR SQL COLEGIO:", e)
     return alumnos
+
 
 def get_materia_docente_choices(area):
     if area == 'bilingue':
@@ -838,52 +840,133 @@ def descargar_pdf_conductual(request, pk):
 
 @login_required
 def descargar_pdf_progress(request, pk):
+    from pptx.dml.color import RGBColor
+    from pptx.enum.shapes import MSO_SHAPE
+    from pptx.enum.text import PP_ALIGN
+    from pptx.util import Pt
+
     reporte = get_object_or_404(ProgressReport, pk=pk)
     materias = reporte.materias_json or []
 
-    fondo_path = os.path.join(settings.BASE_DIR, '/home/admin2/techcare_project/system_proyect/conducta/static/conducta/img/plantilla.jpg')
-    if not os.path.exists(fondo_path):
-        return HttpResponse(f"NO se encontró el fondo: {fondo_path}", status=500)
+    # Ruta correcta
+    fondo_path = '/home/admin2/techcare_project/system_proyect/conducta/static/conducta/img/plantilla.jpg'
 
     prs = Presentation()
-    slide_layout = prs.slide_layouts[6]
+    slide_layout = prs.slide_layouts[6]  # Slide en blanco
     slide = prs.slides.add_slide(slide_layout)
+
+    # Fondo completo
     slide.shapes.add_picture(fondo_path, 0, 0, width=prs.slide_width, height=prs.slide_height)
 
-    slide.shapes.add_textbox(Inches(2.0), Inches(0.12), Inches(3.8), Inches(0.4)).text_frame.text = f"Name: {reporte.alumno_nombre}"
-    slide.shapes.add_textbox(Inches(2.0), Inches(0.5), Inches(2.5), Inches(0.3)).text_frame.text = f"Grade: {reporte.grado}"
-    slide.shapes.add_textbox(Inches(5.1), Inches(0.12), Inches(3.5), Inches(0.4)).text_frame.text = (
-        f"Weeks: {reporte.semana_inicio.strftime('%b %d')} - {reporte.semana_fin.strftime('%b %d, %Y')}"
-    )
+    # -- TÍTULO "Progress Report"
+    titulo = slide.shapes.add_textbox(Inches(0.7), Inches(0.1), Inches(5), Inches(0.7)).text_frame
+    p = titulo.paragraphs[0]
+    p.text = "Progress Report"
+    p.font.size = Pt(40)
+    p.font.bold = True
+    p.font.name = "Arial Black"  # Usa Arial Black o una fuente bien visible
+    p.alignment = PP_ALIGN.LEFT
 
+    # -- Name: <cursiva>   (en la misma línea)
+    nombre_textbox = slide.shapes.add_textbox(Inches(0.7), Inches(0.7), Inches(7.5), Inches(0.7))
+    tf = nombre_textbox.text_frame
+    tf.clear()
+
+    # "Name: " en negrita
+    run1 = tf.paragraphs[0].add_run()
+    run1.text = "Name: "
+    run1.font.bold = True
+    run1.font.size = Pt(28)
+    run1.font.name = "Arial Black"
+
+    # El nombre en cursiva/script (usa "Brush Script MT", o prueba con "Segoe Script" o similar)
+    run2 = tf.paragraphs[0].add_run()
+    run2.text = reporte.alumno_nombre
+    run2.font.size = Pt(28)
+    run2.font.italic = True
+    run2.font.name = "Brush Script MT"  # Cambia aquí si no tienes esta fuente
+
+    tf.paragraphs[0].alignment = PP_ALIGN.LEFT
+
+    # -- Weeks: <rango> (a la derecha)
+    semanas_textbox = slide.shapes.add_textbox(Inches(6), Inches(0.7), Inches(4), Inches(0.5))
+    semanas_tf = semanas_textbox.text_frame
+    semanas_tf.clear()
+    semanas_tf.word_wrap = True
+    p = semanas_tf.paragraphs[0]
+    p.text = f"Weeks: {reporte.semana_inicio.strftime('%b %d')} - {reporte.semana_fin.strftime('%b %d, %Y')}"
+    p.font.bold = True
+    p.font.size = Pt(22)
+    p.font.name = "Arial"
+    p.alignment = PP_ALIGN.RIGHT
+
+    # -- Grado
+    grado_textbox = slide.shapes.add_textbox(Inches(0.7), Inches(1.2), Inches(5), Inches(0.5))
+    grado_tf = grado_textbox.text_frame
+    grado_tf.clear()
+    p = grado_tf.paragraphs[0]
+    p.text = f"Grade: {reporte.grado}"
+    p.font.size = Pt(24)
+    p.font.name = "Arial"
+    p.alignment = PP_ALIGN.LEFT
+
+    # -- TABLA de materias (fondos blancos, cabecera en negrita)
     num_rows = len(materias) + 1
     num_cols = 3
-    left = Inches(0.25)
-    top = Inches(1.05)
-    width = Inches(9.2)
-    height = Inches(5.7)
+    left = Inches(0.35)
+    top = Inches(1.7)
+    width = Inches(9.1)
+    height = Inches(5.5)
+
     table = slide.shapes.add_table(num_rows, num_cols, left, top, width, height).table
 
+    # Cabecera
     headers = ["Materia", "Asignación", "Comentario/Observación"]
     for idx, title in enumerate(headers):
         cell = table.cell(0, idx)
         cell.text = title
         cell.text_frame.paragraphs[0].font.bold = True
-        cell.text_frame.paragraphs[0].font.size = Pt(20)
+        cell.text_frame.paragraphs[0].font.size = Pt(22)
         cell.text_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        # Fondo blanco y bordes (no azul)
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        for border in cell._tc.xpath('.//a:tcPr/a:ln'):
+            border.set('w', '12700')  # Ajusta borde si deseas más grueso
 
+    # Filas de materias
     for row, mat in enumerate(materias, start=1):
-        table.cell(row, 0).text = mat.get("materia", "")
-        table.cell(row, 1).text = mat.get("asignacion", "")
-        table.cell(row, 2).text = mat.get("comentario", "")
-        for col in range(num_cols):
-            table.cell(row, col).text_frame.paragraphs[0].font.size = Pt(15)
+        # Materia en negrita
+        cell_materia = table.cell(row, 0)
+        cell_materia.text = mat.get("materia", "")
+        cell_materia.text_frame.paragraphs[0].font.bold = True
+        cell_materia.text_frame.paragraphs[0].font.size = Pt(18)
+        cell_materia.fill.solid()
+        cell_materia.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        # Asignación
+        cell_asignacion = table.cell(row, 1)
+        cell_asignacion.text = mat.get("asignacion", "")
+        cell_asignacion.text_frame.paragraphs[0].font.size = Pt(17)
+        cell_asignacion.fill.solid()
+        cell_asignacion.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        # Comentario
+        cell_comentario = table.cell(row, 2)
+        cell_comentario.text = mat.get("comentario", "")
+        cell_comentario.text_frame.paragraphs[0].font.size = Pt(17)
+        cell_comentario.fill.solid()
+        cell_comentario.fill.fore_color.rgb = RGBColor(255, 255, 255)
+        # Quitar bordes azules si aparecen (PowerPoint suele ponerlos por defecto)
+        for cell in [cell_materia, cell_asignacion, cell_comentario]:
+            for border in cell._tc.xpath('.//a:tcPr/a:ln'):
+                border.set('w', '12700')  # Ajusta borde si deseas más grueso
 
+    # DESCARGA el archivo
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.presentationml.presentation')
     filename = f'progress_{reporte.alumno_nombre.replace(" ", "_")}.pptx'
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
     prs.save(response)
     return response
+
 
 @login_required
 def descargar_pdf_conductual_3_strikes(request, pk):
@@ -1053,6 +1136,7 @@ def dashboard_coordinador(request, area):
     }
     return render(request, 'conducta/dashboard_coordinador.html', contexto)
 
+    
 @login_required
 def historial_alumno_coordinador(request, alumno_id):
     """
