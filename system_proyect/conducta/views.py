@@ -433,25 +433,7 @@ def historial_maestro_bilingue(request):
     reportes_informativo = ReporteInformativo.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
     reportes_conductual = ReporteConductual.objects.filter(usuario=usuario, area='bilingue').order_by('-fecha')
 
-    # ———— NUEVO: FILTRA LOS PROGRESS DONDE EL USUARIO HA SIDO DOCENTE DE UNA MATERIA ————
-    todos_progress = ProgressReport.objects.all().order_by('-fecha')
-    reportes_progress = []
-    for pr in todos_progress:
-        materias = pr.materias_json
-        if isinstance(materias, str):
-            try:
-                materias = json.loads(materias)
-            except Exception:
-                materias = []
-        if materias is None:
-            materias = []
-        for mat in materias:
-            if mat.get("docente", "") == usuario_actual:
-                reportes_progress.append(pr)
-                break
-        # Extra: si quieres que también aparezca si él fue quien lo creó, agrega esto:
-        if pr.usuario == usuario and pr not in reportes_progress:
-            reportes_progress.append(pr)
+    reportes_progress = ProgressReport.objects.all().order_by('-fecha')
 
     tickets_usuario = Ticket.objects.filter(email=usuario.email).order_by('-created_at')
 
@@ -563,7 +545,8 @@ def editar_progress_report(request, pk):
 
     reporte = get_object_or_404(ProgressReport, pk=pk)
     es_coord = es_coordinador(request.user)
-    usuario_actual = request.user.get_full_name()  # O usa el campo que identifica a los maestros en tu sistema
+    usuario_actual = request.user.get_full_name()
+    es_creador = (reporte.usuario == request.user)   # <--- Nuevo
 
     # --- Decodificar materias ---
     materias = reporte.materias_json
@@ -579,9 +562,10 @@ def editar_progress_report(request, pk):
     for mat in materias:
         # Permitir editar:
         # - Si es coordinador
+        # - Si es el creador del reporte
         # - Si la materia NO tiene docente asignado aún (primer registro)
         # - Si el docente es el usuario actual
-        if es_coord or not mat.get("docente") or mat.get("docente", "") == usuario_actual:
+        if es_coord or es_creador or not mat.get("docente") or mat.get("docente", "") == usuario_actual:
             mat["editable"] = True
         else:
             mat["editable"] = False
@@ -595,6 +579,7 @@ def editar_progress_report(request, pk):
                 comentario = request.POST.get(f'comentario_{materia}', mat.get('comentario', ''))
                 mat['asignacion'] = asignacion
                 mat['comentario'] = comentario
+                # Solo cambia el docente si es el propio maestro o el creador o el coordinador
                 mat['docente'] = usuario_actual
             nuevas_materias.append(mat)
         reporte.materias_json = nuevas_materias
@@ -620,7 +605,7 @@ def editar_progress_report(request, pk):
         'materias': materias,
         'es_coordinador': es_coord,
         'usuario_actual': usuario_actual,
-        'coordinadores': coordinadores,   # <-- Esto permite el dropdown en el template
+        'coordinadores': coordinadores,
     })
 
 
