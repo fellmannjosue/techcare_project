@@ -15,6 +15,7 @@ urlpatterns = [
     # 2) Admin de Django
     # ──────────────────────────────────────────────────────────────────────────
     path('admin/', admin.site.urls),
+    path('core/', include('core.urls')),
 
     # ──────────────────────────────────────────────────────────────────────────
     # 3) Autenticación y perfil de usuario
