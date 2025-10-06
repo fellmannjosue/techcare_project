@@ -3,87 +3,85 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Registro de Maestro</title>
+    <title>Registro de Usuario</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body { background: #f4f6fa; }
-        .register-container {
-            max-width: 410px;
-            margin: 40px auto 0 auto;
-            background: #fff;
-            border-radius: 16px;
-            box-shadow: 0 8px 28px rgba(31, 56, 139, 0.10);
-            padding: 32px 26px 18px 26px;
-        }
-        .register-logo img {
-            width: 78px;
-            margin-bottom: 8px;
-        }
-        .register-title {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #1064ea;
-            text-align: center;
-            margin-bottom: 28px;
-            margin-top: 6px;
-        }
-        .form-label {
-            font-weight: 600;
-            margin-bottom: 3px;
-            color: #263146;
-        }
-        .form-control, select.form-select {
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 1rem;
-        }
-        .btn-primary {
-            background: #1064ea;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 1.1rem;
-        }
-        .footer {
-            color: #888;
-            font-size: .96rem;
-            text-align: center;
-            margin-top: 22px;
-        }
-        .register-link {
-            text-align: center;
-            margin-top: 18px;
-        }
-        .alert { margin-bottom: 14px; }
-    </style>
+    <link rel="stylesheet" href="{% static 'accounts/css/registro.css' %}">
 </head>
 <body>
     <div class="register-container">
         <div class="register-logo text-center">
             <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo">
         </div>
-        <div class="register-title">Registro de Maestro</div>
+        <div class="register-title">Registro de Usuario</div>
 
-        <form method="post" novalidate>
+        <form method="post" id="registerForm" novalidate>
             {% csrf_token %}
-            {% for field in form %}
-                <div class="mb-3">
-                    <label class="form-label">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors|striptags }}</div>
-                    {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Nombre</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                    <div class="text-danger small">{{ form.first_name.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Apellido</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                    <div class="text-danger small">{{ form.last_name.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Correo institucional</label>
+                <div class="input-group">
+                    {{ form.email }}
+                    <button type="button" class="btn btn-outline-secondary" id="btnBuscarCorreo">
+                        Olvidé mi correo institucional
+                    </button>
                 </div>
-            {% endfor %}
+                {% if form.email.errors %}
+                    <div class="text-danger small">{{ form.email.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Área</label>
+                {{ form.area }}
+                {% if form.area.errors %}
+                    <div class="text-danger small">{{ form.area.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3" id="divCargo">
+                <label class="form-label">Cargo</label>
+                {{ form.cargo }}
+                {% if form.cargo.errors %}
+                    <div class="text-danger small">{{ form.cargo.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Contraseña</label>
+                {{ form.password }}
+                {% if form.password.errors %}
+                    <div class="text-danger small">{{ form.password.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Confirmar contraseña</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <div class="text-danger small">{{ form.password2.errors|striptags }}</div>
+                {% endif %}
+            </div>
             <button type="submit" class="btn btn-primary w-100">Registrarme</button>
         </form>
 
         <div class="register-link">
-            <a href="{% url 'user_login' %}" class="text-primary">
+            <a href="{% url 'login' %}" class="text-primary">
                 ¿Ya tienes cuenta? Inicia sesión aquí
             </a>
         </div>
+
         {% if messages %}
             <div class="mt-2">
                 {% for message in messages %}
@@ -95,5 +93,26 @@
             © {{ year|default:"2025" }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.
         </div>
     </div>
+
+    <!-- Modal de búsqueda de correos institucionales -->
+    <div class="modal fade" id="modalBuscarCorreo" tabindex="-1" aria-labelledby="modalBuscarCorreoLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalBuscarCorreoLabel">Buscar correo institucional</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <input type="text" id="inputBuscarCorreo" class="form-control mb-3" placeholder="Buscar por nombre o correo...">
+            <ul id="listaCorreos" class="list-group" style="max-height: 220px; overflow-y:auto;">
+              <!-- Aquí se llenará la lista de correos por JS -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <script src="{% static 'accounts/js/registro.js' %}" defer></script>
 </body>
 </html>

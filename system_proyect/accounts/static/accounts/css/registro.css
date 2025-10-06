@@ -1,0 +1,76 @@
+body {
+    background: #f4f6fa;
+}
+.register-container {
+    max-width: 420px;
+    margin: 40px auto 0 auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(31, 56, 139, 0.10);
+    padding: 32px 26px 18px 26px;
+}
+.register-logo img {
+    width: 78px;
+    margin-bottom: 8px;
+}
+.register-title {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1064ea;
+    text-align: center;
+    margin-bottom: 28px;
+    margin-top: 6px;
+}
+.form-label {
+    font-weight: 600;
+    margin-bottom: 3px;
+    color: #263146;
+}
+.form-control, select.form-select {
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 1rem;
+}
+.input-group .btn-outline-secondary {
+    border-radius: 8px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.btn-primary {
+    background: #1064ea;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 1.1rem;
+    border: none;
+    transition: background .2s;
+}
+.btn-primary:hover {
+    background: #1e49b6;
+}
+.footer {
+    color: #888;
+    font-size: .96rem;
+    text-align: center;
+    margin-top: 22px;
+}
+.register-link {
+    text-align: center;
+    margin-top: 18px;
+}
+.alert { margin-bottom: 14px; }
+.list-group-item {
+    cursor: pointer;
+    transition: background 0.18s;
+}
+.list-group-item:hover,
+.list-group-item.active {
+    background: #f1f5ff;
+    color: #1064ea;
+}
+@media (max-width: 576px) {
+    .register-container {
+        padding: 18px 5px 12px 5px;
+        max-width: 98vw;
+    }
+    .register-title { font-size: 1.3rem; }
+}

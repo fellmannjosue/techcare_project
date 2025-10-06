@@ -1,17 +1,21 @@
 from django.urls import path
 from . import views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
-    # Login principal
+    # Login principal (unificado)
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('maestro_logout/', views.maestro_logout, name='maestro_logout'),
     path('register/', views.register_maestro, name='register_maestro'),
     path('menu/', views.menu_view, name='menu'),
 
-    # NUEVO Login duplicado para "user_login"
-    path('user_login/', views.user_login_view, name='user_login'),
-    # Ruta para chequear notificaciones:
+    # Notificaciones para dashboard
     path('check-new-notifications/', views.check_new_notifications, name='check_new_notifications'),
 
+    # Recuperación de contraseña (vistas estándar de Django)
+    path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(), name='password_reset_complete'),
 ]

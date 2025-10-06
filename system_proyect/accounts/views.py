@@ -4,6 +4,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth.models import User, Group
+from django.core.mail import send_mail
+from django.conf import settings
 import datetime
 
 from .forms import MaestroRegisterForm
@@ -12,44 +14,35 @@ from tickets.models import Ticket
 
 def login_view(request):
     """
-    Vista para el inicio de sesión de usuarios (login general).
+    Login unificado para todos los usuarios. Usa el checkbox 'is_maestro' para lógica especial.
     """
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+        is_maestro = request.POST.get('is_maestro') == 'on'
         user = authenticate(request, username=username, password=password)
         if user:
             login(request, user)
             request.session['show_welcome'] = True
-            messages.success(request, f'¡Bienvenido {user.username}!')
+            messages.success(request, f'¡Bienvenido {user.first_name}!')
+            # Redirección según checkbox/grupo
+            if is_maestro or user.groups.filter(name__in=['maestros_bilingue', 'maestros_colegio']).exists():
+                return redirect('dashboard_maestro')
+            elif user.groups.filter(name='tecnicos').exists():
+                return redirect('tickets_dashboard')
+            elif user.is_superuser:
+                return redirect('menu')
             return redirect('menu')
         else:
             messages.error(request, 'Credenciales inválidas, inténtalo de nuevo.')
-    return render(request, 'accounts/login.html')
-
-def user_login_view(request):
-    """
-    Vista de login para usuarios que van directamente a tickets o dashboard de maestros.
-    """
-    if request.method == 'POST':
-        username = request.POST['username']
-        password = request.POST['password']
-        user = authenticate(request, username=username, password=password)
-        if user:
-            login(request, user)
-            request.session['show_welcome'] = True
-            messages.success(request, f'¡Bienvenido {user.username}!')
-
-            # REDIRECCIÓN SEGÚN GRUPO
-            if user.groups.filter(name__in=['maestros_bilingue', 'maestros_colegio']).exists():
-                return redirect('dashboard_maestro')
-            return redirect('/tickets/submit_ticket/')
-        else:
-            messages.error(request, 'Credenciales inválidas, inténtalo de nuevo.')
-    return render(request, 'accounts/user_login.html')
+    year = datetime.datetime.now().year
+    return render(request, 'accounts/login.html', {'year': year})
 
 
 def register_maestro(request):
+    """
+    Registro moderno para maestros, administrativos y staff.
+    """
     if request.method == 'POST':
         form = MaestroRegisterForm(request.POST)
         if form.is_valid():
@@ -57,9 +50,10 @@ def register_maestro(request):
             last_name = form.cleaned_data['last_name']
             email = form.cleaned_data['email']
             area = form.cleaned_data['area']
+            cargo = form.cleaned_data['cargo']
             password = form.cleaned_data['password']
 
-            # Usa email como username
+            # Username será igual a email
             user = User.objects.create_user(
                 username=email,
                 email=email,
@@ -67,16 +61,45 @@ def register_maestro(request):
                 first_name=first_name,
                 last_name=last_name
             )
-            # Asignar grupo según área
-            group_name = 'maestros_bilingue' if area == 'bilingue' else 'maestros_colegio'
-            group, _ = Group.objects.get_or_create(name=group_name)
-            user.groups.add(group)
+            # Asignar grupo y staff según área
+            if area == 'bilingue':
+                group_name = 'maestros_bilingue' if cargo == 'docente' else 'admin_bilingue'
+                group, _ = Group.objects.get_or_create(name=group_name)
+                user.groups.add(group)
+            elif area == 'colegio':
+                group_name = 'maestros_colegio' if cargo == 'docente' else 'admin_colegio'
+                group, _ = Group.objects.get_or_create(name=group_name)
+                user.groups.add(group)
+            elif area == 'administracion':
+                user.is_staff = True
+                group, _ = Group.objects.get_or_create(name='administracion')
+                user.groups.add(group)
             user.save()
+
+            # Enviar correo automático con datos de acceso
+            try:
+                send_mail(
+        'Bienvenido al Sistema TechCare',
+        (
+            f'Se ha creado una cuenta para ti en el sistema TechCare.\n\n'
+            f'Usuario: {email}\n'
+            f'Contraseña: {password}\n\n'
+            'Por seguridad, te recomendamos cambiar tu contraseña en tu primer acceso.\n\n'
+            'Saludos,\nSoporte Técnico ANA-HN'
+        ),
+        settings.DEFAULT_FROM_EMAIL,
+        [email],
+        fail_silently=False,
+    )
+            except Exception as e:
+                messages.warning(request, f"Usuario creado, pero no se pudo enviar el correo: {e}")
+
             messages.success(request, "¡Registro exitoso! Ahora puedes iniciar sesión.")
-            return redirect('user_login')
+            return redirect('login')
     else:
         form = MaestroRegisterForm()
-    return render(request, 'accounts/register.html', {'form': form})
+    year = datetime.datetime.now().year
+    return render(request, 'accounts/register.html', {'form': form, 'year': year})
 
 @login_required
 def menu_view(request):
@@ -121,7 +144,6 @@ def menu_view(request):
         'show_citas_bl':    is_admin or is_group_citas_bl,
         'show_citas_col':   is_admin or is_group_citas_col,
         'show_enfermeria':  is_admin or is_group_citas_bl or is_group_enfermeria,
-        # Coordinador Conducta
         'show_coordinador_bilingue': is_admin or is_coordinador_bilingue,
         'show_coordinador_colegio':  is_admin or is_coordinador_colegio,
     }
@@ -153,7 +175,7 @@ def logout_view(request):
 
 def maestro_logout(request):
     """
-    Cierra la sesión y redirige al login de usuario maestro.
+    Cierra la sesión y redirige al login.
     """
     inactive = request.GET.get('inactive')
     logout(request)
@@ -161,5 +183,4 @@ def maestro_logout(request):
         messages.info(request, 'Sesión cerrada por inactividad.')
     else:
         messages.info(request, 'Sesión cerrada correctamente.')
-    return redirect('user_login')  # O la url exacta de tu login de maestros
-
+    return redirect('login')
