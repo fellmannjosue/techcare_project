@@ -5,118 +5,143 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Sponsors</title>
+    <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
+    <!-- Bootstrap & FontAwesome -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    
-    <style>
-        body {
-            background-color: #f8f9fa;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .menu-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            text-align: center;
-            max-width: 900px;
-            margin: auto;
-        }
-        .menu-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: #ffffff;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            cursor: pointer;
-        }
-        .menu-item:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        .menu-item img {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 10px;
-        }
-        .menu-item span {
-            font-size: 16px;
-            font-weight: bold;
-        }
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            color: #666;
-        }
-    </style>
 </head>
-<body>
+<body class="bg-light">
 
-    <h2 class="menu-title">Dashboard de Sponsors</h2>
-
-    <div class="menu-grid">
-        <div class="menu-item" onclick="redirectWithAlert('{% url 'sponsors:add_sponsor' %}', 'Formulario Sponsors')">
-            <img src="{% static 'sponsors/img/sponsors.png' %}" alt="Formulario Sponsors">
-            <span>Formulario Sponsors</span>
-        </div>
-
-        <div class="menu-item" onclick="redirectWithAlert('{% url 'sponsors:add_city' %}', 'Nueva Ciudad')">
-            <img src="{% static 'sponsors/img/city.png' %}" alt="Nueva Ciudad">
-            <span>Agregar Ciudad</span>
-        </div>
-
-        <div class="menu-item" onclick="redirectWithAlert('{% url 'sponsors:add_country' %}', 'Nuevo País')">
-            <img src="{% static 'sponsors/img/country.png' %}" alt="Nuevo País">
-            <span>Agregar País</span>
-        </div>
-
-        <div class="menu-item" onclick="redirectWithAlert('{% url 'sponsors:add_directed' %}', 'Nuevo Directed')">
-            <img src="{% static 'sponsors/img/directed.png' %}" alt="Nuevo Directed">
-            <span>Agregar Directed</span>
-        </div>
-
-        <div class="menu-item" onclick="redirectWithAlert('{% url 'sponsors:add_title' %}', 'Nuevo Título')">
-            <img src="{% static 'sponsors/img/title.png' %}" alt="Nuevo Título">
-            <span>Agregar Título</span>
-        </div>
-        <div class="menu-item" onclick="redirectWithAlert('{% url 'menu' %}', 'Redirigiendo a Menu Principal')">
-            <img src="{% static 'sponsors/img/hogar.png' %}" alt="Menu Principal">
-            <span>Regresar al Menu Principal</span>
-        </div>
-
-  
-
+<div class="d-flex" id="wrapper">
+  <!-- Sidebar -->
+  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:220px;">
+    <div class="d-flex align-items-center mb-3">
+      <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+      <span class="fs-5 fw-bold">TechCare</span>
     </div>
-        <div class="footer">
-    © {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.
-  </div>
-    <script>
-        function redirectWithAlert(url, section) {
-            Swal.fire({
-                title: "Redirigiendo...",
-                text: "Cargando " + section,
-                icon: "info",
-                showConfirmButton: false,
-                timer: 1200
-            }).then(() => {
-                window.location.href = url;
-            });
-        }
-    </script>
+    <hr class="text-secondary">
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li><a href="{% url 'menu' %}" class="nav-link text-white"><i class="fa-solid fa-house me-2"></i> Menú Principal</a></li>
+      <li><a href="{% url 'sponsors:sponsors_dashboard' %}" class="nav-link text-white active"><i class="fa-solid fa-hand-holding-heart me-2"></i> Sponsors</a></li>
+      <li><a href="{% url 'inventario:dashboard' %}" class="nav-link text-white"><i class="fa-solid fa-boxes-stacked me-2"></i> Inventario</a></li>
+      <!-- Agrega más módulos si lo deseas -->
+    </ul>
+    <hr class="text-secondary">
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong>{{ request.user.username }}</strong>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+  <!-- /Sidebar -->
 
+  <!-- Main content -->
+  <div class="flex-grow-1 d-flex flex-column min-vh-100">
+    <!-- Header -->
+    <nav class="navbar navbar-light bg-white shadow-sm px-3">
+      <div class="container-fluid">
+        <div class="navbar-brand d-flex align-items-center gap-3">
+          <span class="fs-4">Dashboard de Sponsors</span>
+        </div>
+      </div>
+    </nav>
+    <!-- /Header -->
+
+    <div class="container py-4">
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-4 justify-content-center">
+
+        <!-- Formulario Sponsors -->
+        <div class="col">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_sponsor' %}', 'Formulario Sponsors')">
+            <div class="card-body">
+              <i class="fa-solid fa-hand-holding-heart fa-3x text-warning mb-3"></i>
+              <div class="fw-bold mb-1">Formulario Sponsors</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nueva Ciudad -->
+        <div class="col">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_city' %}', 'Nueva Ciudad')">
+            <div class="card-body">
+              <i class="fa-solid fa-city fa-3x text-primary mb-3"></i>
+              <div class="fw-bold mb-1">Agregar Ciudad</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nuevo País -->
+        <div class="col">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_country' %}', 'Nuevo País')">
+            <div class="card-body">
+              <i class="fa-solid fa-flag fa-3x text-success mb-3"></i>
+              <div class="fw-bold mb-1">Agregar País</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nuevo Directed -->
+        <div class="col">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_directed' %}', 'Nuevo Directed')">
+            <div class="card-body">
+              <i class="fa-solid fa-share-nodes fa-3x text-info mb-3"></i>
+              <div class="fw-bold mb-1">Agregar Directed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Nuevo Título -->
+        <div class="col">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_title' %}', 'Nuevo Título')">
+            <div class="card-body">
+              <i class="fa-solid fa-certificate fa-3x text-danger mb-3"></i>
+              <div class="fw-bold mb-1">Agregar Título</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Regresar al Menú Principal -->
+        <div class="col">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'menu' %}', 'Redirigiendo a Menú Principal')">
+            <div class="card-body">
+              <i class="fa-solid fa-house fa-3x text-secondary mb-3"></i>
+              <div class="fw-bold mb-1">Regresar al Menú Principal</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="footer mt-auto py-3 bg-white text-center small border-top">
+      © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.
+    </footer>
+  </div>
+</div>
+
+<script>
+    function redirectWithAlert(url, section) {
+        Swal.fire({
+            title: "Redirigiendo...",
+            text: "Cargando " + section,
+            icon: "info",
+            showConfirmButton: false,
+            timer: 1200
+        }).then(() => {
+            window.location.href = url;
+        });
+    }
+</script>
+<!-- Bootstrap & FontAwesome JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
 </body>
 </html>

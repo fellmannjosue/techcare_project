@@ -1,169 +1,122 @@
-/* static/accounts/css/menu.css */
+/* static/accounts/css/dashboard.css */
 
+/* ===== Layout base ===== */
 body {
   background-color: #eef2f7;
   font-family: 'Segoe UI', sans-serif;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   margin: 0;
   min-height: 100vh;
 }
 
-/* Encabezado */
-.header-container {
-  position: absolute;
-  top: 15px;
-  right: 25px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
+/* ===== Sidebar ===== */
+.sidebar {
+  min-height: 100vh;
+  box-shadow: 1px 0 4px rgba(20,40,80,0.08);
+  background: #222d32;
 }
-
-/* Icono de notificaciones */
-.notification-icon img {
-  cursor: pointer;
-}
-
-.notification-count {
-  position: absolute;
-  top: -5px;
-  right: -8px;
-  background-color: #dc3545;
-  color: #fff;
-  padding: 2px 6px;
-  border-radius: 50%;
-  font-size: 12px;
-}
-
-/* Dropdown de notificaciones */
-.dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 45px;
-  right: 0;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  border-radius: 4px;
-  z-index: 1000;
-  min-width: 220px;
-}
-
-.notification-icon:hover .dropdown-menu {
-  display: block;
-}
-
-.dropdown-header {
-  padding: 8px 12px;
-  font-weight: bold;
-  border-bottom: 1px solid #ddd;
-}
-
-.dropdown-item {
-  padding: 8px 12px;
-  color: #333;
-  text-decoration: none;
-  display: block;
-}
-
-.dropdown-item:hover {
-  background-color: #f5f5f5;
-}
-
-/* Usuario */
-.user-dropdown {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.sidebar .nav-link.active, .sidebar .nav-link:focus, .sidebar .nav-link:hover {
+  background: #0069d9;
+  color: #fff !important;
+  border-radius: 8px;
   font-weight: 600;
-  color: #333;
-  cursor: pointer;
 }
-
-.user-dropdown img {
-  border-radius: 50%;
-}
-
-.user-dropdown-menu {
-  display: none;
-  position: absolute;
-  top: 45px;
-  right: 0;
-  background: #fff;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-  border-radius: 4px;
-  z-index: 1000;
-  min-width: 180px;
-}
-
-.user-dropdown:hover .user-dropdown-menu {
-  display: block;
-}
-
-.user-dropdown-menu .dropdown-item {
+.sidebar .nav-link {
+  color: #d4d7dd;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  transition: all 0.13s;
+  border-radius: 6px;
   padding: 8px 12px;
-  color: #333;
-  text-decoration: none;
-  display: block;
+}
+.sidebar .nav-link i {
+  min-width: 20px;
+  text-align: center;
 }
 
-.dropdown-divider {
-  margin: 4px 0;
-  border-top: 1px solid #ddd;
-}
-
-/* Logo & Título */
-.logo img {
-  width: 120px;
-  margin: 40px 0 20px;
-}
-
-.menu-title {
-  font-size: 26px;
-  color: #444;
-  font-weight: bold;
-  margin-bottom: 20px;
-}
-
-/* Grilla del menú */
-.menu-grid {
-  width: 80%;
-  max-width: 700px;
-  margin-bottom: 20px;
-}
-
-.menu-item {
+/* ===== Cards ===== */
+.card, .menu-item {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  padding: 15px;
-  text-align: center;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(60,60,100,0.10);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: transform .15s, box-shadow .15s;
+  border: none;
+}
+.card:hover, .menu-item:hover {
+  transform: translateY(-4px) scale(1.025);
+  box-shadow: 0 8px 28px rgba(60,60,100,0.14);
+}
+.card-body img, .menu-item img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  margin-bottom: 12px;
+}
+.card-title, .menu-item span, .menu-item .fw-bold {
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #2a2a36;
+  margin-top: 6px;
 }
 
-.menu-item:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+/* ===== Navbar/Header ===== */
+.navbar {
+  border-bottom: 1px solid #eee;
+  min-height: 60px;
 }
-
-.menu-item img {
-  width: 60px;
-  margin-bottom: 8px;
-}
-
-.menu-item span {
-  display: block;
+.navbar-brand {
   font-weight: bold;
-  color: #555;
+  font-size: 1.18rem;
 }
 
-/* Footer */
+/* ===== Responsive grid ===== */
+.row {
+  --bs-gutter-x: 1.5rem;
+  --bs-gutter-y: 1.5rem;
+}
+@media (max-width: 767px) {
+  .card, .menu-item {
+    border-radius: 11px;
+    padding: 10px 6px 10px 6px;
+  }
+  .card-body img, .menu-item img {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ===== Footer ===== */
 .footer {
-  margin-top: auto;
-  margin-bottom: 20px;
   text-align: center;
+  padding: 16px 0 4px 0;
   color: #666;
   font-size: 14px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  margin-top: auto;
+}
+
+/* ===== User Dropdown (header, sidebar) ===== */
+.dropdown-menu-dark {
+  background-color: #232a31;
+  color: #d4d7dd;
+}
+.dropdown-menu-dark .dropdown-item {
+  color: #d4d7dd;
+}
+.dropdown-menu-dark .dropdown-item.active,
+.dropdown-menu-dark .dropdown-item:active,
+.dropdown-menu-dark .dropdown-item:focus,
+.dropdown-menu-dark .dropdown-item:hover {
+  background-color: #0069d9;
+  color: #fff;
+}
+.dropdown-divider {
+  border-top: 1px solid #555;
+}
+
+/* ===== SweetAlert2 Custom (si usas) ===== */
+.swal2-popup {
+  font-size: 1.05rem !important;
+  border-radius: 12px !important;
 }
