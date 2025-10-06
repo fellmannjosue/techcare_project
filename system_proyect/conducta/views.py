@@ -539,14 +539,16 @@ def editar_reporte_informativo(request, pk):
 
 @login_required
 def editar_progress_report(request, pk):
-    # --- Lista de coordinadores SOLO bilingüe ---
+    import json
+    from django.contrib import messages
+    from django.shortcuts import render, redirect, get_object_or_404
+
     COORDINADORES_BL = ["Mrs. Osorto", "Miss Alcerro", "Miss Angela"]
     coordinadores = COORDINADORES_BL
 
     reporte = get_object_or_404(ProgressReport, pk=pk)
     es_coord = es_coordinador(request.user)
-    usuario_actual = request.user.get_full_name()
-    es_creador = (reporte.usuario == request.user)   # <--- Nuevo
+    usuario_actual = request.user.get_full_name() or request.user.username  # Usa el nombre completo si está
 
     # --- Decodificar materias ---
     materias = reporte.materias_json
@@ -560,34 +562,52 @@ def editar_progress_report(request, pk):
 
     # --- Determina para cada materia si el usuario la puede editar ---
     for mat in materias:
-        # Permitir editar:
-        # - Si es coordinador
-        # - Si es el creador del reporte
-        # - Si la materia NO tiene docente asignado aún (primer registro)
-        # - Si el docente es el usuario actual
-        if es_coord or es_creador or not mat.get("docente") or mat.get("docente", "") == usuario_actual:
+        if es_coord or not mat.get("docente") or mat.get("docente", "") == usuario_actual:
             mat["editable"] = True
         else:
             mat["editable"] = False
 
     if request.method == 'POST':
         nuevas_materias = []
+        asociadas_indices_existentes = []
+        # 1️⃣ Procesa materias normales y existentes (NO 'Asociadas')
         for mat in materias:
             materia = mat.get('materia', '')
+            if materia == 'Asociadas':
+                # Guarda índices para procesarlos después
+                asociadas_indices_existentes.append(mat)
+                continue
             if mat["editable"]:
                 asignacion = request.POST.get(f'asignacion_{materia}', mat.get('asignacion', ''))
                 comentario = request.POST.get(f'comentario_{materia}', mat.get('comentario', ''))
                 mat['asignacion'] = asignacion
                 mat['comentario'] = comentario
-                # Solo cambia el docente si es el propio maestro o el creador o el coordinador
-                mat['docente'] = usuario_actual
+                # SOLO asigna el docente si está vacío
+                if not mat.get('docente'):
+                    mat['docente'] = usuario_actual
             nuevas_materias.append(mat)
-        reporte.materias_json = nuevas_materias
 
-        # Actualizar comentario general (todos pueden)
+        # 2️⃣ Procesa TODAS las filas de 'Asociadas'
+        asignaciones_asociadas = request.POST.getlist('asignacion_Asociadas[]')
+        comentarios_asociadas = request.POST.getlist('comentario_Asociadas[]')
+        # Los nombres de los docentes asociados pueden venir en POST (si pones un input), si no, asigna usuario_actual a todos los nuevos
+        # Si quieres que sólo el que edita quede como docente, déjalos así:
+        for i in range(len(asignaciones_asociadas)):
+            # Si tienes filas de 'Asociadas' ya existentes, usa el docente de esas filas; si no, pon el usuario actual
+            docente_valor = usuario_actual
+            if i < len(asociadas_indices_existentes) and asociadas_indices_existentes[i].get('docente'):
+                docente_valor = asociadas_indices_existentes[i]['docente']
+            nuevas_materias.append({
+                'materia': 'Asociadas',
+                'asignacion': asignaciones_asociadas[i],
+                'comentario': comentarios_asociadas[i],
+                'docente': docente_valor,
+                'editable': True,  # Esto es sólo para el template
+            })
+
+        # 3️⃣ Actualiza los campos generales y guarda
+        reporte.materias_json = json.dumps(nuevas_materias)
         reporte.comentario_general = request.POST.get('comentario_general', reporte.comentario_general)
-        
-        # Si es coordinador, puede actualizar campos de coordinación
         if es_coord:
             reporte.coordinador_firma = request.POST.get('coordinador_firma', reporte.coordinador_firma)
             reporte.estado = request.POST.get('estado', reporte.estado)
@@ -607,7 +627,6 @@ def editar_progress_report(request, pk):
         'usuario_actual': usuario_actual,
         'coordinadores': coordinadores,
     })
-
 
 # -----------  DESCARGA EN PDF  -----------
 def draw_paragraph(pdf, text, x, y, max_width, font="Helvetica", font_size=10, bold=False, italic=False, leading=13):

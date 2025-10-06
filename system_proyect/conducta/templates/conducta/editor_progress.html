@@ -8,6 +8,10 @@
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'conducta/css/progress.css' %}">
+  <style>
+    .docente-mini { font-size: 0.92em; color: #2196f3; }
+    .btn-add-asociada { font-size: 1.2em; margin-left: 8px; }
+  </style>
 </head>
 <body>
   <div class="container my-4">
@@ -53,7 +57,7 @@
               <th style="width:180px;">Materia</th>
               <th style="width:230px;">Asignación</th>
               <th>Comentario/Observación</th>
-              <th style="width:160px;">Docente</th>
+              <th style="width:180px;">Docente</th>
             </tr>
           </thead>
           <tbody>
@@ -61,19 +65,24 @@
             <tr>
               <td>
                 <input type="text" class="form-control" value="{{ mat.materia }}" readonly>
+                {% if mat.materia == "Asociadas" and forloop.first %}
+                  <button type="button" class="btn btn-outline-primary btn-sm btn-add-asociada" id="btnAddAsociada" title="Agregar fila Asociada">+</button>
+                {% endif %}
               </td>
               <td>
-                <input type="text" name="asignacion_{{ mat.materia }}" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                <input type="text" name="asignacion_{{ mat.materia }}{% if mat.materia == 'Asociadas' %}[]{% endif %}" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
               </td>
               <td>
-                <input type="text" name="comentario_{{ mat.materia }}" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                <input type="text" name="comentario_{{ mat.materia }}{% if mat.materia == 'Asociadas' %}[]{% endif %}" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
               </td>
               <td>
                 <input type="text" class="form-control" value="{{ mat.docente }}" readonly>
                 {% if mat.editable and not mat.docente %}
-                  <small class="text-success">Serás registrado como: {{ usuario_actual }}</small>
+                  <div class="docente-mini text-success">Serás registrado como: {{ usuario_actual }}</div>
                 {% elif mat.editable and mat.docente == usuario_actual %}
-                  <small class="text-info">Editando como: {{ usuario_actual }}</small>
+                  <div class="docente-mini text-primary">Editando como: {{ usuario_actual }}</div>
+                {% elif mat.docente %}
+                  <div class="docente-mini text-secondary">Registrado por: {{ mat.docente }}</div>
                 {% endif %}
               </td>
             </tr>
@@ -118,5 +127,27 @@
   </div>
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Agregar nueva fila Asociadas dinámicamente
+    document.addEventListener('DOMContentLoaded', function() {
+      const tabla = document.getElementById('tabla-materias').getElementsByTagName('tbody')[0];
+      const btnAdd = document.getElementById('btnAddAsociada');
+      if (btnAdd) {
+        btnAdd.addEventListener('click', function() {
+          // Crea una fila nueva igual a la estructura de Asociadas pero vacía
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td><input type="text" class="form-control" value="Asociadas" readonly></td>
+            <td><input type="text" name="asignacion_Asociadas[]" class="form-control"></td>
+            <td><input type="text" name="comentario_Asociadas[]" class="form-control"></td>
+            <td><input type="text" class="form-control" value="{{ usuario_actual }}" readonly>
+              <div class="docente-mini text-success">Serás registrado como: {{ usuario_actual }}</div>
+            </td>
+          `;
+          tabla.appendChild(row);
+        });
+      }
+    });
+  </script>
 </body>
 </html>
