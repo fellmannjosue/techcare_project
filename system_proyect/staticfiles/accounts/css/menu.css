@@ -14,7 +14,9 @@ body {
   box-shadow: 1px 0 4px rgba(20,40,80,0.08);
   background: #222d32;
 }
-.sidebar .nav-link.active, .sidebar .nav-link:focus, .sidebar .nav-link:hover {
+.sidebar .nav-link.active, 
+.sidebar .nav-link:focus, 
+.sidebar .nav-link:hover {
   background: #0069d9;
   color: #fff !important;
   border-radius: 8px;
@@ -31,6 +33,41 @@ body {
 .sidebar .nav-link i {
   min-width: 20px;
   text-align: center;
+}
+
+/* ===== Sidebar Submenús tipo AdminLTE ===== */
+.sidebar .collapse .nav-link {
+  font-size: 0.99rem;
+  padding-left: 2.3rem;
+  color: #b3bed5 !important;
+  background: none !important;
+  margin-bottom: 2px;
+  border-radius: 4px;
+}
+.sidebar .collapse .nav-link.active,
+.sidebar .collapse .nav-link:focus,
+.sidebar .collapse .nav-link:hover {
+  color: #fff !important;
+  background: #0069d9 !important;
+  font-weight: 600;
+}
+.sidebar .fa-angle-down {
+  transition: transform 0.22s;
+}
+.sidebar .nav-link[aria-expanded="true"] .fa-angle-down {
+  transform: rotate(-180deg);
+}
+.sidebar .collapse {
+  background: #232c38;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  border-radius: 8px;
+}
+
+/* ===== Extra: Mantén el hover igual para todo el sidebar ===== */
+.sidebar .nav-link:not(.active):hover {
+  background: #2357ad;
+  color: #fff !important;
 }
 
 /* ===== Cards ===== */
@@ -82,6 +119,13 @@ body {
   .card-body img, .menu-item img {
     width: 36px;
     height: 36px;
+  }
+  .sidebar {
+    min-width: 100vw;
+    box-shadow: none;
+  }
+  .sidebar .collapse {
+    padding-left: 10px;
   }
 }
 

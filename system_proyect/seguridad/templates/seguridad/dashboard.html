@@ -3,13 +3,13 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel Técnico – Sistema de Seguridad</title>
+  <title>Panel Técnico – Seguridad</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
   <!-- Bootstrap & FontAwesome -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
+  <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
 </head>
 <body class="bg-light">
 
@@ -22,10 +22,26 @@
     </div>
     <hr class="text-secondary">
     <ul class="nav nav-pills flex-column mb-auto">
-      <li><a href="{% url 'menu' %}" class="nav-link text-white"><i class="fa-solid fa-house me-2"></i> Menú Principal</a></li>
-      <li><a href="{% url 'seguridad:dashboard' %}" class="nav-link text-white active"><i class="fa-solid fa-shield-halved me-2"></i> Seguridad</a></li>
-      <li><a href="{% url 'inventario:dashboard' %}" class="nav-link text-white"><i class="fa-solid fa-boxes-stacked me-2"></i> Inventario</a></li>
-      <!-- Agrega más módulos si lo deseas -->
+      <li>
+        <a href="{% url 'seguridad:inventario_list' %}" class="nav-link text-white">
+          <i class="fa-solid fa-video me-2"></i> Inventario Cámaras
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'seguridad:contable_list' %}" class="nav-link text-white">
+          <i class="fa-solid fa-file-invoice-dollar me-2"></i> Contable Cámaras
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'seguridad:identificacion_list' %}" class="nav-link text-white">
+          <i class="fa-solid fa-map-location-dot me-2"></i> Identificación
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'menu' %}" class="nav-link text-white">
+          <i class="fa-solid fa-house me-2"></i> Volver al Menú
+        </a>
+      </li>
     </ul>
     <hr class="text-secondary">
     <div class="dropdown">
@@ -48,7 +64,7 @@
     <nav class="navbar navbar-light bg-white shadow-sm px-3">
       <div class="container-fluid">
         <div class="navbar-brand d-flex align-items-center gap-3">
-          <span class="fs-4">Panel Técnico – Seguridad</span>
+          <span class="fs-4 fw-bold">Panel de Seguridad</span>
         </div>
       </div>
     </nav>
@@ -60,11 +76,11 @@
         <!-- Inventario de Cámaras -->
         <div class="col">
           <a href="{% url 'seguridad:inventario_list' %}" class="card-link text-decoration-none">
-            <div class="card shadow-sm h-100 text-center">
+            <div class="card shadow-sm h-100 text-center menu-item">
               <div class="card-body">
                 <i class="fa-solid fa-video fa-3x text-primary mb-3"></i>
-                <h5 class="card-title">Inventario Cámaras</h5>
-                <p class="card-text text-muted">Registrar y consultar inventario.</p>
+                <div class="fw-bold">Inventario Cámaras</div>
+                <div class="text-muted small">Registrar y consultar inventario.</div>
               </div>
             </div>
           </a>
@@ -72,11 +88,11 @@
         <!-- Contable de Cámaras -->
         <div class="col">
           <a href="{% url 'seguridad:contable_list' %}" class="card-link text-decoration-none">
-            <div class="card shadow-sm h-100 text-center">
+            <div class="card shadow-sm h-100 text-center menu-item">
               <div class="card-body">
                 <i class="fa-solid fa-file-invoice-dollar fa-3x text-success mb-3"></i>
-                <h5 class="card-title">Contable Cámaras</h5>
-                <p class="card-text text-muted">Ver registros contables.</p>
+                <div class="fw-bold">Contable Cámaras</div>
+                <div class="text-muted small">Ver registros contables.</div>
               </div>
             </div>
           </a>
@@ -84,11 +100,11 @@
         <!-- Identificación Cámaras/Gabinetes -->
         <div class="col">
           <a href="{% url 'seguridad:identificacion_list' %}" class="card-link text-decoration-none">
-            <div class="card shadow-sm h-100 text-center">
+            <div class="card shadow-sm h-100 text-center menu-item">
               <div class="card-body">
                 <i class="fa-solid fa-map-location-dot fa-3x text-warning mb-3"></i>
-                <h5 class="card-title">Identificación</h5>
-                <p class="card-text text-muted">Registrar ubicaciones y gabinetes.</p>
+                <div class="fw-bold">Identificación</div>
+                <div class="text-muted small">Registrar ubicaciones y gabinetes.</div>
               </div>
             </div>
           </a>
@@ -96,11 +112,11 @@
         <!-- Volver al Menú Principal -->
         <div class="col">
           <a href="{% url 'menu' %}" class="card-link text-decoration-none">
-            <div class="card shadow-sm h-100 text-center">
+            <div class="card shadow-sm h-100 text-center menu-item">
               <div class="card-body">
                 <i class="fa-solid fa-house fa-3x text-secondary mb-3"></i>
-                <h5 class="card-title">Volver al Menú</h5>
-                <p class="card-text text-muted">Regresar al dashboard principal.</p>
+                <div class="fw-bold">Volver al Menú</div>
+                <div class="text-muted small">Regresar al dashboard principal.</div>
               </div>
             </div>
           </a>
@@ -114,7 +130,6 @@
   </div>
 </div>
 
-<!-- Bootstrap & FontAwesome JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
 </body>

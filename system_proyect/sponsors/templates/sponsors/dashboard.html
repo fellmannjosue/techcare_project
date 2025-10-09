@@ -2,15 +2,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Sponsors</title>
-    <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
-    <!-- Bootstrap & FontAwesome -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <meta charset="UTF-8">
+  <title>Dashboard de Sponsors</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
+  <!-- Bootstrap & FontAwesome -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'accounts/css/dashboard.css' %}">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light">
 
@@ -23,10 +23,36 @@
     </div>
     <hr class="text-secondary">
     <ul class="nav nav-pills flex-column mb-auto">
-      <li><a href="{% url 'menu' %}" class="nav-link text-white"><i class="fa-solid fa-house me-2"></i> Menú Principal</a></li>
-      <li><a href="{% url 'sponsors:sponsors_dashboard' %}" class="nav-link text-white active"><i class="fa-solid fa-hand-holding-heart me-2"></i> Sponsors</a></li>
-      <li><a href="{% url 'inventario:dashboard' %}" class="nav-link text-white"><i class="fa-solid fa-boxes-stacked me-2"></i> Inventario</a></li>
-      <!-- Agrega más módulos si lo deseas -->
+      <li>
+        <a href="{% url 'sponsors:add_sponsor' %}" class="nav-link text-white">
+          <i class="fa-solid fa-hand-holding-heart me-2"></i> Formulario Sponsors
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'sponsors:add_city' %}" class="nav-link text-white">
+          <i class="fa-solid fa-city me-2"></i> Agregar Ciudad
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'sponsors:add_country' %}" class="nav-link text-white">
+          <i class="fa-solid fa-flag me-2"></i> Agregar País
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'sponsors:add_directed' %}" class="nav-link text-white">
+          <i class="fa-solid fa-share-nodes me-2"></i> Agregar Directed
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'sponsors:add_title' %}" class="nav-link text-white">
+          <i class="fa-solid fa-certificate me-2"></i> Agregar Título
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'menu' %}" class="nav-link text-white">
+          <i class="fa-solid fa-house me-2"></i> Regresar al Menú Principal
+        </a>
+      </li>
     </ul>
     <hr class="text-secondary">
     <div class="dropdown">
@@ -45,11 +71,10 @@
 
   <!-- Main content -->
   <div class="flex-grow-1 d-flex flex-column min-vh-100">
-    <!-- Header -->
     <nav class="navbar navbar-light bg-white shadow-sm px-3">
       <div class="container-fluid">
         <div class="navbar-brand d-flex align-items-center gap-3">
-          <span class="fs-4">Dashboard de Sponsors</span>
+          <span class="fs-4 fw-bold">Dashboard de Sponsors</span>
         </div>
       </div>
     </nav>
@@ -58,7 +83,6 @@
     <div class="container py-4">
       <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-3 g-4 justify-content-center">
 
-        <!-- Formulario Sponsors -->
         <div class="col">
           <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_sponsor' %}', 'Formulario Sponsors')">
             <div class="card-body">
@@ -67,50 +91,40 @@
             </div>
           </div>
         </div>
-
-        <!-- Nueva Ciudad -->
         <div class="col">
-          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_city' %}', 'Nueva Ciudad')">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_city' %}', 'Agregar Ciudad')">
             <div class="card-body">
               <i class="fa-solid fa-city fa-3x text-primary mb-3"></i>
               <div class="fw-bold mb-1">Agregar Ciudad</div>
             </div>
           </div>
         </div>
-
-        <!-- Nuevo País -->
         <div class="col">
-          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_country' %}', 'Nuevo País')">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_country' %}', 'Agregar País')">
             <div class="card-body">
               <i class="fa-solid fa-flag fa-3x text-success mb-3"></i>
               <div class="fw-bold mb-1">Agregar País</div>
             </div>
           </div>
         </div>
-
-        <!-- Nuevo Directed -->
         <div class="col">
-          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_directed' %}', 'Nuevo Directed')">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_directed' %}', 'Agregar Directed')">
             <div class="card-body">
               <i class="fa-solid fa-share-nodes fa-3x text-info mb-3"></i>
               <div class="fw-bold mb-1">Agregar Directed</div>
             </div>
           </div>
         </div>
-
-        <!-- Nuevo Título -->
         <div class="col">
-          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_title' %}', 'Nuevo Título')">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'sponsors:add_title' %}', 'Agregar Título')">
             <div class="card-body">
               <i class="fa-solid fa-certificate fa-3x text-danger mb-3"></i>
               <div class="fw-bold mb-1">Agregar Título</div>
             </div>
           </div>
         </div>
-
-        <!-- Regresar al Menú Principal -->
         <div class="col">
-          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'menu' %}', 'Redirigiendo a Menú Principal')">
+          <div class="card menu-item shadow-sm h-100 text-center" onclick="redirectWithAlert('{% url 'menu' %}', 'Regresar a Menú Principal')">
             <div class="card-body">
               <i class="fa-solid fa-house fa-3x text-secondary mb-3"></i>
               <div class="fw-bold mb-1">Regresar al Menú Principal</div>
@@ -128,19 +142,18 @@
 </div>
 
 <script>
-    function redirectWithAlert(url, section) {
-        Swal.fire({
-            title: "Redirigiendo...",
-            text: "Cargando " + section,
-            icon: "info",
-            showConfirmButton: false,
-            timer: 1200
-        }).then(() => {
-            window.location.href = url;
-        });
-    }
+  function redirectWithAlert(url, section) {
+      Swal.fire({
+          title: "Redirigiendo...",
+          text: "Cargando " + section,
+          icon: "info",
+          showConfirmButton: false,
+          timer: 1200
+      }).then(() => {
+          window.location.href = url;
+      });
+  }
 </script>
-<!-- Bootstrap & FontAwesome JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
 </body>

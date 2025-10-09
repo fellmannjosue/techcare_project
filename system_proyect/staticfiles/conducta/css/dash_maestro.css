@@ -1,0 +1,92 @@
+body {
+  background-color: #eef2f7;
+}
+.sidebar {
+  min-height: 100vh;
+  box-shadow: 1px 0 4px rgba(20,40,80,0.08);
+  background: #222d32;
+}
+.sidebar .nav-link.active,
+.sidebar .nav-link:focus,
+.sidebar .nav-link:hover {
+  background: #0069d9;
+  color: #fff !important;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.sidebar .nav-link {
+  color: #d4d7dd;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  transition: all 0.13s;
+  border-radius: 6px;
+  padding: 8px 12px;
+}
+.sidebar .nav-link i {
+  min-width: 20px;
+  text-align: center;
+}
+.sidebar .dropdown {
+  margin-top: 32px;
+}
+.sidebar .dropdown-toggle {
+  color: #d4d7dd;
+  font-weight: 600;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.dashboard-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-top: 32px;
+  padding-bottom: 32px;
+  width: 100%;
+}
+.card-dashboard {
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(60,60,100,0.09);
+  cursor: pointer;
+  transition: transform .12s, box-shadow .12s;
+  border: none;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fff;
+  padding: 22px 0;
+}
+.card-dashboard:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 18px rgba(60,60,100,0.14);
+}
+.card-dashboard .fa-3x {
+  margin-bottom: 7px;
+  font-size: 2.2rem;
+}
+.card-dashboard .fw-bold {
+  font-size: 1.08rem;
+  margin-bottom: 0;
+}
+@media (max-width: 991px) {
+  .dashboard-container { max-width: 98vw; }
+}
+@media (max-width: 767px) {
+  .sidebar { min-width: 54px !important; width: 54px !important; }
+  .sidebar .nav-link span { display: none; }
+  .sidebar .nav-link i { margin: 0; }
+  .dashboard-container { padding-left: 0.6rem; padding-right: 0.6rem; }
+  .card-dashboard { min-height: 78px; padding: 10px 0; }
+  .card-dashboard .fa-3x { font-size: 1.3rem; }
+  .sidebar .dropdown { margin-top: 10px;}
+}
+.footer {
+  text-align: center;
+  padding: 16px 0 4px 0;
+  color: #666;
+  font-size: 14px;
+  background: #fff;
+  border-top: 1px solid #eee;
+  margin-top: auto;
+}
