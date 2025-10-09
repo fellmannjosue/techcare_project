@@ -38,7 +38,7 @@
                 <div class="mb-3">
                     <label class="form-label">Correo institucional</label>
                     <div class="input-group">
-                        <input type="email" name="email" maxlength="100" required class="form-control" value="{{ form.email.value|default_if_none:'' }}">
+                        <input type="email" name="email" maxlength="100" required class="form-control" id="id_email" value="{{ form.email.value|default_if_none:'' }}">
                         <button type="button" class="btn btn-outline-secondary" id="btnBuscarCorreo">
                             <i class="bi bi-search"></i> Olvidé mi correo
                         </button>
