@@ -252,8 +252,7 @@ print("ALLOWED_HOSTS =", ALLOWED_HOSTS)
 # ─────────────────────────────────────────────────────────────
 
 # Clave secreta de la API de OpenAI (GPT-4o, GPT-3.5, etc.)
-OPENAI_API_KEY = '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'
-
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
 
 # Opcional: Puedes definir el modelo por defecto a usar
 OPENAI_MODEL_DEFAULT = os.getenv('OPENAI_MODEL_DEFAULT', 'gpt-4o')
