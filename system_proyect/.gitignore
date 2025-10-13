@@ -1,2 +1,3 @@
 /.env
-/media/
+/media/*.pyc
+__pycache__/
