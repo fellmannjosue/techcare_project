@@ -58,7 +58,6 @@ document.addEventListener("DOMContentLoaded", function () {
       .then((resp) => resp.json())
       .then((res) => {
         chatDiv.innerHTML = res.html;
-        scrollChatToBottom();
       });
   }
 

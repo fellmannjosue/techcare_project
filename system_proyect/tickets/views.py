@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 from django.views.decorators.http import require_POST, require_GET
 import os
+import traceback
 import json
 from threading import Thread
 from core.utils_ai import consultar_ia  # 🚀 IA
@@ -271,58 +272,64 @@ def ticket_status_get_ajax(request, ticket_id):
         "comments": ticket.comments
     })
 
+
+
 @csrf_exempt
 @require_POST
 @login_required
 def ticket_chat_ai_ajax(request, ticket_id):
-    ticket = get_object_or_404(Ticket, id=ticket_id)
-    mensaje_usuario = request.POST.get("mensaje", "").strip()
+    try:
+        ticket = get_object_or_404(Ticket, id=ticket_id)
+        mensaje_usuario = request.POST.get("mensaje", "").strip()
 
-    if not mensaje_usuario:
-        return JsonResponse({"ok": False, "error": "Mensaje vacío."}, status=400)
+        if not mensaje_usuario:
+            return JsonResponse({"ok": False, "error": "Mensaje vacío."}, status=400)
 
-    # Guarda el mensaje del usuario
-    comentario_user = TicketComment.objects.create(
-        ticket=ticket,
-        usuario=request.user,
-        mensaje=mensaje_usuario,
-        fecha=timezone.now(),
-        tipo="usuario"
-    )
+        # Guarda el mensaje del usuario
+        comentario_user = TicketComment.objects.create(
+            ticket=ticket,
+            usuario=request.user,
+            mensaje=mensaje_usuario,
+            tipo="usuario"
+        )
 
-    # Prepara mensajes para la IA
-    mensajes_ia = [
-        {"role": "system", "content": "Eres un asistente técnico amigable..."},
-        {"role": "user", "content": mensaje_usuario}
-    ]
-    respuesta_ia = consultar_ia(mensajes_ia)
+        # Prepara mensajes para la IA
+        mensajes_ia = [
+            {"role": "system", "content": "Eres un asistente técnico amigable..."},
+            {"role": "user", "content": mensaje_usuario}
+        ]
+        respuesta_ia = consultar_ia(mensajes_ia)
 
-    if not respuesta_ia:
-        return JsonResponse({"ok": False, "error": "No se pudo obtener respuesta de la IA."}, status=500)
+        if not respuesta_ia:
+            return JsonResponse({"ok": False, "error": "No se pudo obtener respuesta de la IA."}, status=500)
 
-    # Guarda la respuesta IA
-    comentario_ai = TicketComment.objects.create(
-        ticket=ticket,
-        usuario=None,
-        mensaje=respuesta_ia,
-        fecha=timezone.now(),
-        tipo="ia"
-    )
+        # Guarda la respuesta IA
+        comentario_ai = TicketComment.objects.create(
+            ticket=ticket,
+            usuario=None,
+            mensaje=respuesta_ia,
+            tipo="ia"
+        )
 
-    return JsonResponse({
-        "ok": True,
-        "mensaje_usuario": {
-            "id": comentario_user.id,
-            "mensaje": comentario_user.mensaje,
-            "fecha": comentario_user.fecha.strftime("%d/%m/%Y %H:%M"),
-            "autor": request.user.username,
-            "tipo": "usuario",
-        },
-        "mensaje_ia": {
-            "id": comentario_ai.id,
-            "mensaje": comentario_ai.mensaje,
-            "fecha": comentario_ai.fecha.strftime("%d/%m/%Y %H:%M"),
-            "autor": "IA TechCare",
-            "tipo": "ia",
-        }
-    })
+        return JsonResponse({
+            "ok": True,
+            "mensaje_usuario": {
+                "id": comentario_user.id,
+                "mensaje": comentario_user.mensaje,
+                "fecha": comentario_user.fecha.strftime("%d/%m/%Y %H:%M"),
+                "autor": request.user.username,
+                "tipo": "usuario",
+            },
+            "mensaje_ia": {
+                "id": comentario_ai.id,
+                "mensaje": comentario_ai.mensaje,
+                "fecha": comentario_ai.fecha.strftime("%d/%m/%Y %H:%M"),
+                "autor": "IA TechCare",
+                "tipo": "ia",
+            }
+        })
+
+    except Exception as e:
+        print("======= ERROR EN VIEW AJAX CHAT IA =======")
+        traceback.print_exc()
+        return JsonResponse({'ok': False, 'error': str(e)}, status=500)
