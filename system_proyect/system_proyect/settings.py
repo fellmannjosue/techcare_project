@@ -185,16 +185,11 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-
-
 # ─────────────────────────────────────────────────────────────
 # 12. ARCHIVOS DE USUARIO (MEDIA)
 # ─────────────────────────────────────────────────────────────
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
-
-
-
 
 
 # ──────────────────────────────
@@ -251,3 +246,21 @@ ADMIN_SITE_URL = '/accounts/login/'
 
 print("DEBUG =", DEBUG)
 print("ALLOWED_HOSTS =", ALLOWED_HOSTS)
+
+# ─────────────────────────────────────────────────────────────
+# 16. INTEGRACIÓN OPENAI / IA
+# ─────────────────────────────────────────────────────────────
+
+# Clave secreta de la API de OpenAI (GPT-4o, GPT-3.5, etc.)
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
+
+# Opcional: Puedes definir el modelo por defecto a usar
+OPENAI_MODEL_DEFAULT = os.getenv('OPENAI_MODEL_DEFAULT', 'gpt-4o')
+
+# Seguridad: Recomendado usar límite de tokens por respuesta
+OPENAI_MAX_TOKENS = int(os.getenv('OPENAI_MAX_TOKENS', '500'))
+
+# Opcional: Configura el timeout para las llamadas a la API (segundos)
+OPENAI_TIMEOUT = int(os.getenv('OPENAI_TIMEOUT', '20'))
+
+# Puedes agregar más parámetros según tus necesidades

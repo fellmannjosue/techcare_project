@@ -13,6 +13,7 @@ from django.views.decorators.http import require_POST, require_GET
 import os
 import json
 from threading import Thread
+from core.utils_ai import consultar_ia  # 🚀 IA
 
 PUBLIC_IMAGE_URL = ""
 
@@ -92,13 +93,12 @@ def technician_dashboard(request):
     messages.info(request, 'Bienvenido al Dashboard de Técnico.')
     return render(request, 'tickets/technician_dashboard.html', {'tickets': tickets})
 
-
 @login_required
 def ticket_comments(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
 
-    # MENSAJE AUTOMÁTICO SI NO HAY COMENTARIOS PREVIOS (corregido para evitar usuario=None)
+    # MENSAJE AUTOMÁTICO SI NO HAY COMENTARIOS PREVIOS
     if not comentarios.exists():
         User = get_user_model()
         try:
@@ -114,7 +114,8 @@ def ticket_comments(request, ticket_id):
                 ticket=ticket,
                 usuario=usuario_soporte,
                 mensaje="Soporte técnico de Asociación Nuevo Amanecer: ¿En qué le podemos ayudar? Descríbanos el problema que presenta.",
-                fecha=timezone.now()
+                fecha=timezone.now(),
+                tipo="tecnico"
             )
             comentarios = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
 
@@ -132,7 +133,6 @@ def ticket_comments(request, ticket_id):
             ticket.status = new_status
             ticket.save()
             status_cambiado = True
-            # Si el nuevo estado es Resuelto, enviamos historial
             if new_status.strip().lower() == "resuelto":
                 enviar_historial = True
 
@@ -145,8 +145,8 @@ def ticket_comments(request, ticket_id):
             comentario = form.save(commit=False)
             comentario.ticket = ticket
             comentario.usuario = request.user
+            comentario.tipo = "usuario" if not request.user.is_staff else "tecnico"
             comentario.save()
-            # Notificar nuevo comentario (no historial aún)
             try:
                 subject = f"Nuevo comentario en Ticket #{ticket.ticket_id}"
                 html_message = render_to_string(
@@ -159,11 +159,10 @@ def ticket_comments(request, ticket_id):
 
         # ---- Si cambió el estado, enviar correo con historial de chat ----
         if status_cambiado:
-            # Recopila historial de chat
             historial_chat = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
             chat_conversacion = [
                 {
-                    "autor": c.usuario.username if c.usuario else "Soporte Técnico",
+                    "autor": c.usuario.username if c.usuario else c.get_tipo_display(),
                     "mensaje": c.mensaje,
                     "fecha": c.fecha.strftime("%d/%m/%Y %H:%M"),
                 }
@@ -192,7 +191,6 @@ def ticket_comments(request, ticket_id):
     else:
         form = TicketCommentForm()
 
-    # Render según tipo usuario (técnico/usuario)
     if request.user.is_staff or request.user.groups.filter(name__icontains='tecnico').exists():
         template = 'tickets/ticket_comments_tech.html'
     else:
@@ -202,9 +200,8 @@ def ticket_comments(request, ticket_id):
         'ticket': ticket,
         'comentarios': comentarios,
         'form': form,
-        'status_resuelto': status_resuelto,  # Para deshabilitar el form en el template si está resuelto
+        'status_resuelto': status_resuelto,
     })
-
 
 @login_required
 def ticket_comments_ajax(request, ticket_id):
@@ -220,7 +217,6 @@ def ticket_comments_ajax(request, ticket_id):
     })
     return JsonResponse({'html': html})
 
-
 @require_POST
 @login_required
 def ticket_status_update_ajax(request, ticket_id):
@@ -230,18 +226,15 @@ def ticket_status_update_ajax(request, ticket_id):
     correo_enviado = False
 
     if new_status and new_status in ["Pendiente", "En Proceso", "Resuelto"]:
-        # Actualiza status y comments generales
         ticket.status = new_status
         ticket.comments = comments
         ticket.save()
 
-        # Si es RESUELTO, manda el correo con historial del chat
         if new_status == "Resuelto":
-            # Prepara historial del chat
             historial_chat = TicketComment.objects.filter(ticket=ticket).order_by('fecha')
             chat_conversacion = [
                 {
-                    "autor": c.usuario.username if c.usuario else "Soporte Técnico",
+                    "autor": c.usuario.username if c.usuario else c.get_tipo_display(),
                     "mensaje": c.mensaje,
                     "fecha": c.fecha.strftime("%d/%m/%Y %H:%M"),
                 }
@@ -275,5 +268,61 @@ def ticket_status_get_ajax(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     return JsonResponse({
         "status": ticket.status,
-        "comments": ticket.comments  # <-- esto refresca el textarea!
+        "comments": ticket.comments
+    })
+
+@csrf_exempt
+@require_POST
+@login_required
+def ticket_chat_ai_ajax(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    mensaje_usuario = request.POST.get("mensaje", "").strip()
+
+    if not mensaje_usuario:
+        return JsonResponse({"ok": False, "error": "Mensaje vacío."}, status=400)
+
+    # Guarda el mensaje del usuario
+    comentario_user = TicketComment.objects.create(
+        ticket=ticket,
+        usuario=request.user,
+        mensaje=mensaje_usuario,
+        fecha=timezone.now(),
+        tipo="usuario"
+    )
+
+    # Prepara mensajes para la IA
+    mensajes_ia = [
+        {"role": "system", "content": "Eres un asistente técnico amigable..."},
+        {"role": "user", "content": mensaje_usuario}
+    ]
+    respuesta_ia = consultar_ia(mensajes_ia)
+
+    if not respuesta_ia:
+        return JsonResponse({"ok": False, "error": "No se pudo obtener respuesta de la IA."}, status=500)
+
+    # Guarda la respuesta IA
+    comentario_ai = TicketComment.objects.create(
+        ticket=ticket,
+        usuario=None,
+        mensaje=respuesta_ia,
+        fecha=timezone.now(),
+        tipo="ia"
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "mensaje_usuario": {
+            "id": comentario_user.id,
+            "mensaje": comentario_user.mensaje,
+            "fecha": comentario_user.fecha.strftime("%d/%m/%Y %H:%M"),
+            "autor": request.user.username,
+            "tipo": "usuario",
+        },
+        "mensaje_ia": {
+            "id": comentario_ai.id,
+            "mensaje": comentario_ai.mensaje,
+            "fecha": comentario_ai.fecha.strftime("%d/%m/%Y %H:%M"),
+            "autor": "IA TechCare",
+            "tipo": "ia",
+        }
     })
