@@ -1,17 +1,24 @@
-// --- global.js: Notificaciones en tiempo real ---
+// Notificaciones AJAX para la campana (TechCare)
+
+// Endpoints Django (ajusta si cambian tus rutas)
 const notifUrl = "/core/notificaciones/";
 const marcarLeidasUrl = "/core/notificaciones/marcar-leidas/";
+
+// IDs de elementos HTML
+const badgeId = "badgeNotificaciones";
+const listaId = "listaNotificaciones";
+const soundId = "notifSound";
 
 let notificacionesPrevias = new Set();
 
 function playNotifSound() {
   try {
-    document.getElementById('notifSound').play();
+    document.getElementById(soundId).play();
   } catch (e) {}
 }
 
 function mostrarBadge(count) {
-  const badge = document.getElementById('badgeNotificaciones');
+  const badge = document.getElementById(badgeId);
   if (!badge) return;
   if (count > 0) {
     badge.style.display = '';
@@ -23,7 +30,7 @@ function mostrarBadge(count) {
 }
 
 function renderNotificaciones(notis) {
-  const lista = document.getElementById('listaNotificaciones');
+  const lista = document.getElementById(listaId);
   if (!lista) return;
   lista.innerHTML = '';
   if (notis.length === 0) {
@@ -76,7 +83,7 @@ function getCSRFToken() {
   if (parts.length === 2) return parts.pop().split(";").shift();
 }
 
-// Polling cada 15 segundos (ajusta a gusto)
+// Polling cada 15 segundos
 function cargarNotificaciones() {
   fetch(notifUrl, { credentials: 'include' })
     .then(r => r.json())
@@ -92,5 +99,6 @@ function cargarNotificaciones() {
     });
 }
 
+// Lanzar al cargar la página y cada 15 segundos
 setInterval(cargarNotificaciones, 15000);
 document.addEventListener('DOMContentLoaded', cargarNotificaciones);

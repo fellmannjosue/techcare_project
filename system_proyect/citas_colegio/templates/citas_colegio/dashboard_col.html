@@ -1,4 +1,3 @@
-{# templates/citas_colegio/dashboard_col.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -8,20 +7,71 @@
     <link rel="shortcut icon"
       href="{% static 'accounts/img/nuevo.ico' %}"
       type="image/x-icon" />
-
     <title>Dashboard - Citas Colegio</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- CSS separado -->
     <link rel="stylesheet" href="{% static 'citas_colegio/css/dashboard.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
+    <style>
+      .dashboard-container { margin-top: 32px; }
+      .footer { margin-top: 30px; text-align: center; color: #666; font-size: 14px; }
+      @media (max-width: 768px) {
+        .sidebar { min-width: 100px !important; max-width: 160px !important; }
+        .dashboard-container { margin-top: 20px; padding: 8px; }
+      }
+    </style>
 </head>
-<body>
-<div class="container mt-5">
-    <h2 class="text-center mb-4">Citas Registradas (Colegio)</h2>
+<body class="bg-light">
+<div class="d-flex" id="wrapper">
 
+  <!-- Sidebar -->
+  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+    <div class="d-flex align-items-center mb-3">
+      <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+      <span class="fs-5 fw-bold">TechCare</span>
+    </div>
+    <hr class="text-secondary">
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li>
+        <a href="{% url 'menu' %}" class="nav-link text-white">
+          <i class="fa-solid fa-house me-2"></i> Menú Principal
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link text-white active">
+          <i class="fa-solid fa-calendar-days me-2"></i> Citas Colegio
+        </a>
+      </li>
+      <!-- Puedes agregar más enlaces aquí si lo deseas -->
+    </ul>
+    <hr class="text-secondary">
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong>{{ request.user.username }}</strong>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+  <!-- /Sidebar -->
 
-    {% if appointments %}
+  <!-- Main content -->
+  <div class="flex-grow-1 d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-light bg-white shadow-sm px-3">
+      <div class="container-fluid">
+        <div class="navbar-brand d-flex align-items-center gap-3">
+          <span class="fs-4">Citas Registradas (Colegio)</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="dashboard-container container mt-4">
+      <h2 class="text-center mb-4">Citas Registradas (Colegio)</h2>
+
+      {% if appointments %}
         <table class="table table-bordered table-hover">
             <thead class="table-dark">
                 <tr>
@@ -57,8 +107,7 @@
                               action="{% url 'delete_appointment_col' appointment.id %}">
                             {% csrf_token %}
                             <button class="delete-btn" type="button">
-                                <img src="{% static 'citas_colegio/img/eliminar.png' %}"
-                                     alt="Eliminar">
+                                <img src="{% static 'citas_colegio/img/eliminar.png' %}" alt="Eliminar">
                             </button>
                         </form>
                     </td>
@@ -66,26 +115,27 @@
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
+      {% else %}
         <div class="alert alert-warning text-center" role="alert">
             No hay citas registradas.
         </div>
-    {% endif %}
+      {% endif %}
 
-    <div class="mt-4 text-center">
+      <div class="mt-4 text-center">
         <a href="{% url 'menu' %}" class="btn btn-secondary">
-            <img src="{% static 'citas_colegio/img/regresar.png' %}"
-                 alt="Regresar"
-                 width="24" height="24" class="me-2">
-            Regresar al Menú Principal
+          <img src="{% static 'citas_colegio/img/regresar.png' %}" alt="Regresar" width="24" height="24" class="me-2">
+          Regresar al Menú Principal
         </a>
-    </div>
+      </div>
 
-    <div class="footer mt-4 text-center">
+      <div class="footer mt-4 text-center">
         <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+      </div>
     </div>
+  </div>
 </div>
 
-<script src="{% static 'citas_colegio/js/dashboard.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="{% static 'citas_colegio/js/dashboard.js' %}" defer></script>
 </body>
 </html>

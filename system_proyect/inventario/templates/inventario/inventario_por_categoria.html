@@ -14,123 +14,207 @@
   <!-- DataTables CSS -->
   <link href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" rel="stylesheet">
   <link href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.dataTables.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
   <style>
-    body { background: #f5f7fa; padding: 20px; font-family: 'Segoe UI', sans-serif; }
-    .card { max-width: 1050px; margin: auto; background: #fff; padding:20px;
-            border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
-    .card h2 { text-align:center; margin-bottom:18px; }
+    body { background: #f5f7fa; font-family: 'Segoe UI', sans-serif; }
+    .dashboard-container { margin-top: 32px; }
+    .main-card { max-width: 1050px; margin: 32px auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .main-card h2 { text-align: center; margin-bottom: 18px; }
     .checkbox-filter { margin-right: 14px; }
-    .footer { text-align:center; margin-top:30px; color:#888; }
+    .footer { text-align: center; margin-top: 30px; color: #888; }
     .dataTables_length select { min-width: 60px;}
+    @media (max-width: 768px) {
+      .sidebar { min-width: 100px !important; max-width: 160px !important; }
+      .dashboard-container { margin-top: 20px; padding: 8px; }
+    }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Clasificar Inventario por Categoría</h2>
+<div class="d-flex" id="wrapper">
 
-    <!-- Filtro por Categoría -->
-    <div class="mb-2">
-      <label class="checkbox-filter">
-        <input type="checkbox" class="category-filter" value="Computadora" checked> Computadora
-      </label>
-      <label class="checkbox-filter">
-        <input type="checkbox" class="category-filter" value="Impresora" checked> Impresora
-      </label>
-      <label class="checkbox-filter">
-        <input type="checkbox" class="category-filter" value="Router" checked> Router
-      </label>
-      <!-- Agrega más categorías aquí si necesitas -->
+  <!-- Sidebar CONSISTENTE -->
+  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+    <div class="d-flex align-items-center mb-3">
+      <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+      <span class="fs-5 fw-bold">TechCare</span>
     </div>
-
-    <div class="table-responsive">
-      <table id="items-table" class="table table-striped table-bordered align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Categoría</th>
-            <th>ID</th>
-            <th>Descripción</th>
-            <th>Categoría Actual</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in items %}
-          <tr>
-            <td>{{ item.tipo }}</td>
-            <td>{{ item.id }}</td>
-            <td>{{ item.descripcion }}</td>
-            <td>{{ item.categoria }}</td>
-            <td>
-              <form method="post"
-                    action="{% url 'inventario:inventario_por_categoria' %}"
-                    class="d-flex mb-0">
-                {% csrf_token %}
-                <input type="hidden" name="item_type" value="{{ item.tipo }}">
-                <input type="hidden" name="item_id"   value="{{ item.id }}">
-                <select name="categoria"
-                        class="form-select form-select-sm me-2"
-                        required>
-                  {% for val,label in form.categoria.field.choices %}
-                  <option value="{{ val }}"
-                    {% if val == item.categoria %}selected{% endif %}>
-                    {{ label }}
-                  </option>
-                  {% endfor %}
-                </select>
-                <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
-              </form>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="5" class="text-center">No hay ítems para clasificar.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="text-center mt-4">
-      <a href="{% url 'inventario:dashboard' %}" class="btn btn-secondary">
-        Volver al Dashboard
+    <hr class="text-secondary">
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li>
+        <a href="{% url 'menu' %}" class="nav-link text-white">
+          <i class="fa-solid fa-house me-2"></i> Menú Principal
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_computadoras' %}" class="nav-link text-white">
+          <i class="fa-solid fa-desktop me-2 text-primary"></i> Computadoras
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_televisores' %}" class="nav-link text-white">
+          <i class="fa-solid fa-tv me-2 text-info"></i> Televisores
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_impresoras' %}" class="nav-link text-white">
+          <i class="fa-solid fa-print me-2 text-warning"></i> Impresoras
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_routers' %}" class="nav-link text-white">
+          <i class="fa-solid fa-wifi me-2 text-success"></i> Routers
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_datashows' %}" class="nav-link text-white">
+          <i class="fa-solid fa-video me-2 text-secondary"></i> DataShows
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_por_categoria' %}" class="nav-link text-white active">
+          <i class="fa-solid fa-layer-group me-2 text-primary"></i> Por Categoría
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'inventario:inventario_registros' %}" class="nav-link text-white">
+          <i class="fa-solid fa-clipboard-list me-2 text-info"></i> Ver registros
+        </a>
+      </li>
+    </ul>
+    <hr class="text-secondary">
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong>{{ request.user.username }}</strong>
       </a>
+      <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+      </ul>
     </div>
-    <div class="footer">
-      © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer
+  </nav>
+  <!-- /Sidebar -->
+
+  <!-- Main content -->
+  <div class="flex-grow-1 d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-light bg-white shadow-sm px-3">
+      <div class="container-fluid">
+        <div class="navbar-brand d-flex align-items-center gap-3">
+          <span class="fs-4">Inventario – Por Categoría</span>
+        </div>
+      </div>
+    </nav>
+    <div class="dashboard-container">
+      <div class="main-card">
+        <h2>Clasificar Inventario por Categoría</h2>
+
+        <!-- Filtro por Categoría -->
+        <div class="mb-2">
+          <label class="checkbox-filter">
+            <input type="checkbox" class="category-filter" value="Computadora" checked> Computadora
+          </label>
+          <label class="checkbox-filter">
+            <input type="checkbox" class="category-filter" value="Impresora" checked> Impresora
+          </label>
+          <label class="checkbox-filter">
+            <input type="checkbox" class="category-filter" value="Router" checked> Router
+          </label>
+          <!-- Puedes agregar más categorías aquí -->
+        </div>
+
+        <div class="table-responsive">
+          <table id="items-table" class="table table-striped table-bordered align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>Categoría</th>
+                <th>ID</th>
+                <th>Descripción</th>
+                <th>Categoría Actual</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+              <tr>
+                <td>{{ item.tipo }}</td>
+                <td>{{ item.id }}</td>
+                <td>{{ item.descripcion }}</td>
+                <td>{{ item.categoria }}</td>
+                <td>
+                  <form method="post"
+                        action="{% url 'inventario:inventario_por_categoria' %}"
+                        class="d-flex mb-0">
+                    {% csrf_token %}
+                    <input type="hidden" name="item_type" value="{{ item.tipo }}">
+                    <input type="hidden" name="item_id"   value="{{ item.id }}">
+                    <select name="categoria"
+                            class="form-select form-select-sm me-2"
+                            required>
+                      {% for val,label in form.categoria.field.choices %}
+                      <option value="{{ val }}"
+                        {% if val == item.categoria %}selected{% endif %}>
+                        {{ label }}
+                      </option>
+                      {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-primary">Guardar</button>
+                  </form>
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5" class="text-center">No hay ítems para clasificar.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="text-center mt-4">
+          <a href="{% url 'inventario:dashboard' %}" class="btn btn-secondary">
+            Volver al Dashboard
+          </a>
+        </div>
+        <div class="footer">
+          © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer
+        </div>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- Scripts -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-
-  <script>
-    $(document).ready(function() {
-      var table = $('#items-table').DataTable({
-        dom: 'Bfrtip',
-        buttons: [
-          'excel', 'pdf', 'print',
-          { extend: 'pageLength', text: 'Filas por página' }
-        ],
-        language: {
-          url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
-        }
-      });
-
-      // Filtro de categoría
-      $('.category-filter').on('change', function() {
-        var cats = [];
-        $('.category-filter:checked').each(function() { cats.push($(this).val()); });
-        table.column(0).search(cats.join('|'), true, false).draw();
-      });
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script>
+  $(document).ready(function() {
+    var table = $('#items-table').DataTable({
+      dom: 'Bfrtip',
+      buttons: [
+        'excel', 'pdf', 'print',
+        { extend: 'pageLength', text: 'Filas por página' }
+      ],
+      language: {
+        url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/es-ES.json'
+      }
     });
-  </script>
+
+    // Filtro de categoría
+    $('.category-filter').on('change', function() {
+      var cats = [];
+      $('.category-filter:checked').each(function() { cats.push($(this).val()); });
+      table.column(0).search(cats.join('|'), true, false).draw();
+    });
+  });
+</script>
 </body>
 </html>

@@ -5,219 +5,230 @@
   <meta charset="UTF-8">
   <title>{% if edit_id %}Editar Atención{% else %}Nueva Atención Médica{% endif %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- Select2 CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css"
-    rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
   <!-- DataTables CSS -->
-  <link
-    href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"
-    rel="stylesheet"/>
-
+  <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
   <style>
-    .footer {
-      margin-top: 30px;
-      text-align: center;
-      color: #666;
-      font-size: 14px;
-    }
-    .select2-container .select2-selection--single {
-      height: calc(1.5em + .75rem + 2px) !important;
-      padding: .375rem .75rem !important;
-    }
-    #atenciones-table .btn {
-      margin-right: .25rem;
+    .footer { margin-top: 30px; text-align: center; color: #666; font-size: 14px; }
+    .select2-container .select2-selection--single { height: calc(1.5em + .75rem + 2px) !important; padding: .375rem .75rem !important; }
+    #atenciones-table .btn { margin-right: .25rem; }
+    @media (max-width: 768px) {
+      .sidebar { min-width: 100px !important; max-width: 160px !important; }
     }
   </style>
 </head>
 <body>
-  <div class="container py-4">
+<div class="d-flex" id="wrapper">
+  <!-- Sidebar de Enfermería -->
+  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+    <div class="d-flex align-items-center mb-3">
+      <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+      <span class="fs-5 fw-bold">TechCare</span>
+    </div>
+    <hr class="text-secondary">
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li>
+        <a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="nav-link text-white">
+          <i class="fa-solid fa-briefcase-medical me-2 text-primary"></i> Dashboard Enfermería
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'enfermeria:uso_create' %}" class="nav-link text-white">
+          <i class="fa-solid fa-pills me-2 text-warning"></i> Registrar Uso
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'enfermeria:atencion_form' %}" class="nav-link text-white active">
+          <i class="fa-solid fa-user-injured me-2 text-success"></i> Atenciones Médicas
+        </a>
+      </li>
+      <!-- Puedes agregar más módulos aquí si deseas -->
+    </ul>
+    <hr class="text-secondary">
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong>{{ request.user.username }}</strong>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+  <!-- /Sidebar -->
 
-    {% if form.errors %}
-      <div class="alert alert-danger">
-        <strong>Errores de validación:</strong>
-        <ul class="mb-0">
-          {% for field, errs in form.errors.items %}
-            <li><strong>{{ field }}:</strong> {{ errs|join:", " }}</li>
+  <!-- Main content -->
+  <div class="flex-grow-1">
+    <div class="container py-4">
+
+      {% if form.errors %}
+        <div class="alert alert-danger">
+          <strong>Errores de validación:</strong>
+          <ul class="mb-0">
+            {% for field, errs in form.errors.items %}
+              <li><strong>{{ field }}:</strong> {{ errs|join:", " }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+
+      <h2 class="mb-4">{% if edit_id %}Editar Atención{% else %}Nueva Atención Médica{% endif %}</h2>
+
+      <form method="post" class="row g-3 mb-5">
+        {% csrf_token %}
+        <input type="hidden" name="pk" value="{{ edit_id }}">
+        <!-- Selector de estudiante -->
+        <div class="col-md-6">
+          <label for="student-select" class="form-label">Estudiante:</label>
+          <select id="student-select"
+                  name="estudiante"
+                  class="form-select"
+                  required>
+            <option value="">-- Selecciona un alumno --</option>
+            {% for s in students %}
+              <option
+                value="{{ s.id }}"
+                data-grado="{{ s.grado }}"
+                {% if form.instance.estudiante == s.label %}selected{% endif %}>
+                {{ s.label }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <!-- Grado (solo lectura) -->
+        <div class="col-md-6">
+          <label for="grade-display" class="form-label">Grado:</label>
+          <input type="text"
+                 id="grade-display"
+                 class="form-control"
+                 readonly
+                 value="{% if form.instance.grado %}{{ form.instance.grado.nombre }}{% endif %}">
+          <input type="hidden"
+                 name="grado"
+                 id="student_grade"
+                 value="{% if form.instance.grado %}{{ form.instance.grado.nombre }}{% endif %}">
+        </div>
+        <!-- Resto de campos -->
+        <div class="col-md-6">
+          {{ form.fecha_hora.label_tag }}{{ form.fecha_hora }}
+        </div>
+        <div class="col-md-6">
+          {{ form.atendido_por.label_tag }}{{ form.atendido_por }}
+        </div>
+        <div class="col-12">
+          {{ form.motivo.label_tag }}{{ form.motivo }}
+        </div>
+        <div class="col-12">
+          {{ form.tratamiento.label_tag }}{{ form.tratamiento }}
+        </div>
+        <div class="col-12 text-end">
+          <button type="submit" class="btn btn-primary">
+            {% if edit_id %}Actualizar{% else %}Guardar{% endif %}
+          </button>
+          </div>
+      </form>
+
+      <!-- Listado de Atenciones -->
+      <h3 class="mb-3">Listado de Atenciones</h3>
+      <table id="atenciones-table" class="table table-striped table-hover">
+        <thead class="table-dark">
+          <tr>
+            <th>Estudiante</th>
+            <th>Grado</th>
+            <th>Fecha y Hora</th>
+            <th>Atendido Por</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in records %}
+          <tr>
+            <td>{{ r.estudiante }}</td>
+            <td>{{ r.grado.nombre }}</td>
+            <td data-order="{{ r.fecha_hora|date:'Y-m-d H:i:s' }}">
+              {{ r.fecha_hora|date:"j \\d\\e F \\d\\e Y \\a \\l\\a\\s H:i" }}
+            </td>
+            <td>{{ r.atendido_por.nombre }}</td>
+            <td>
+              <button onclick="confirmDelete({{ r.pk }})"
+                      class="btn btn-sm btn-danger">🗑</button>
+              <a href="?edit={{ r.pk }}" class="btn btn-sm btn-warning">✎</a>
+              <a href="{% url 'enfermeria:enviar_correo' r.pk %}"
+                 class="btn btn-sm btn-secondary">✉️</a>
+            </td>
+          </tr>
           {% endfor %}
-        </ul>
-      </div>
-    {% endif %}
+        </tbody>
+      </table>
 
-    <h2 class="mb-4">{% if edit_id %}Editar Atención{% else %}Nueva Atención Médica{% endif %}</h2>
-
-    <form method="post" class="row g-3 mb-5">
-      {% csrf_token %}
-      <input type="hidden" name="pk" value="{{ edit_id }}">
-
-      <!-- Selector de estudiante -->
-      <div class="col-md-6">
-        <label for="student-select" class="form-label">Estudiante:</label>
-        <select id="student-select"
-                name="estudiante"
-                class="form-select"
-                required>
-          <option value="">-- Selecciona un alumno --</option>
-          {% for s in students %}
-            <option
-              value="{{ s.id }}"
-              data-grado="{{ s.grado }}"
-              {% if form.instance.estudiante == s.label %}selected{% endif %}>
-              {{ s.label }}
-            </option>
-          {% endfor %}
-        </select>
+      <div class="footer">
+        © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer.
       </div>
-
-      <!-- Grado (solo lectura) -->
-      <div class="col-md-6">
-        <label for="grade-display" class="form-label">Grado:</label>
-        <input type="text"
-               id="grade-display"
-               class="form-control"
-               readonly
-               value="{% if form.instance.grado %}{{ form.instance.grado.nombre }}{% endif %}">
-        <input type="hidden"
-               name="grado"
-               id="student_grade"
-               value="{% if form.instance.grado %}{{ form.instance.grado.nombre }}{% endif %}">
-      </div>
-
-      <!-- Resto de campos -->
-      <div class="col-md-6">
-        {{ form.fecha_hora.label_tag }}{{ form.fecha_hora }}
-      </div>
-      <div class="col-md-6">
-        {{ form.atendido_por.label_tag }}{{ form.atendido_por }}
-      </div>
-      <div class="col-12">
-        {{ form.motivo.label_tag }}{{ form.motivo }}
-      </div>
-      <div class="col-12">
-        {{ form.tratamiento.label_tag }}{{ form.tratamiento }}
-      </div>
-
-      <div class="col-12 text-end">
-        <button type="submit" class="btn btn-primary">
-          {% if edit_id %}Actualizar{% else %}Guardar{% endif %}
-        </button>
-        <a href="{% url 'enfermeria:enfermeria_dashboard' %}"
-           class="btn btn-secondary ms-2">Dashboard</a>
-        <a href="{% url 'enfermeria:uso_create' %}"
-           class="btn btn-warning ms-2">Registrar Uso</a>
-      </div>
-    </form>
-
-    <!-- Listado de Atenciones -->
-    <h3 class="mb-3">Listado de Atenciones</h3>
-    <table id="atenciones-table" class="table table-striped table-hover">
-      <thead class="table-dark">
-        <tr>
-          <th>Estudiante</th>
-          <th>Grado</th>
-          <th>Fecha y Hora</th>
-          <th>Atendido Por</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for r in records %}
-        <tr>
-          <!-- Estudiante -->
-          <td>{{ r.estudiante }}</td>
-          <!-- Grado -->
-          <td>{{ r.grado.nombre }}</td>
-          <!-- Fecha con data-order en ISO -->
-          <td data-order="{{ r.fecha_hora|date:'Y-m-d H:i:s' }}">
-            {{ r.fecha_hora|date:"j \\d\\e F \\d\\e Y \\a \\l\\a\\s H:i" }}
-          </td>
-          <!-- Atendido Por -->
-          <td>{{ r.atendido_por.nombre }}</td>
-          <!-- Acciones -->
-          <td>
-            <button onclick="confirmDelete({{ r.pk }})"
-                    class="btn btn-sm btn-danger">🗑</button>
-            <a href="?edit={{ r.pk }}" class="btn btn-sm btn-warning">✎</a>
-            <a href="{% url 'enfermeria:enviar_correo' r.pk %}"
-               class="btn btn-sm btn-secondary">✉️</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-
-    <div class="footer">
-      © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer.
     </div>
   </div>
+</div>
 
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <!-- Bootstrap Bundle -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
-  </script>
-  <!-- Select2 JS -->
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <!-- DataTables JS -->
-  <script
-    src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js">
-  </script>
-  <script
-    src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js">
-  </script>
-  <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!-- Bootstrap Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- DataTables JS -->
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  $(function(){
+    // Inicializar Select2
+    $('#student-select').select2({
+      placeholder: '-- Selecciona un alumno --',
+      width: '100%'
+    });
 
-  <script>
-    $(function(){
-      // Inicializar Select2
-      $('#student-select').select2({
-        placeholder: '-- Selecciona un alumno --',
-        width: '100%'
-      });
+    // Actualizar grado al cambiar estudiante
+    $('#student-select').on('change', function(){
+      var grado = $(this).find('option:selected').data('grado') || '';
+      $('#grade-display').val(grado);
+      $('#student_grade').val(grado);
+    });
 
-      // Actualizar grado al cambiar estudiante
-      $('#student-select').on('change', function(){
-        var grado = $(this).find('option:selected').data('grado') || '';
-        $('#grade-display').val(grado);
-        $('#student_grade').val(grado);
-      });
+    // Inicializar DataTable con orden por Fecha desc
+    var table = $('#atenciones-table').DataTable({
+      order: [[2, 'desc']],
+      pageLength: 15,
+      lengthChange: false,
+      language: {
+        search: "Buscar:",
+        paginate: { previous: "Anterior", next: "Siguiente" },
+        zeroRecords: "No hay registros coincidentes",
+        info: "Mostrando _START_ a _END_ de _TOTAL_ atenciones",
+        infoEmpty: "Mostrando 0 a 0 de 0 atenciones"
+      }
+    });
 
-      // Inicializar DataTable con orden por Fecha desc
-      var table = $('#atenciones-table').DataTable({
-        order: [[2, 'desc']],
-        pageLength: 15,
-        lengthChange: false,
-        language: {
-          search: "Buscar:",
-          paginate: { previous: "Anterior", next: "Siguiente" },
-          zeroRecords: "No hay registros coincidentes",
-          info: "Mostrando _START_ a _END_ de _TOTAL_ atenciones",
-          infoEmpty: "Mostrando 0 a 0 de 0 atenciones"
+    // Confirmación de eliminación
+    window.confirmDelete = function(id) {
+      Swal.fire({
+        title: '¿Eliminar esta atención?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          window.location.href = '?delete=' + id;
         }
       });
-
-      // Confirmación de eliminación
-      window.confirmDelete = function(id) {
-        Swal.fire({
-          title: '¿Eliminar esta atención?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonText: 'Sí, eliminar',
-          cancelButtonText: 'Cancelar'
-        }).then(result => {
-          if (result.isConfirmed) {
-            window.location.href = '?delete=' + id;
-          }
-        });
-      };
-    });
-  </script>
+    };
+  });
+</script>
 </body>
 </html>

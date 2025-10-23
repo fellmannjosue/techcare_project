@@ -1,126 +1,145 @@
-{# templates/citas_bl/dashboard.html #}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="shortcut icon"
-      href="{% static 'accounts/img/nuevo.ico' %}"
-      type="image/x-icon" />
-
+  <link rel="shortcut icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
   <title>Dashboard - Citas</title>
-
   <!-- Bootstrap CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  >
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- SweetAlert2 CSS -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
-    rel="stylesheet"
-  >
-  <!-- CSS personalizado (ya en static/citas_billingue/css/) -->
-  <link
-    rel="stylesheet"
-    href="{% static 'citas_billingue/css/dashboard.css' %}"
-  >
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <!-- Tu CSS personalizado -->
+  <link rel="stylesheet" href="{% static 'citas_billingue/css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
+  <style>
+    .dashboard-container { margin-top: 32px; }
+    .footer { margin-top: 30px; text-align: center; color: #666; font-size: 14px; }
+    @media (max-width: 768px) {
+      .sidebar { min-width: 100px !important; max-width: 160px !important; }
+      .dashboard-container { margin-top: 20px; padding: 8px; }
+    }
+  </style>
 </head>
-<body>
-  <div class="container mt-5">
-    <h2 class="text-center mb-4">Citas Registradas</h2>
+<body class="bg-light">
+<div class="d-flex" id="wrapper">
 
-
-    {% if appointments %}
-      <table class="table table-bordered table-hover">
-        <thead class="table-dark">
-          <tr>
-            <th>#</th>
-            <th>Padre</th>
-            <th>Alumno</th>
-            <th>Grado</th>
-            <th>Parentesco</th>
-            <th>Maestro</th>
-            <th>Materia</th>
-            <th>Teléfono</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Eliminar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for appointment in appointments %}
-            <tr>
-              <td>{{ forloop.counter }}</td>
-              <td>{{ appointment.parent_name }}</td>
-              <td>{{ appointment.student_name }}</td>
-              <td>{{ appointment.grade.name }}</td>
-              <td>{{ appointment.relationship.name }}</td>
-              <td>{{ appointment.teacher.name }}</td>
-              <td>{{ appointment.subject }}</td>
-              <td>{{ appointment.phone }}</td>
-              <td>{{ appointment.date|date:"d/m/Y" }}</td>
-              <td>{{ appointment.time|time:"H:i" }}</td>
-              <td class="text-center">
-                <form
-                  method="POST"
-                  action="{% url 'delete_appointment_bl' appointment.id %}"
-                  class="delete-form"
-                >
-                  {% csrf_token %}
-                  <button class="delete-btn" type="button">
-                    <img
-                      src="{% static 'citas_billingue/img/eliminar.png' %}"
-                      alt="Eliminar"
-                      width="24"
-                      height="24"
-                    >
-                  </button>
-                </form>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <div class="alert alert-warning text-center" role="alert">
-        No hay citas registradas.
-      </div>
-    {% endif %}
-
-    <div class="mt-4 text-center">
-      <a href="{% url 'menu' %}" class="btn btn-secondary">
-        <img
-          src="{% static 'citas_billingue/img/regresar.png' %}"
-          alt="Regresar"
-          width="24"
-          height="24"
-          class="me-2"
-        >
-        Regresar al Menú Principal
-      </a>
+  <!-- Sidebar -->
+  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+    <div class="d-flex align-items-center mb-3">
+      <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+      <span class="fs-5 fw-bold">TechCare</span>
     </div>
+    <hr class="text-secondary">
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li>
+        <a href="{% url 'menu' %}" class="nav-link text-white">
+          <i class="fa-solid fa-house me-2"></i> Menú Principal
+        </a>
+      </li>
+      <li>
+        <a href="#" class="nav-link text-white active">
+          <i class="fa-solid fa-calendar-check me-2"></i> Citas BL
+        </a>
+      </li>
+      <!-- Puedes agregar más enlaces si lo deseas -->
+    </ul>
+    <hr class="text-secondary">
+    <div class="dropdown">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+        <strong>{{ request.user.username }}</strong>
+      </a>
+      <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+      </ul>
+    </div>
+  </nav>
+  <!-- /Sidebar -->
 
-    <div class="footer mt-4 text-center">
-      <p>© {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+  <!-- Main content -->
+  <div class="flex-grow-1 d-flex flex-column min-vh-100">
+    <nav class="navbar navbar-light bg-white shadow-sm px-3">
+      <div class="container-fluid">
+        <div class="navbar-brand d-flex align-items-center gap-3">
+          <span class="fs-4">Citas Registradas</span>
+        </div>
+      </div>
+    </nav>
+
+    <div class="dashboard-container container mt-4">
+      <h2 class="text-center mb-4">Citas Registradas</h2>
+
+      {% if appointments %}
+        <table class="table table-bordered table-hover">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th>
+              <th>Padre</th>
+              <th>Alumno</th>
+              <th>Grado</th>
+              <th>Parentesco</th>
+              <th>Maestro</th>
+              <th>Materia</th>
+              <th>Teléfono</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Eliminar</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for appointment in appointments %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ appointment.parent_name }}</td>
+                <td>{{ appointment.student_name }}</td>
+                <td>{{ appointment.grade.name }}</td>
+                <td>{{ appointment.relationship.name }}</td>
+                <td>{{ appointment.teacher.name }}</td>
+                <td>{{ appointment.subject }}</td>
+                <td>{{ appointment.phone }}</td>
+                <td>{{ appointment.date|date:"d/m/Y" }}</td>
+                <td>{{ appointment.time|time:"H:i" }}</td>
+                <td class="text-center">
+                  <form method="POST" action="{% url 'delete_appointment_bl' appointment.id %}" class="delete-form">
+                    {% csrf_token %}
+                    <button class="delete-btn" type="button">
+                      <img src="{% static 'citas_billingue/img/eliminar.png' %}" alt="Eliminar" width="24" height="24">
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="alert alert-warning text-center" role="alert">
+          No hay citas registradas.
+        </div>
+      {% endif %}
+
+      <div class="mt-4 text-center">
+        <a href="{% url 'menu' %}" class="btn btn-secondary">
+          <img src="{% static 'citas_billingue/img/regresar.png' %}" alt="Regresar" width="24" height="24" class="me-2">
+          Regresar al Menú Principal
+        </a>
+      </div>
+
+      <div class="footer mt-4 text-center">
+        <p>© {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+      </div>
     </div>
   </div>
+</div>
 
-  <!-- Bootstrap JS Bundle -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
-    defer
-  ></script>
-  <!-- SweetAlert2 JS -->
-  <script
-    src="https://cdn.jsdelivr.net/npm/sweetalert2@11"
-    defer
-  ></script>
-  <!-- JS personalizado (ya en static/citas_billingue/js/) -->
-  <script
-    src="{% static 'citas_billingue/js/dashboard.js' %}"
-    defer
-  ></script>
+<!-- Bootstrap JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<!-- SweetAlert2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
+<!-- JS personalizado -->
+<script src="{% static 'citas_billingue/js/dashboard.js' %}" defer></script>
 </body>
 </html>

@@ -12,6 +12,7 @@
 </head>
 <body class="bg-light">
 <div class="d-flex" id="wrapper">
+
   <!-- Sidebar -->
   <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
     <div class="d-flex align-items-center mb-3">
@@ -21,7 +22,6 @@
     <hr class="text-secondary">
     <ul class="nav nav-pills flex-column mb-auto">
 
-      <!-- Tickets -->
       {% if show_tickets %}
       <li>
         <a href="{% url 'technician_dashboard' %}" class="nav-link text-white">
@@ -30,7 +30,6 @@
       </li>
       {% endif %}
 
-      <!-- Inventario con submenú -->
       {% if show_inventory %}
       <li>
         <a class="nav-link text-white d-flex justify-content-between align-items-center"
@@ -42,11 +41,11 @@
         <div class="collapse" id="submenuInventario">
           <ul class="list-unstyled ps-4">
             <li><a href="{% url 'inventario:dashboard' %}" class="nav-link"><i class="fa-regular fa-circle me-2"></i> Panel Inventario</a></li>
+          </ul>
         </div>
       </li>
       {% endif %}
 
-      <!-- Sponsors con submenú -->
       {% if show_sponsors %}
       <li>
         <a class="nav-link text-white d-flex justify-content-between align-items-center"
@@ -57,13 +56,12 @@
         </a>
         <div class="collapse" id="submenuSponsors">
           <ul class="list-unstyled ps-4">
-            <li><a href="{% url 'sponsors:sponsors_dashboard' %}" class="nav-link"><i class="fa-regular fa-circle me-2"></i> Dashboard Sponsors</a>
+            <li><a href="{% url 'sponsors:sponsors_dashboard' %}" class="nav-link"><i class="fa-regular fa-circle me-2"></i> Dashboard Sponsors</a></li>
           </ul>
         </div>
       </li>
       {% endif %}
 
-      <!-- Seguridad con submenú -->
       {% if show_seguridad %}
       <li>
         <a class="nav-link text-white d-flex justify-content-between align-items-center"
@@ -75,11 +73,11 @@
         <div class="collapse" id="submenuSeguridad">
           <ul class="list-unstyled ps-4">
             <li><a href="{% url 'seguridad:dashboard' %}" class="nav-link"><i class="fa-regular fa-circle me-2"></i> Dashboard Seguridad</a></li>
+          </ul>
         </div>
       </li>
       {% endif %}
 
-      <!-- Enfermería con submenú -->
       {% if show_enfermeria %}
       <li>
         <a class="nav-link text-white d-flex justify-content-between align-items-center"
@@ -96,7 +94,6 @@
       </li>
       {% endif %}
 
-      <!-- Mantenimiento -->
       {% if show_maintenance %}
       <li>
         <a href="{% url 'mantenimiento:maintenance_dashboard' %}" class="nav-link text-white">
@@ -105,7 +102,6 @@
       </li>
       {% endif %}
 
-      <!-- Citas BL (individual) -->
       {% if show_citas_bl %}
       <li>
         <a href="{% url 'dashboard_bl' %}" class="nav-link text-white">
@@ -113,7 +109,7 @@
         </a>
       </li>
       {% endif %}
-      <!-- Citas COL/VOC (individual) -->
+
       {% if show_citas_col %}
       <li>
         <a href="{% url 'dashboard_col' %}" class="nav-link text-white">
@@ -122,7 +118,6 @@
       </li>
       {% endif %}
 
-      <!-- Coord. Bilingüe -->
       {% if show_coordinador_bilingue %}
       <li>
         <a href="{% url 'dashboard_coordinador' area='bilingue' %}" class="nav-link text-white">
@@ -130,7 +125,6 @@
         </a>
       </li>
       {% endif %}
-      <!-- Coord. Colegio -->
       {% if show_coordinador_colegio %}
       <li>
         <a href="{% url 'dashboard_coordinador' area='colegio' %}" class="nav-link text-white">
@@ -163,39 +157,24 @@
           <span class="fs-4">Panel Principal</span>
         </div>
         <div class="d-flex align-items-center gap-3">
-          <!-- Notificaciones -->
+          <!-- Notificaciones CAMPANITA AJAX -->
           <div class="dropdown">
             <a href="#" id="notifDropdownToggle" data-bs-toggle="dropdown" aria-expanded="false" class="position-relative">
               <i class="fa-solid fa-bell fa-lg"></i>
-              {% if citas_pendientes or tickets_pendientes %}
-              <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                {{ citas_pendientes|add:tickets_pendientes }}
-              </span>
-              {% endif %}
+              <span id="badgeNotificaciones"
+                class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                style="display:none;">0</span>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notifDropdownToggle">
-              <li class="dropdown-header">Notificaciones recientes</li>
-              {% if citas_pendientes %}
+            <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notifDropdownToggle"
+              style="min-width: 340px; max-height: 360px; overflow-y: auto;">
               <li>
-                <a class="dropdown-item" href="{% url 'dashboard_bl' %}">
-                  <i class="fa fa-calendar-check text-primary me-2"></i> {{ citas_pendientes }} cita(s) pendiente(s)
-                </a>
+                <div class="dropdown-header border-bottom bg-light">Notificaciones recientes</div>
               </li>
-              {% endif %}
-              {% if tickets_pendientes %}
-              <li>
-                <a class="dropdown-item" href="{% url 'technician_dashboard' %}">
-                  <i class="fa fa-ticket-alt text-warning me-2"></i> {{ tickets_pendientes }} ticket(s) pendiente(s)
-                </a>
-              </li>
-              {% endif %}
-              {% if not citas_pendientes and not tickets_pendientes %}
-              <li>
-                <span class="dropdown-item text-muted">Sin nuevas notificaciones.</span>
-              </li>
-              {% endif %}
+              <ul id="listaNotificaciones" class="list-unstyled mb-0"></ul>
             </ul>
           </div>
+          <audio id="notifSound" src="{% static 'accounts/sound/notification.mp3' %}" preload="auto"></audio>
+          <!-- /Notificaciones -->
         </div>
       </div>
     </nav>
@@ -368,11 +347,10 @@
     </div>
   </div>
 </div>
-<!-- Bootstrap Bundle JS -->
+<!-- JS scripts -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
-<script>const NOTIFICATIONS_URL = "{% url 'check_new_notifications' %}";</script>
-<script src="{% static 'accounts/js/menu.js' %}" defer></script>
+<script src="{% static 'accounts/js/notifications.js' %}" defer></script>
 </body>
 </html>

@@ -13,15 +13,13 @@
   <link 
     href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
     rel="stylesheet">
-
   <!-- DataTables CSS -->
   <link 
     href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css" 
     rel="stylesheet">
-
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+  <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
   <style>
     .footer {
       margin-top: 30px;
@@ -29,80 +27,134 @@
       color: #666;
       font-size: 14px;
     }
+    .main-content {
+      margin: 32px auto;
+      max-width: 1100px;
+      width: 100%;
+      padding: 0 18px;
+    }
+    @media (max-width: 991px) {
+      .main-content { max-width: 100%; padding: 1rem; margin: 24px 0 0 0;}
+    }
   </style>
 </head>
 <body class="bg-light">
-  <div class="container py-5">
-    <!-- Encabezado -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <a href="{% url 'enfermeria:enfermeria_dashboard' %}" 
-         class="btn btn-sm btn-outline-secondary">
-        ← Volver al Dashboard
-      </a>
-      <h2 class="mb-0">Inventario de Medicamentos</h2>
-    </div>
+  <div class="d-flex" id="wrapper">
+    <!-- Sidebar de Enfermería -->
+    <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+      <div class="d-flex align-items-center mb-3">
+        <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+        <span class="fs-5 fw-bold">TechCare</span>
+      </div>
+      <hr class="text-secondary">
+      <ul class="nav nav-pills flex-column mb-auto">
+        <li>
+          <a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="nav-link text-white">
+            <i class="fa-solid fa-briefcase-medical me-2 text-primary"></i> Dashboard Enfermería
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'enfermeria:uso_create' %}" class="nav-link text-white">
+            <i class="fa-solid fa-pills me-2 text-warning"></i> Registrar Uso
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'enfermeria:atencion_form' %}" class="nav-link text-white">
+            <i class="fa-solid fa-user-injured me-2 text-success"></i> Atenciones Médicas
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'enfermeria:inventario_list' %}" class="nav-link text-white active">
+            <i class="fa-solid fa-boxes-stacked me-2 text-info"></i> Inventario de Medicamentos
+          </a>
+        </li>
+      </ul>
+      <hr class="text-secondary">
+      <div class="dropdown">
+        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+          <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+          <strong>{{ request.user.username }}</strong>
+        </a>
+        <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+          <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+        </ul>
+      </div>
+    </nav>
+    <!-- /Sidebar -->
 
-    <!-- Botones de acción -->
-    <div class="mb-3 d-flex gap-2 flex-wrap">
-      <a href="{% url 'enfermeria:inventario_create' %}" 
-         class="btn btn-success btn-sm">➕ Agregar Medicamento</a>
-      <a href="{% if items %}{% url 'enfermeria:historial_uso' items.0.pk %}{% else %}#{% endif %}"
-         class="btn btn-info btn-sm {% if not items %}disabled{% endif %}"
-         {% if not items %}tabindex="-1" aria-disabled="true"{% endif %}
-         title="Ver historial del primer medicamento">
-        📋 Ver Historial
-      </a>
-    </div>
-
-    <!-- Tabla -->
-    <div class="table-responsive">
-      <table id="inventario-table" class="table table-bordered table-hover bg-white">
-        <thead class="table-dark">
-          <tr>
-            <th>Nombre</th>
-            <th>Presentación</th>
-            <th>Fecha Ingreso</th>
-            <th>Proveedor</th>
-            <th>Cantidad</th>
-            <th>Modificado por</th>
-            <th style="width: 220px;">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in items %}
-          <tr>
-            <td>{{ item.nombre }}</td>
-            <td>{{ item.presentacion.nombre }}</td>
-            <td>{{ item.fecha_ingreso|date:"d-m-Y" }}</td>
-            <td>{{ item.proveedor.nombre }}</td>
-            <td>
-              {% if item.cantidad_existente <= 5 %}
-                <span class="badge bg-danger">{{ item.cantidad_existente }}</span>
-              {% else %}
-                {{ item.cantidad_existente }}
-              {% endif %}
-            </td>
-            <td>{{ item.modificado_por.username|default:"—" }}</td>
-            <td>
-              <a href="{% url 'enfermeria:inventario_edit' item.pk %}" 
-                 class="btn btn-sm btn-primary" title="Editar">✏️</a>
-              <a href="{% url 'enfermeria:inventario_pdf' item.pk %}" 
-                 class="btn btn-sm btn-secondary" title="Generar PDF">📄</a>
-              <a href="{% url 'enfermeria:historial_uso' item.pk %}" 
-                 class="btn btn-sm btn-info" title="Ver historial">📋</a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="7" class="text-center text-muted">
-              No hay medicamentos registrados.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-      <div class="footer">
-        <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+    <!-- Main content -->
+    <div class="flex-grow-1 main-content">
+      <!-- Encabezado -->
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Inventario de Medicamentos</h2>
+        <a href="{% url 'enfermeria:enfermeria_dashboard' %}" 
+          class="btn btn-sm btn-outline-secondary">
+          ← Volver al Dashboard
+        </a>
+      </div>
+      <!-- Botones de acción -->
+      <div class="mb-3 d-flex gap-2 flex-wrap">
+        <a href="{% url 'enfermeria:inventario_create' %}" 
+          class="btn btn-success btn-sm">➕ Agregar Medicamento</a>
+        <a href="{% if items %}{% url 'enfermeria:historial_uso' items.0.pk %}{% else %}#{% endif %}"
+          class="btn btn-info btn-sm {% if not items %}disabled{% endif %}"
+          {% if not items %}tabindex="-1" aria-disabled="true"{% endif %}
+          title="Ver historial del primer medicamento">
+          📋 Ver Historial
+        </a>
+      </div>
+      <!-- Tabla -->
+      <div class="table-responsive">
+        <table id="inventario-table" class="table table-bordered table-hover bg-white">
+          <thead class="table-dark">
+            <tr>
+              <th>Nombre</th>
+              <th>Presentación</th>
+              <th>Fecha Ingreso</th>
+              <th>Proveedor</th>
+              <th>Cantidad</th>
+              <th>Modificado por</th>
+              <th style="width: 220px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td>{{ item.nombre }}</td>
+              <td>{{ item.presentacion.nombre }}</td>
+              <td>{{ item.fecha_ingreso|date:"d-m-Y" }}</td>
+              <td>{{ item.proveedor.nombre }}</td>
+              <td>
+                {% if item.cantidad_existente <= 5 %}
+                  <span class="badge bg-danger">{{ item.cantidad_existente }}</span>
+                {% else %}
+                  {{ item.cantidad_existente }}
+                {% endif %}
+              </td>
+              <td>{{ item.modificado_por.username|default:"—" }}</td>
+              <td>
+                <a href="{% url 'enfermeria:inventario_edit' item.pk %}" 
+                  class="btn btn-sm btn-primary" title="Editar">✏️</a>
+                <a href="{% url 'enfermeria:inventario_pdf' item.pk %}" 
+                  class="btn btn-sm btn-secondary" title="Generar PDF">📄</a>
+                <a href="{% url 'enfermeria:historial_uso' item.pk %}" 
+                  class="btn btn-sm btn-info" title="Ver historial">📋</a>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="7" class="text-center text-muted">
+                No hay medicamentos registrados.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="footer">
+          <p>© {{ year }} Soporte Técnico - Asociación Nuevo Amanecer. Todos los derechos reservados.</p>
+        </div>
       </div>
     </div>
   </div>
