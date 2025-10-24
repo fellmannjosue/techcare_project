@@ -7,61 +7,89 @@
     <title>Conversación del Ticket – {{ ticket.ticket_id }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="{% static 'accounts/img/nuevo.ico' %}" type="image/x-icon" />
-
-    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- SweetAlert2 -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Tu CSS personalizado -->
     <link rel="stylesheet" href="{% static 'tickets/css/comments_user.css' %}">
+    <link rel="stylesheet" href="{% static 'accounts/css/menu.css' %}">
     <style>
-        /* Estilos básicos para las burbujas */
+        .sidebar {
+            min-width: 210px;
+            max-width: 210px;
+            background: #222b3c;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .main-content {
+            max-width: 900px;
+            margin: 32px auto;
+        }
+        .ticket-info {
+            background: #176cf2;
+            color: #fff;
+            border-radius: 14px 14px 0 0;
+            padding: 18px 22px 8px 22px;
+            margin-bottom: 0;
+            font-size: 1.07rem;
+        }
         .chat-bubble { background: #fff; border-radius: 10px; padding: 10px 16px; margin-bottom: 12px; max-width: 80%; box-shadow: 0 2px 8px #e6e6e6;}
         .chat-bubble.mine { background: #d9f8d9; margin-left: auto; }
         .chat-bubble.ia-bubble { background: #f0f5ff; border-left: 4px solid #22b573; }
         .chat-bubble.tecnico-bubble { background: #fff4e6; border-left: 4px solid #ffc107; }
         .chat-meta { font-size: 0.9em; color: #888; margin-top: 6px; }
+        .problemas-rapidos { margin-bottom: 10px; }
+        .problemas-rapidos button { margin-right: 6px; margin-bottom: 6px; font-size: 0.98em;}
+        @media (max-width: 991px) {
+          .main-content { max-width: 100%; padding: 1rem; margin: 18px 0 0 0;}
+          .sidebar { min-width: 100px !important; max-width: 160px !important; }
+        }
     </style>
 </head>
-
 <body>
-    <div class="container py-3">
-
-        <div class="mb-2">
-            {% if request.GET.area == "bilingue" %}
-            <a href="{% url 'historial_maestro_bilingue' %}" class="btn btn-outline-secondary">
-                ← Regresar al Historial
-            </a>
-            {% else %}
-            <a href="{% url 'historial_maestro_colegio' %}" class="btn btn-outline-secondary">
-                ← Regresar al Historial
-            </a>
-            {% endif %}
+<div class="d-flex" id="wrapper">
+    <!-- Sidebar simple -->
+    <nav class="bg-dark sidebar flex-shrink-0 p-3">
+        <div class="mb-3 text-center">
+            <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;">
+            <div class="fw-bold mt-2" style="font-size:1.05em;">TechCare</div>
         </div>
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li>
+                {% if request.GET.area == "bilingue" %}
+                <a href="{% url 'historial_maestro_bilingue' %}" class="btn btn-outline-light w-100 mb-2">
+                    ← Regresar al Historial
+                </a>
+                {% else %}
+                <a href="{% url 'historial_maestro_colegio' %}" class="btn btn-outline-light w-100 mb-2">
+                    ← Regresar al Historial
+                </a>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
 
-        <div class="ticket-info mb-2">
+    <!-- Main content -->
+    <div class="flex-grow-1 main-content">
+        <div class="ticket-info mb-1">
             <b>Ticket:</b> {{ ticket.ticket_id }}<br>
             <b>Estado:</b> <span class="badge bg-light text-dark">{{ ticket.status }}</span>
             <b>| Nombre:</b> {{ ticket.name }}
             <b>| Correo:</b> {{ ticket.email }}
         </div>
-
-        <div><b>Descripción:</b> {{ ticket.description }}</div>
-        {% if ticket.attachment %}
-        <div><b>Adjunto:</b>
-            <a href="{{ ticket.attachment.url }}" class="btn btn-sm btn-outline-light ms-1" target="_blank">
-                <i class="bi bi-paperclip"></i> Ver archivo
-            </a>
+        <div class="bg-white px-4 py-3 rounded-bottom mb-3 border-bottom">
+            <div><b>Descripción:</b> {{ ticket.description }}</div>
+            {% if ticket.attachment %}
+            <div><b>Adjunto:</b>
+                <a href="{{ ticket.attachment.url }}" class="btn btn-sm btn-outline-primary ms-1" target="_blank">
+                    <i class="bi bi-paperclip"></i> Ver archivo
+                </a>
+            </div>
+            {% endif %}
         </div>
-        {% endif %}
-        <hr>
         <h5 class="mb-2"><i class="bi bi-chat-left-text"></i> Conversación del Ticket</h5>
 
         <!-- CHAT MENSAJES CON ID para AJAX -->
         <div id="chat-mensajes"
-            style="max-height: 320px; overflow-y:auto; background:#f9fafb; border-radius:9px; padding: 16px; margin-bottom:8px;">
+            style="max-height: 340px; overflow-y:auto; background:#f9fafb; border-radius:9px; padding: 16px; margin-bottom:8px;">
             {% for c in comentarios %}
             <div class="chat-bubble
                 {% if c.tipo == 'usuario' and c.usuario == request.user %} mine
@@ -92,13 +120,20 @@
         </div>
 
         {% if ticket.status == "Resuelto" %}
-        <!-- ALERTA DE CHAT BLOQUEADO SI RESUELTO -->
         <div class="alert alert-success text-center mb-2">
             <i class="bi bi-lock"></i>
             Este ticket ha sido marcado como <b>Resuelto</b>. La conversación está cerrada para el usuario.
         </div>
         {% else %}
-        <!-- FORMULARIO DE ENVÍO SOLO SI NO ESTÁ RESUELTO -->
+        <!-- Botones de problemas frecuentes -->
+        <div class="problemas-rapidos mb-2">
+            <label class="fw-semibold me-2 mb-2">Problema frecuente:</label>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertMsg('No puedo imprimir desde mi computadora.')">Impresora no imprime</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertMsg('No tengo acceso a internet.')">Sin acceso a Internet</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertMsg('Mi computadora no enciende.')">Computadora no enciende</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertMsg('Tengo problemas con mi correo institucional.')">Problema con correo</button>
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertMsg('Otro (describir abajo).')">Otro</button>
+        </div>
         <div class="chat-footer">
             <form id="formComentarioIA" method="post" autocomplete="off">
                 {% csrf_token %}
@@ -116,13 +151,20 @@
             </div>
         </div>
         {% endif %}
-
     </div>
+</div>
 
-    <!-- Bootstrap Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- JS personalizado (AJAX y autorefresco) -->
-    <script src="{% static 'tickets/js/comments.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Inserta el texto rápido del problema frecuente en el textarea del chat
+    function insertMsg(msg) {
+        var textarea = document.querySelector('textarea[name="mensaje"]');
+        if (textarea) {
+            textarea.value = msg;
+            textarea.focus();
+        }
+    }
+</script>
+<script src="{% static 'tickets/js/comments.js' %}"></script>
 </body>
-
 </html>

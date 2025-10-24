@@ -64,7 +64,7 @@ INSTALLED_APPS = [
     'seguridad',
     'conducta',
     'core',
-   
+    'reloj',
 
 ]
 
@@ -127,16 +127,31 @@ DATABASES = {
 
     # Conexión al SQL Server remoto (Test2)
     'padres_sqlserver': {
-        'ENGINE': 'mssql',
-        'NAME': os.getenv('MSSQL_DB_NAME', 'Test2'),
-        'USER': os.getenv('MSSQL_DB_USER', 'admin2'),
-        'PASSWORD': os.getenv('MSSQL_DB_PASSWORD', '121800-Jfellmann'),
-        'HOST': os.getenv('MSSQL_DB_HOST', '192.168.10.2'),
-        'PORT': os.getenv('MSSQL_DB_PORT', '1433'),
-        'OPTIONS': {
-            'driver': os.getenv('MSSQL_ODBC_DRIVER', 'ODBC Driver 17 for SQL Server'),
-        },
+    'ENGINE': 'mssql',
+    'NAME': os.getenv('MSSQL_TEST2_DB_NAME', 'Test2'),
+    'USER': os.getenv('MSSQL_TEST2_DB_USER', 'admin2'),
+    'PASSWORD': os.getenv('MSSQL_TEST2_DB_PASSWORD', '121800-Jfellmann'),
+    'HOST': os.getenv('MSSQL_TEST2_DB_HOST', '192.168.10.2'),
+    'PORT': os.getenv('MSSQL_TEST2_DB_PORT', '1433'),
+    'OPTIONS': {
+        'driver': os.getenv('MSSQL_ODBC_DRIVER', 'ODBC Driver 17 for SQL Server'),
     },
+},
+
+# Conexión al SQL Server remoto (zkbiotime)
+'zkbio_sqlserver': {
+    'ENGINE': 'mssql',
+    'NAME': os.getenv('MSSQL_ZKBIO_DB_NAME', 'zkbiotime'),
+    'USER': os.getenv('MSSQL_ZKBIO_DB_USER', 'admin2'),
+    'PASSWORD': os.getenv('MSSQL_ZKBIO_DB_PASSWORD', '121800-Jfellmann'),
+    'HOST': os.getenv('MSSQL_ZKBIO_DB_HOST', '192.168.10.2'),
+    'PORT': os.getenv('MSSQL_ZKBIO_DB_PORT', '1433'),
+    'OPTIONS': {
+        'driver': os.getenv('MSSQL_ODBC_DRIVER', 'ODBC Driver 17 for SQL Server'),
+    },
+}
+
+
 }
 
 # ─────────────────────────────────────────────────────────────

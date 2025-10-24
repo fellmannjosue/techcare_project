@@ -120,6 +120,8 @@ def menu_view(request):
     is_group_citas_col  = user.groups.filter(name='citas colegio').exists()
     is_group_enfermeria = user.groups.filter(name='enfermeria').exists()
     is_group_inventario = user.groups.filter(name='inventario').exists()
+    is_group_reloj = user.groups.filter(name='reloj').exists()
+
 
     # Permisos individuales
     can_view_inventario   = user.has_perm('inventario.view_inventariomedicamento')
@@ -146,6 +148,8 @@ def menu_view(request):
         'show_enfermeria':  is_admin or is_group_citas_bl or is_group_enfermeria,
         'show_coordinador_bilingue': is_admin or is_coordinador_bilingue,
         'show_coordinador_colegio':  is_admin or is_coordinador_colegio,
+        'show_reloj': is_admin or is_group_reloj,
+
     }
     return render(request, 'accounts/menu.html', context)
 

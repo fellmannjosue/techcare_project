@@ -36,8 +36,7 @@
         <strong>{{ request.user.username }}</strong>
       </a>
       <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
-        <li><hr class="dropdown-divider"></li>
+        
         <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
       </ul>
     </div>
