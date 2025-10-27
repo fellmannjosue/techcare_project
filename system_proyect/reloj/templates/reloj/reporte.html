@@ -119,7 +119,7 @@
             <tr>
               <th>ID Empleado</th>
               <th>Empleado</th>
-              <th>Departamento</th>
+              <th>Cargo</th>
               <th>Fecha</th>
               <th>Marcas</th>
               <th>Cantidad Marcas</th>
@@ -140,7 +140,7 @@
             <tr {% if row.Estado == "AUSENTE" %} style="background-color: #f8d7da;" {% endif %}>
               <td>{{ row.ID_Empleado }}</td>
               <td>{{ row.Empleado }}</td>
-              <td>{{ row.Departamento }}</td>
+              <td>{{ row.Cargo }}</td>
               <td>{{ row.Fecha|date:"Y-m-d" }}</td>
               <td>
                 {% if row.Marcas %}
