@@ -24,54 +24,24 @@
       <span class="fs-5 fw-bold">TechCare</span>
     </div>
     <hr class="text-secondary">
-                <ul class="nav nav-pills flex-column mb-auto">
-                <li>
-                    <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white active">
-                        <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-table me-2"></i> Generar Reporte
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'horarios_list' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-user-clock me-2"></i> Horarios de Empleados
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'menu' %}" class="nav-link">
-                        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
-                    </a>
-                </li>
-            </ul>
+    <ul class="nav nav-pills flex-column mb-auto">
+      <li><a href="{% url 'reloj_dashboard' %}" class="nav-link text-white active"><i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)</a></li>
+      <li><a href="{% url 'reloj_reporte' %}" class="nav-link text-white"><i class="fa-solid fa-table me-2"></i> Generar Reporte</a></li>
+      <li><a href="{% url 'reloj_grafica' %}" class="nav-link text-white"><i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica</a></li>
+      <li><a href="{% url 'horarios_list' %}" class="nav-link text-white"><i class="fa-solid fa-user-clock me-2"></i> Horarios de Empleados</a></li>
+      <li><a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white"><i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora</a></li>
+      <li><a href="{% url 'menu' %}" class="nav-link"><i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú</a></li>
+    </ul>
     <hr class="text-secondary">
     <div class="dropdown">
-      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-         data-bs-toggle="dropdown">
-        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32"
-             class="rounded-circle me-2">
+      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
+        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
         <strong>{{ request.user.username }}</strong>
       </a>
       <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
         <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i>
-            Cerrar Sesión</a></li>
+        <li><hr class="dropdown-divider"></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
       </ul>
     </div>
   </nav>
@@ -80,11 +50,11 @@
   <div class="flex-grow-1 container py-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h2 class="mb-0">Horarios de Empleados</h2>
-      <!-- Botón que abre el modal de agregar -->
       <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#agregarHorarioModal">
         <i class="fa fa-plus"></i> Agregar Horario
       </button>
     </div>
+
     <div class="table-responsive">
       <table id="tablaHorarios" class="table table-bordered table-striped align-middle">
         <thead class="table-light">
@@ -98,6 +68,8 @@
             <th>Acciones</th>
           </tr>
         </thead>
+
+        {% if horarios %}
         <tbody>
           {% for horario in horarios %}
           <tr>
@@ -111,24 +83,27 @@
                 {{ horario.nombre }}
               </a>
             </td>
-            <td>{{ horario.entrada_manana }}</td>
-            <td>{{ horario.salida_manana }}</td>
+            <td>{{ horario.entrada_manana|default:"—" }}</td>
+            <td>{{ horario.salida_manana|default:"—" }}</td>
             <td>{{ horario.entrada_tarde|default:"—" }}</td>
             <td>{{ horario.salida_tarde|default:"—" }}</td>
             <td>
               <a href="#" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editarHorarioModal" data-id="{{ horario.pk }}">Editar</a>
             </td>
           </tr>
-          {% empty %}
-          <tr><td colspan="7">No hay horarios registrados.</td></tr>
           {% endfor %}
         </tbody>
+        {% else %}
+        <tbody></tbody><!-- vacío para que DataTables no truene -->
+        <div class="alert alert-info mt-2">No hay horarios registrados.</div>
+        {% endif %}
       </table>
     </div>
+
     <a href="{% url 'reloj_dashboard' %}" class="btn btn-outline-secondary mt-2">Volver a Reloj</a>
   </div>
 
-  <!-- Modal para agregar horario -->
+  <!-- Modal: Agregar horario (contenido ya renderizado) -->
   <div class="modal fade" id="agregarHorarioModal" tabindex="-1" aria-labelledby="agregarHorarioModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content" id="modalAgregarHorarioContent">
@@ -139,7 +114,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            {{ form.as_p }} <!-- Envía el form desde la vista -->
+            {{ form.as_p }}
           </div>
           <div class="modal-footer">
             <button type="submit" class="btn btn-success">Guardar</button>
@@ -150,29 +125,33 @@
     </div>
   </div>
 
-  <!-- Modal para editar horario (carga por AJAX) -->
+  <!-- Modal: Editar horario (se carga por AJAX) -->
   <div class="modal fade" id="editarHorarioModal" tabindex="-1" aria-labelledby="editarHorarioModalLabel" aria-hidden="true">
     <div class="modal-dialog">
-      <div class="modal-content" id="modalHorarioContent">
-        <!-- El contenido del formulario se carga por AJAX -->
-      </div>
+      <div class="modal-content" id="modalHorarioContent"><!-- contenido por AJAX --></div>
     </div>
   </div>
 </div>
-  <!-- JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- JS (orden seguro) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-    window.horarios_edit_url = "{% url 'horarios_edit' 99999 %}";
-    window.django_messages = [
-        {% for message in messages %}
-            "{{ message|escapejs }}"{% if not forloop.last %},{% endif %}
-        {% endfor %}
-    ];
+  // URL base para cargar el formulario de edición por AJAX
+  window.horarios_edit_url = "{% url 'horarios_edit' 99999 %}";
+
+  // Mensajes flash de Django (opcional)
+  window.django_messages = [
+    {% for message in messages %}
+      "{{ message|escapejs }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
 </script>
+
 <script src="{% static 'reloj/js/horario.js' %}"></script>
 </body>
 </html>

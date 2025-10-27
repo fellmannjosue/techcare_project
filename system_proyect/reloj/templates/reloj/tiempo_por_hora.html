@@ -16,12 +16,13 @@
     .hora-rojo  { background:#f8d7da !important; color:#842029 !important; font-weight:600; }
     .hora-verde { background:#d1e7dd !important; color:#0f5132 !important; font-weight:600; }
     .hora-azul  { background:#3b8eea !important; color:#fff !important;   font-weight:600; }
+    .chip { padding: 2px 6px; border-radius: .25rem; display: inline-block; }
   </style>
 </head>
 <body class="bg-light">
 
 <div class="d-flex" id="wrapper">
-  <!-- Sidebar (mismo estilo que tu asistencia) -->
+  <!-- Sidebar (igual al de Reporte de Asistencia) -->
   <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
     <div class="d-flex align-items-center mb-3">
       <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
@@ -98,7 +99,7 @@
         <div class="alert alert-danger">{{ error }}</div>
       {% endif %}
 
-      <!-- Filtros por fecha (GET) -->
+      <!-- Filtros por fecha + búsqueda (GET) -->
       <form method="get" class="row g-3 align-items-end mb-4">
         <div class="col-auto">
           <label for="fecha_inicio" class="form-label mb-0">Fecha inicio</label>
@@ -116,9 +117,7 @@
           <button type="submit" class="btn btn-primary">
             <i class="fa-solid fa-search"></i> Aplicar
           </button>
-          <a href="{% url 'tiempo_por_hora' %}" class="btn btn-outline-secondary">
-            Limpiar
-          </a>
+          <a href="{% url 'tiempo_por_hora' %}" class="btn btn-outline-secondary">Limpiar</a>
         </div>
       </form>
 
@@ -132,6 +131,7 @@
               <th>Fecha</th>
               <th>Hora Entrada</th>
               <th>Hora Salida</th>
+              <th>Marcas del Día</th>   <!-- NUEVA -->
               <th>Cantidad Marcas</th>
               <th>Tiempo Extra</th>
               <th>Tiempo Faltante</th>
@@ -143,6 +143,7 @@
               <th><input type="text" class="form-control form-control-sm" placeholder="AAAA-MM-DD" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="HH:MM" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="HH:MM" /></th>
+              <th><input type="text" class="form-control form-control-sm" placeholder="06:54, 12:03..." /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="N°" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="+min / +h" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="-min / -h" /></th>
@@ -157,6 +158,23 @@
                 <td>{{ row.Fecha|date:"Y-m-d" }}</td>
                 <td class="{{ row.Color_Entrada_Class }}">{{ row.Hora_Entrada }}</td>
                 <td class="{{ row.Color_Salida_Class  }}">{{ row.Hora_Salida }}</td>
+
+                <!-- Marcas del Día: todas separadas por coma; 1ª y última coloreadas -->
+                <td>
+                  {% if row.Marcas_Dia and row.Marcas_Dia|length > 0 %}
+                    {% for m in row.Marcas_Dia %}
+                      {% if m.cls %}
+                        <span class="chip {{ m.cls }}">{{ m.t }}</span>
+                      {% else %}
+                        <span class="badge text-bg-secondary">{{ m.t }}</span>
+                      {% endif %}
+                      {% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
                 <td>{{ row.Cantidad_Marcas|default:"0" }}</td>
                 <td>{% if row.Tiempo_Extra %}<span class="badge bg-primary">{{ row.Tiempo_Extra }}</span>{% else %}—{% endif %}</td>
                 <td>{% if row.Tiempo_Faltante %}<span class="badge bg-danger">{{ row.Tiempo_Faltante }}</span>{% else %}—{% endif %}</td>
@@ -164,7 +182,8 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="8" class="text-center text-muted py-3">No hay registros disponibles.</td>
+                <!-- ¡OJO! 9 columnas -->
+                <td colspan="9" class="text-center text-muted py-3">No hay registros disponibles.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -185,33 +204,30 @@
 <script>
   $(function () {
     var $table = $('#tablaTiempoPorHora');
-    // Inicializa DataTables solo si existe la tabla
-    if ($table.length) {
-      var table = $table.DataTable({
-        language: {
-          lengthMenu: "Mostrar _MENU_ registros",
-          zeroRecords: "No hay registros",
-          info: "Mostrando _START_ a _END_ de _TOTAL_",
-          infoEmpty: "No hay registros disponibles",
-          infoFiltered: "(filtrado de _MAX_ registros totales)",
-          search: "Buscar:",
-          paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
-        },
-        pageLength: 10,
-        orderCellsTop: true,
-        fixedHeader: true,
-        order: [[0, 'asc'], [2, 'asc']] // ID, luego Fecha
-      });
+    var table = $table.DataTable({
+      language: {
+        lengthMenu: "Mostrar _MENU_ registros",
+        zeroRecords: "No hay registros",
+        info: "Mostrando _START_ a _END_ de _TOTAL_",
+        infoEmpty: "No hay registros disponibles",
+        infoFiltered: "(filtrado de _MAX_ registros totales)",
+        search: "Buscar:",
+        paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
+      },
+      pageLength: 10,
+      orderCellsTop: true,
+      fixedHeader: true,
+      order: [[0, 'asc'], [2, 'asc']] // ID, luego Fecha
+    });
 
-      // Filtros por columna (segunda fila del thead)
-      $('#tablaTiempoPorHora thead tr:eq(1) th').each(function (i) {
-        $('input', this).on('keyup change', function () {
-          if (table.column(i).search() !== this.value) {
-            table.column(i).search(this.value).draw();
-          }
-        });
+    // Filtros por columna (segunda fila del thead)
+    $('#tablaTiempoPorHora thead tr:eq(1) th').each(function (i) {
+      $('input', this).on('keyup change', function () {
+        if (table.column(i).search() !== this.value) {
+          table.column(i).search(this.value).draw();
+        }
       });
-    }
+    });
   });
 </script>
 </body>

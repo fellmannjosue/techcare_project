@@ -13,6 +13,13 @@ from django.utils import timezone
 from .models import EmployeeSchedule
 from .forms import EmployeeScheduleForm
 
+# arriba de tu archivo
+from django.http import JsonResponse
+
+def _is_ajax(request):
+    return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+
 FMT_HHMM = "%H:%M"
 
 def _to_hhmm(val):
@@ -230,54 +237,47 @@ def reporte(request):
 # CRUD de Horarios (con dropdown de empleados reales)
 # ─────────────────────────────────────────────────────────────
 def horarios_list(request):
-    """Listado de horarios configurados en tu formulario (ORM)."""
+    # Listado para la tabla
     horarios = EmployeeSchedule.objects.all().order_by('nombre', 'emp_code')
-    return render(request, 'reloj/horarios_list.html', {'horarios': horarios})
 
-
-def horarios_add(request):
-    """
-    Alta de horario:
-    - Dropdown con empleados reales (de ZKBioTime).
-    - Autocompleta emp_code.
-    """
+    # Opciones: value=emp_code, label="emp_code - Nombre"
     empleados = get_empleados_zkbiotime()
-    EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [(e[0], f"{e[1]} ({e[0]})") for e in empleados]
+    EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [
+        (str(e[0]), f"{e[0]} - {e[1]}")
+    for e in empleados]
 
+    # Form para el modal (crear desde la lista)
     class EmployeeScheduleCustomForm(EmployeeScheduleForm):
-        nombre = forms.choiceField(
+        nombre = forms.ChoiceField(
             choices=EMPLEADOS_CHOICES,
             label="Empleado",
             widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_nombre_dropdown'})
         )
-        emp_code = forms.CharField(widget=forms.TextInput(attrs={
-            'readonly': 'readonly', 'class': 'form-control', 'id': 'id_emp_code'
-        }))
+        emp_code = forms.CharField(
+            label="ID Empleado",
+            widget=forms.TextInput(attrs={'readonly': 'readonly', 'class': 'form-control', 'id': 'id_emp_code'})
+        )
 
-    if request.method == 'POST':
-        form = EmployeeScheduleCustomForm(request.POST)
-        if form.is_valid():
-            emp_code = form.cleaned_data['nombre']  # del dropdown tomamos el code
-            instance = form.save(commit=False)
-            instance.emp_code = emp_code
-            # Guarda solo el nombre limpio (sin el "(code)")
-            instance.nombre = dict(form.fields['nombre'].choices).get(emp_code, emp_code).split(' (')[0]
-            instance.save()
-            return redirect('horarios_list')
-    else:
-        form = EmployeeScheduleCustomForm()
+    form = EmployeeScheduleCustomForm()
+    form.fields['emp_code'].initial = ""  # vacío al abrir modal
 
-    return render(request, 'reloj/horario_form.html', {'form': form, 'modo': 'Agregar'})
+    return render(request, 'reloj/horarios_list.html', {
+        'horarios': horarios,
+        'form': form,
+    })
 
-
-def horarios_edit(request, pk):
+def horarios_add(request):
     """
-    Edición de horario:
-    - Preselecciona el empleado actual en el dropdown.
+    Alta de horario:
+    - Dropdown con empleados (emp_code – Nombre)
+    - Copia emp_code al campo readonly automáticamente
+    - Responde JSON si el request es AJAX (modal)
     """
-    horario = get_object_or_404(EmployeeSchedule, pk=pk)
     empleados = get_empleados_zkbiotime()
-    EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [(e[0], f"{e[1]} ({e[0]})") for e in empleados]
+    EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [
+        (str(e[0]), f"{e[0]} - {e[1]}")
+        for e in empleados
+    ]
 
     class EmployeeScheduleCustomForm(EmployeeScheduleForm):
         nombre = forms.ChoiceField(
@@ -285,9 +285,62 @@ def horarios_edit(request, pk):
             label="Empleado",
             widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_nombre_dropdown'})
         )
-        emp_code = forms.CharField(widget=forms.TextInput(attrs={
-            'readonly': 'readonly', 'class': 'form-control', 'id': 'id_emp_code'
-        }))
+        emp_code = forms.CharField(
+            label="ID Empleado",
+            widget=forms.TextInput(attrs={'readonly': 'readonly', 'class': 'form-control', 'id': 'id_emp_code'})
+        )
+
+    if request.method == 'POST':
+        form = EmployeeScheduleCustomForm(request.POST)
+        if form.is_valid():
+            emp_code = form.cleaned_data['nombre']  # value del select = emp_code
+            instance = form.save(commit=False)
+            instance.emp_code = emp_code
+
+            # nombre limpio desde etiqueta "CODE - Nombre"
+            label = dict(form.fields['nombre'].choices).get(emp_code, emp_code)
+            instance.nombre = label.split(' - ', 1)[1].strip() if ' - ' in label else label
+
+            instance.save()
+
+            if _is_ajax(request):
+                return JsonResponse({'success': True})
+            return redirect('horarios_list')
+        else:
+            if _is_ajax(request):
+                return JsonResponse({'success': False, 'errors': form.errors})
+    else:
+        form = EmployeeScheduleCustomForm()
+        form.fields['emp_code'].initial = ""  # vacío al empezar
+
+    # Render de página completa (no modal)
+    return render(request, 'reloj/horario_form.html', {'form': form, 'modo': 'Agregar'})
+
+
+def horarios_edit(request, pk):
+    """
+    Edición de horario (modal):
+    - Preselecciona el empleado actual
+    - Devuelve JSON en POST por AJAX (success / errors)
+    - En GET devuelve el fragmento HTML del formulario y pasa 'horario' para el action
+    """
+    horario = get_object_or_404(EmployeeSchedule, pk=pk)
+    empleados = get_empleados_zkbiotime()
+    EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [
+        (str(e[0]), f"{e[0]} - {e[1]}")
+        for e in empleados
+    ]
+
+    class EmployeeScheduleCustomForm(EmployeeScheduleForm):
+        nombre = forms.ChoiceField(
+            choices=EMPLEADOS_CHOICES,
+            label="Empleado",
+            widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_nombre_dropdown'})
+        )
+        emp_code = forms.CharField(
+            label="ID Empleado",
+            widget=forms.TextInput(attrs={'readonly': 'readonly', 'class': 'form-control', 'id': 'id_emp_code'})
+        )
 
     if request.method == 'POST':
         form = EmployeeScheduleCustomForm(request.POST, instance=horario)
@@ -295,14 +348,29 @@ def horarios_edit(request, pk):
             emp_code = form.cleaned_data['nombre']
             instance = form.save(commit=False)
             instance.emp_code = emp_code
-            instance.nombre = dict(form.fields['nombre'].choices).get(emp_code, emp_code).split(' (')[0]
+
+            label = dict(form.fields['nombre'].choices).get(emp_code, emp_code)
+            instance.nombre = label.split(' - ', 1)[1].strip() if ' - ' in label else label
+
             instance.save()
+
+            if _is_ajax(request):
+                return JsonResponse({'success': True})
             return redirect('horarios_list')
+        else:
+            if _is_ajax(request):
+                return JsonResponse({'success': False, 'errors': form.errors})
     else:
         form = EmployeeScheduleCustomForm(instance=horario)
-        form.fields['nombre'].initial = horario.emp_code  # preselecciona
+        form.fields['nombre'].initial = str(horario.emp_code)
+        form.fields['emp_code'].initial = str(horario.emp_code)
 
-    return render(request, 'reloj/horario_form.html', {'form': form, 'modo': 'Editar'})
+    # IMPORTANTE: pasar 'horario' para que el template construya action con pk
+    return render(request, 'reloj/horario_form.html', {
+        'form': form,
+        'modo': 'Editar',
+        'horario': horario,
+    })
 
 
 # ─────────────────────────────────────────────────────────────
@@ -329,9 +397,9 @@ def tiempo_por_hora(request):
     - Hora de entrada/salida reales (del SQL original).
     - Colores de llegada/salida (comparado contra horario real).
     - Tiempo extra / faltante (comparando total real vs total programado).
+    - Marcas del día (todas) separadas por coma, coloreando 1ª y última.
     NOTA: El SQL NO se modifica; los horarios vienen del ORM (formulario).
     """
-
     # 1) Filtros por fecha + búsqueda q (empleado, depto o código)
     hoy = datetime.today()
     fecha_inicio_default = hoy.replace(day=1).strftime('%Y-%m-%d')
@@ -345,7 +413,6 @@ def tiempo_por_hora(request):
     error = None
 
     # 2) Mapa de horarios por emp_code desde tu formulario (soporta turno partido)
-    #    Ajusta nombres si tu modelo usa otros campos.
     schedules_map = {}
     try:
         qs = EmployeeSchedule.objects.all().values(
@@ -364,7 +431,6 @@ def tiempo_por_hora(request):
                 segs.append((m_in, m_out))
             if t_in and t_out:
                 segs.append((t_in, t_out))
-            # Si no hay segmentos, el empleado quedará con defaults más abajo
             schedules_map[code] = segs
     except Exception as ex:
         print(f"[WARN] No fue posible cargar horarios del ORM: {ex}")
@@ -409,13 +475,34 @@ def tiempo_por_hora(request):
             rows = cursor.fetchall()
             columnas = [col[0] for col in cursor.description]
 
+            # === NUEVO: mapa con TODAS las marcas por día (ordenadas) ===
+            marcas_map = {}  # key: (emp_code_str, fecha_date) -> ["06:54","12:01","13:00","17:25"]
+            try:
+                with connections['zkbio_sqlserver'].cursor() as cur2:
+                    cur2.execute(f"""
+                        SELECT 
+                            CAST(t.emp_code AS VARCHAR(10)) AS emp_code,
+                            CONVERT(DATE, t.punch_time) AS fecha,
+                            CONVERT(VARCHAR(5), CAST(t.punch_time AS TIME), 108) AS hhmm
+                        FROM dbo.iclock_transaction t
+                        WHERE CONVERT(DATE, t.punch_time) BETWEEN '{fecha_inicio}' AND '{fecha_fin}'
+                        ORDER BY CAST(t.punch_time AS TIME)
+                    """)
+                    rows_m = cur2.fetchall()
+                    for emp_code_m, fecha_m, hhmm in rows_m:
+                        key = (str(emp_code_m).strip(), fecha_m)
+                        marcas_map.setdefault(key, []).append(hhmm)
+            except Exception as ex:
+                print(f"[WARN] Consulta de marcas por día falló: {ex}")
+            # === FIN NUEVO ===
+
             # Depuración útil
             print("==[Tiempo por Hora]==")
             print(f"Rango: {fecha_inicio} -> {fecha_fin} | q='{q}'")
             print(f"Total filas recibidas (SQL): {len(rows)}")
 
             # Defaults si un empleado no tiene horario configurado
-            DEF_IN, DEF_OUT = "07:00", "15:00"
+            DEF_IN, DEF_OUT = "07:00", "16:35"
 
             for i, r in enumerate(rows):
                 row = dict(zip(columnas, r))
@@ -481,6 +568,22 @@ def tiempo_por_hora(request):
                     if not (qlow in emp_code.lower() or qlow in empleado.lower() or qlow in depto.lower()):
                         continue
 
+                # --- NUEVO: Marcas del día y coloreado de 1ª y última ---
+                key = (emp_code, row.get('Fecha'))
+                marcas_list = marcas_map.get(key, [])  # lista de "HH:MM"
+                marcas_coloreadas = []
+                if marcas_list:
+                    for idx, t in enumerate(marcas_list):
+                        cls = ""
+                        if idx == 0:
+                            cls = color_in_class      # primera marca usa color de ENTRADA
+                        elif idx == len(marcas_list) - 1:
+                            cls = color_out_class     # última marca usa color de SALIDA
+                        marcas_coloreadas.append({'t': t, 'cls': cls})
+                row['Marcas_Dia_Texto'] = ", ".join(marcas_list) if marcas_list else ""
+                row['Marcas_Dia'] = marcas_coloreadas
+                # --- FIN NUEVO ---
+
                 # Campos finales para el template
                 row['Hora_Entrada']        = h_in_real  or "—"
                 row['Hora_Salida']         = h_out_real or "—"
@@ -489,7 +592,7 @@ def tiempo_por_hora(request):
                 row['Tiempo_Extra']        = t_extra
                 row['Tiempo_Faltante']     = t_falt
 
-                # (Opcional) Exponer primer y último horario aplicado (útil para depurar/mostrar)
+                # (Opcional) Exponer primer y último horario aplicado
                 row['Horario_Primera_Entrada'] = prog_first_in or DEF_IN
                 row['Horario_Ultima_Salida']   = prog_last_out or DEF_OUT
 
@@ -501,8 +604,8 @@ def tiempo_por_hora(request):
                 print(f"[{j}] emp={r0.get('ID_Empleado')} fecha={r0.get('Fecha')} "
                       f"in={r0.get('Hora_Entrada')} out={r0.get('Hora_Salida')} "
                       f"extra={r0.get('Tiempo_Extra')} falt={r0.get('Tiempo_Faltante')} | "
-                      f"prog_in={r0.get('Horario_Primera_Entrada')} prog_out={r0.get('Horario_Ultima_Salida')}")
-
+                      f"prog_in={r0.get('Horario_Primera_Entrada')} prog_out={r0.get('Horario_Ultima_Salida')} | "
+                      f"marcas={r0.get('Marcas_Dia_Texto')}")
             if not datos:
                 print("⚠️ No llegaron registros (SQL vacío o filtros dejaron 0 filas).")
 
