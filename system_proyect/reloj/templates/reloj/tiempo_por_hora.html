@@ -5,161 +5,110 @@
   <meta charset="UTF-8">
   <title>Reporte Tiempo por Hora</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'reloj/reloj.css' %}">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+  <link href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" rel="stylesheet"/>
+
   <style>
-    .sidebar { min-height: 100vh; }
+    .hora-rojo  { background: #f8d7da !important; color: #842029 !important; font-weight: 600; }
+    .hora-verde { background: #d1e7dd !important; color: #0f5132 !important; font-weight: 600; }
+    .hora-azul  { background: #3b8eea !important; color: #fff !important;   font-weight: 600; }
   </style>
 </head>
 <body class="bg-light">
-<div class="d-flex" id="wrapper">
-  <!-- Sidebar principal estilo TechCare -->
-  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
-    <div class="d-flex align-items-center mb-3">
-      <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
-      <span class="fs-5 fw-bold">TechCare</span>
-    </div>
-    <hr class="text-secondary">
-    <ul class="nav nav-pills flex-column mb-auto">
-      <li>
-        <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white">
-          <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
-          <i class="fa-solid fa-table me-2"></i> Generar Reporte
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'horarios_list' %}" class="nav-link text-white">
-          <i class="fa-solid fa-user-clock me-2"></i> Horarios de Empleados
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
-          <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'menu' %}" class="nav-link">
-          <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
-        </a>
-      </li>
-    </ul>
-    <hr class="text-secondary">
-    <div class="dropdown">
-      <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-         data-bs-toggle="dropdown">
-        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32"
-             class="rounded-circle me-2">
-        <strong>{{ request.user.username }}</strong>
-      </a>
-      <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-        <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
-        <li>
-          <hr class="dropdown-divider">
-        </li>
-        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i>
-            Cerrar Sesión</a></li>
-      </ul>
-    </div>
-  </nav>
-  <!-- /Sidebar -->
 
-  <div class="flex-grow-1 container py-4">
-    <h2>Reporte Tiempo por Hora</h2>
-    <div class="table-responsive">
-      <table id="tablaTiempoPorHora" class="table table-bordered table-striped align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>ID Empleado</th>
-            <th>Empleado</th>
-            <th>Departamento</th>
-            <th>Fecha</th>
-            <th>Hora Entrada</th>
-            <th>Hora Salida</th>
-            <th>Cantidad Marcas</th>
-            <th>Tiempo Extra</th>
-            <th>Tiempo Faltante</th>
-          </tr>
-        </thead>
-        <tbody>
+<div class="container py-4">
+  <h2 class="mb-3">Reporte Tiempo por Hora</h2>
+
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div class="table-responsive">
+    <table id="tablaTiempoPorHora" class="table table-bordered table-striped align-middle w-100">
+      <thead class="table-light">
+        <tr>
+          <th>ID Empleado</th>
+          <th>Empleado</th>
+          <th>Fecha</th>
+          <th>Hora Entrada</th>
+          <th>Hora Salida</th>
+          <th>Cantidad Marcas</th>
+          <th>Tiempo Extra</th>
+          <th>Tiempo Faltante</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if datos %}
           {% for row in datos %}
-          <tr>
-            <td>
-              <a href="#" class="text-primary" data-bs-toggle="modal" data-bs-target="#editarHorarioModal" data-id="{{ row.schedule_id }}">
-                {{ row.ID_Empleado }}
-              </a>
-            </td>
-            <td>
-              <a href="#" class="text-primary" data-bs-toggle="modal" data-bs-target="#editarHorarioModal" data-id="{{ row.schedule_id }}">
-                {{ row.Empleado }}
-              </a>
-            </td>
-            <td>{{ row.Departamento }}</td>
+          <tr class="data-row">
+            <td>{{ row.ID_Empleado }}</td>
+            <td>{{ row.Empleado }}</td>
             <td>{{ row.Fecha|date:"Y-m-d" }}</td>
-            <td {% if row.entrada_tarde %} style="background:#f8d7da;color:#c00" {% elif row.entrada_extra %} style="background:#3b8eea;color:#fff" {% endif %}>{{ row.Hora_Entrada }}</td>
-            <td {% if row.salida_extra %} style="background:#3b8eea;color:#fff" {% endif %}>{{ row.Hora_Salida }}</td>
-            <td>{{ row.Cantidad_Marcas }}</td>
-            <td>{{ row.Tiempo_Extra }}</td>
-            <td>{{ row.Tiempo_Faltante }}</td>
+            <td class="{{ row.Color_Entrada_Class }}">{{ row.Hora_Entrada }}</td>
+            <td class="{{ row.Color_Salida_Class  }}">{{ row.Hora_Salida }}</td>
+            <td>{{ row.Cantidad_Marcas|default:"0" }}</td>
+            <td>
+              {% if row.Tiempo_Extra %}
+                <span class="badge bg-primary">{{ row.Tiempo_Extra }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td>
+              {% if row.Tiempo_Faltante %}
+                <span class="badge bg-danger">{{ row.Tiempo_Faltante }}</span>
+              {% else %}—{% endif %}
+            </td>
           </tr>
           {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    <a href="{% url 'reloj_dashboard' %}" class="btn btn-outline-secondary mt-2">Volver a Reloj</a>
+        {% else %}
+          <tr>
+            <!-- OJO: colspan = número de <th> -->
+            <td colspan="8" class="text-center text-muted py-3">No hay registros disponibles.</td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
 
-  <!-- Modal para editar horario -->
-  <div class="modal fade" id="editarHorarioModal" tabindex="-1" aria-labelledby="editarHorarioModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content" id="modalHorarioContent">
-        <!-- El contenido se carga por AJAX -->
-      </div>
-    </div>
-  </div>
+  <a href="{% url 'reloj_dashboard' %}" class="btn btn-outline-secondary mt-2">Volver a Reloj</a>
 </div>
-  <!-- JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-  <script>
-    // Inicializa DataTable
-    $(document).ready(function() {
-      $('#tablaTiempoPorHora').DataTable({
+
+<!-- JS: jQuery antes de DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
+<script>
+  (function(){
+    var $t = $('#tablaTiempoPorHora');
+    var hasRows = $t.find('tbody tr.data-row').length > 0;
+
+    if ($.fn.DataTable.isDataTable($t)) {
+      $t.DataTable().destroy();
+    }
+
+    if (hasRows) {
+      $t.DataTable({
+        pageLength: 25,
+        lengthChange: false,
+        ordering: true,
+        searching: true,
+        deferRender: true,
+        responsive: true,
         language: {
-          "lengthMenu": "Mostrar _MENU_ registros",
-          "zeroRecords": "No hay registros",
-          "info": "Mostrando _START_ a _END_ de _TOTAL_",
-          "infoEmpty": "No hay registros disponibles",
-          "infoFiltered": "(filtrado de _MAX_ registros totales)",
-          "search": "Buscar:",
-          "paginate": {
-            "first": "Primero",
-            "last": "Último",
-            "next": "Siguiente",
-            "previous": "Anterior"
-          }
+          lengthMenu: "Mostrar _MENU_ registros",
+          zeroRecords: "No hay registros",
+          info: "Mostrando _START_ a _END_ de _TOTAL_",
+          infoEmpty: "No hay registros disponibles",
+          infoFiltered: "(filtrado de _MAX_ registros totales)",
+          search: "Buscar:",
+          paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
         }
       });
-    });
-
-    // Modal AJAX para editar
-    $('#editarHorarioModal').on('show.bs.modal', function (event) {
-      var button = $(event.relatedTarget)
-      var horarioId = button.data('id')
-      var modal = $(this)
-      if (horarioId) {
-        $.get("{% url 'horarios_edit' 99999 %}".replace("99999", horarioId), function(data) {
-          modal.find('#modalHorarioContent').html(data)
-        })
-      }
-    });
-  </script>
+    } else {
+      console.warn('DataTables no se inicializa porque la tabla no tiene filas de datos.');
+    }
+  })();
+</script>
 </body>
 </html>
