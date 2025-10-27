@@ -75,6 +75,7 @@
         <div class="navbar-brand d-flex align-items-center gap-3">
           <i class="fa-solid fa-table text-success"></i>
           <span class="fs-4">Reporte de Asistencia</span>
+          <div data-autorefresh-host></div> 
         </div>
         <div>
           <a href="{% url 'reloj_dashboard' %}" class="btn btn-outline-secondary btn-sm">
@@ -210,5 +211,7 @@
     });
   });
 </script>
+<script src="{% static 'reloj/js/autorefresh.js' %}"></script>
+
 </body>
 </html>
