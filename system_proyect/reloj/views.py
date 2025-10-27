@@ -1,29 +1,157 @@
+# ─────────────────────────────────────────────────────────────
+# VIEWS · RELOJ (Asistencia)
+# ─────────────────────────────────────────────────────────────
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db import connections
 from django.urls import reverse
 from django import forms
-from datetime import datetime
+from datetime import datetime, time
+# REEMPLAZA cualquier import de make_naive por este:
+from django.utils import timezone
+
+
 from .models import EmployeeSchedule
 from .forms import EmployeeScheduleForm
 
-# Utilidad: obtener lista de empleados reales desde zkbiotime
+FMT_HHMM = "%H:%M"
+
+def _to_hhmm(val):
+    """
+    Normaliza distintos tipos (None/time/datetime/str) a 'HH:MM'.
+    - Si es datetime aware -> lo paso a hora local y formateo.
+    - Si es datetime naive  -> formateo directo (sin make_naive).
+    """
+    if val is None:
+        return None
+
+    # time -> HH:MM
+    if isinstance(val, time):
+        return val.strftime(FMT_HHMM)
+
+    # datetime (aware o naive)
+    if isinstance(val, datetime):
+        dt = val
+        try:
+            if timezone.is_aware(dt):
+                dt = timezone.localtime(dt)  # convierte a tz local conservando awareness
+            # ahora formateamos (funciona para aware o naive)
+            return dt.strftime(FMT_HHMM)
+        except Exception:
+            # fallback muy seguro por si llega un tipo raro
+            return dt.replace(tzinfo=None).strftime(FMT_HHMM)
+
+    # str -> intenta normalizar a HH:MM
+    if isinstance(val, str):
+        s = val.strip()
+        if len(s) >= 5 and s[2] == ':':  # 'HH:MM...' -> corta a HH:MM
+            return s[:5]
+        for pat in ("%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
+            try:
+                return datetime.strptime(s, pat).strftime(FMT_HHMM)
+            except Exception:
+                continue
+        return s  # último recurso: deja la cadena como venga
+
+    # otros tipos
+    try:
+        return str(val)
+    except Exception:
+        return None
+
+
+def _parse_hhmm_to_dt(hhmm):
+    """
+    Convierte 'HH:MM' a datetime (fecha dummy de hoy) para poder restar/comparar.
+    """
+    if not hhmm:
+        return None
+    try:
+        return datetime.strptime(hhmm, FMT_HHMM)
+    except Exception:
+        return None
+
+
+def _mins_between(a_dt, b_dt):
+    """Minutos entre dos datetime (entero)."""
+    return int((b_dt - a_dt).total_seconds() // 60)
+
+
+def _sum_sched_minutes(segments):
+    """
+    Suma total de minutos programados en una lista de segmentos:
+    segments = [(in_hhmm, out_hhmm), ...]
+    Soporta turno partido (ej. mañana y tarde).
+    """
+    total = 0
+    for hh_in, hh_out in segments:
+        t_in = _parse_hhmm_to_dt(hh_in)
+        t_out = _parse_hhmm_to_dt(hh_out)
+        if t_in and t_out and t_out > t_in:
+            total += _mins_between(t_in, t_out)
+    return total
+
+
+def _first_in_last_out(segments):
+    """
+    A partir de los segmentos programados, retorna:
+    - primer_inicio (para color de llegada)
+    - ultimo_fin    (para color de salida)
+    Ambos como 'HH:MM'. Si no hay datos, (None, None).
+    """
+    starts = [_parse_hhmm_to_dt(s[0]) for s in segments if s and s[0]]
+    ends   = [_parse_hhmm_to_dt(s[1]) for s in segments if s and s[1]]
+    starts = [s for s in starts if s]
+    ends   = [e for e in ends if e]
+    if not starts or not ends:
+        return (None, None)
+    return (min(starts).strftime(FMT_HHMM), max(ends).strftime(FMT_HHMM))
+
+
+# ─────────────────────────────────────────────────────────────
+# Utilidad: obtener lista de empleados desde ZKBioTime (para combos)
+# ─────────────────────────────────────────────────────────────
 def get_empleados_zkbiotime():
+    """
+    Devuelve lista [(emp_code, 'Nombre Apellido')] para llenar dropdowns.
+    """
     with connections['zkbio_sqlserver'].cursor() as cursor:
-        cursor.execute("SELECT emp_code, first_name + ' ' + last_name AS nombre FROM dbo.personnel_employee ORDER BY first_name, last_name")
+        cursor.execute("""
+            SELECT emp_code, first_name + ' ' + last_name AS nombre
+            FROM dbo.personnel_employee
+            ORDER BY first_name, last_name
+        """)
         return cursor.fetchall()
 
-# DASHBOARD PRINCIPAL DE RELOJ
+
+# ─────────────────────────────────────────────────────────────
+# Dashboard principal y vistas base
+# ─────────────────────────────────────────────────────────────
 def dashboard(request):
+    """Renderiza el panel principal del módulo Reloj."""
     return render(request, 'reloj/dashboard.html')
 
+
 def grafica(request):
+    """Vista placeholder para futuras gráficas."""
     return render(request, 'reloj/grafica.html')
 
+
 def exportar_pdf(request):
+    """
+    Renderiza el template de reporte con flag 'pdf' (si lo usas para exportación).
+    """
     return render(request, 'reloj/reporte.html', {'pdf': True})
 
-# REPORTE DE ASISTENCIA PRINCIPAL
+
+# ─────────────────────────────────────────────────────────────
+# REPORTE: listado de marcas por día/empleado (SQL EXACTO)
+# ─────────────────────────────────────────────────────────────
 def reporte(request):
+    """
+    Reporte principal de marcas (string_agg de horas por día/empleado).
+    - Filtros: fecha_inicio / fecha_fin.
+    - SQL se mantiene EXACTO como lo compartiste.
+    """
     hoy = datetime.today()
     fecha_inicio_default = hoy.replace(day=1).strftime('%Y-%m-%d')
     fecha_fin_default = hoy.strftime('%Y-%m-%d')
@@ -34,6 +162,7 @@ def reporte(request):
     datos = []
     error = None
 
+    # Solo consulta si vienen ambas fechas (evita query sin filtros)
     if request.GET.get('fecha_inicio') and request.GET.get('fecha_fin'):
         query = f"""
         DECLARE @fechaInicio DATE = '{fecha_inicio}';
@@ -97,18 +226,26 @@ def reporte(request):
     return render(request, 'reloj/reporte.html', contexto)
 
 
-# LISTADO DE HORARIOS DE EMPLEADOS
+# ─────────────────────────────────────────────────────────────
+# CRUD de Horarios (con dropdown de empleados reales)
+# ─────────────────────────────────────────────────────────────
 def horarios_list(request):
+    """Listado de horarios configurados en tu formulario (ORM)."""
     horarios = EmployeeSchedule.objects.all().order_by('nombre', 'emp_code')
     return render(request, 'reloj/horarios_list.html', {'horarios': horarios})
 
-# AGREGAR HORARIO DE EMPLEADO (Dropdown empleados reales, autocompleta ID)
+
 def horarios_add(request):
+    """
+    Alta de horario:
+    - Dropdown con empleados reales (de ZKBioTime).
+    - Autocompleta emp_code.
+    """
     empleados = get_empleados_zkbiotime()
     EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [(e[0], f"{e[1]} ({e[0]})") for e in empleados]
 
     class EmployeeScheduleCustomForm(EmployeeScheduleForm):
-        nombre = forms.ChoiceField(
+        nombre = forms.choiceField(
             choices=EMPLEADOS_CHOICES,
             label="Empleado",
             widget=forms.Select(attrs={'class': 'form-select', 'id': 'id_nombre_dropdown'})
@@ -120,10 +257,10 @@ def horarios_add(request):
     if request.method == 'POST':
         form = EmployeeScheduleCustomForm(request.POST)
         if form.is_valid():
-            emp_code = form.cleaned_data['nombre']
+            emp_code = form.cleaned_data['nombre']  # del dropdown tomamos el code
             instance = form.save(commit=False)
             instance.emp_code = emp_code
-            # Guarda solo el nombre (sin el ID entre paréntesis)
+            # Guarda solo el nombre limpio (sin el "(code)")
             instance.nombre = dict(form.fields['nombre'].choices).get(emp_code, emp_code).split(' (')[0]
             instance.save()
             return redirect('horarios_list')
@@ -132,8 +269,12 @@ def horarios_add(request):
 
     return render(request, 'reloj/horario_form.html', {'form': form, 'modo': 'Agregar'})
 
-# EDITAR HORARIO DE EMPLEADO (Dropdown selecciona el empleado actual)
+
 def horarios_edit(request, pk):
+    """
+    Edición de horario:
+    - Preselecciona el empleado actual en el dropdown.
+    """
     horario = get_object_or_404(EmployeeSchedule, pk=pk)
     empleados = get_empleados_zkbiotime()
     EMPLEADOS_CHOICES = [('', '--- Selecciona ---')] + [(e[0], f"{e[1]} ({e[0]})") for e in empleados]
@@ -159,13 +300,16 @@ def horarios_edit(request, pk):
             return redirect('horarios_list')
     else:
         form = EmployeeScheduleCustomForm(instance=horario)
-        # Preselecciona el nombre (opción del dropdown) usando emp_code
-        form.fields['nombre'].initial = horario.emp_code
+        form.fields['nombre'].initial = horario.emp_code  # preselecciona
 
     return render(request, 'reloj/horario_form.html', {'form': form, 'modo': 'Editar'})
 
-# TEST SQL SERVER CONNECTION
+
+# ─────────────────────────────────────────────────────────────
+# Test de conexión a SQL Server (útil cuando falla el ODBC)
+# ─────────────────────────────────────────────────────────────
 def test_sqlserver_connection(request):
+    """Realiza una consulta mínima a ZKBioTime para validar la conexión."""
     try:
         with connections['zkbio_sqlserver'].cursor() as cursor:
             cursor.execute("SELECT TOP 1 * FROM dbo.personnel_employee")
@@ -176,25 +320,56 @@ def test_sqlserver_connection(request):
     return render(request, 'reloj/test_sql.html', {'mensaje': msg})
 
 
+# ─────────────────────────────────────────────────────────────
+# TIEMPO POR HORA (Jornada/Extras/Faltantes) · SQL EXACTO + horarios reales
+# ─────────────────────────────────────────────────────────────
 def tiempo_por_hora(request):
     """
-    Muestra primera/última marca por día/empleado usando el query original (sin modificar),
-    y calcula en Python: colores (entrada/salida) + tiempo extra/faltante.
-    Si no hay horario por empleado, usa defaults 07:00–15:00.
+    Calcula para cada empleado/día:
+    - Hora de entrada/salida reales (del SQL original).
+    - Colores de llegada/salida (comparado contra horario real).
+    - Tiempo extra / faltante (comparando total real vs total programado).
+    NOTA: El SQL NO se modifica; los horarios vienen del ORM (formulario).
     """
 
-    # 1) Fechas por defecto (mes actual)
+    # 1) Filtros por fecha + búsqueda q (empleado, depto o código)
     hoy = datetime.today()
     fecha_inicio_default = hoy.replace(day=1).strftime('%Y-%m-%d')
     fecha_fin_default = hoy.strftime('%Y-%m-%d')
 
     fecha_inicio = request.GET.get('fecha_inicio', fecha_inicio_default)
-    fecha_fin = request.GET.get('fecha_fin', fecha_fin_default)
+    fecha_fin    = request.GET.get('fecha_fin', fecha_fin_default)
+    q            = (request.GET.get('q') or "").strip()
 
     datos = []
     error = None
 
-    # 2) TU QUERY SIN CAMBIOS (copiado tal cual)
+    # 2) Mapa de horarios por emp_code desde tu formulario (soporta turno partido)
+    #    Ajusta nombres si tu modelo usa otros campos.
+    schedules_map = {}
+    try:
+        qs = EmployeeSchedule.objects.all().values(
+            'emp_code',
+            'entrada_manana', 'salida_manana',
+            'entrada_tarde', 'salida_tarde',
+        )
+        for obj in qs:
+            code = str(obj['emp_code']).strip()
+            segs = []
+            m_in  = _to_hhmm(obj.get('entrada_manana'))
+            m_out = _to_hhmm(obj.get('salida_manana'))
+            t_in  = _to_hhmm(obj.get('entrada_tarde'))
+            t_out = _to_hhmm(obj.get('salida_tarde'))
+            if m_in and m_out:
+                segs.append((m_in, m_out))
+            if t_in and t_out:
+                segs.append((t_in, t_out))
+            # Si no hay segmentos, el empleado quedará con defaults más abajo
+            schedules_map[code] = segs
+    except Exception as ex:
+        print(f"[WARN] No fue posible cargar horarios del ORM: {ex}")
+
+    # 3) SQL ORIGINAL (NO tocar)
     query = f"""
     DECLARE @fechaInicio DATE = '{fecha_inicio}';
     DECLARE @fechaFin DATE = '{fecha_fin}';
@@ -234,108 +409,99 @@ def tiempo_por_hora(request):
             rows = cursor.fetchall()
             columnas = [col[0] for col in cursor.description]
 
-            # === Depuración en consola ===
+            # Depuración útil
             print("==[Tiempo por Hora]==")
-            print(f"Rango: {fecha_inicio} -> {fecha_fin}")
+            print(f"Rango: {fecha_inicio} -> {fecha_fin} | q='{q}'")
             print(f"Total filas recibidas (SQL): {len(rows)}")
 
-            # Horario por defecto si no hay integración a calendario propio
-            H_ENTRADA_DEF = "07:00"
-            H_SALIDA_DEF  = "15:00"
-            fmt_hora = "%H:%M"
-
-            def fmt_dt_to_hhmm(dt_val):
-                """Convierte datetime/time/str a 'HH:MM' o None."""
-                if dt_val is None:
-                    return None
-                if isinstance(dt_val, str):
-                    # ya viene como cadena; intenta normalizar HH:MM
-                    try:
-                        return datetime.strptime(dt_val[:5], fmt_hora).strftime(fmt_hora)
-                    except Exception:
-                        # Último recurso: intenta parsear como datetime completo
-                        try:
-                            return datetime.strptime(dt_val, "%Y-%m-%d %H:%M:%S").strftime(fmt_hora)
-                        except Exception:
-                            return dt_val  # lo dejamos como viene
-                try:
-                    # Si viene datetime/time, formatea
-                    return dt_val.strftime(fmt_hora)
-                except Exception:
-                    return None
+            # Defaults si un empleado no tiene horario configurado
+            DEF_IN, DEF_OUT = "07:00", "15:00"
 
             for i, r in enumerate(rows):
                 row = dict(zip(columnas, r))
 
-                # Normaliza horas reales a "HH:MM"
-                h_entrada_real = fmt_dt_to_hhmm(row.get('Hora_Entrada'))
-                h_salida_real  = fmt_dt_to_hhmm(row.get('Hora_Salida'))
+                # Campos básicos
+                emp_code = str(row.get('ID_Empleado') or "").strip()
+                empleado = (row.get('Empleado') or "").strip()
+                depto    = (row.get('Departamento') or "").strip()
 
-                # Horario programado (defaults; NO tocamos el SQL)
-                h_entrada_prog = H_ENTRADA_DEF
-                h_salida_prog  = H_SALIDA_DEF
+                # Normaliza horas reales a HH:MM
+                h_in_real  = _to_hhmm(row.get('Hora_Entrada'))
+                h_out_real = _to_hhmm(row.get('Hora_Salida'))
 
-                color_entrada_class = ""   # 'hora-verde' | 'hora-rojo'
-                color_salida_class  = ""   # 'hora-verde' | 'hora-rojo' | 'hora-azul'
-                tiempo_extra = ""          # '1h 25m' / '25 min'
-                tiempo_faltante = ""       # idem
+                # Segmentos programados del empleado (1 o 2 tramos)
+                segs = schedules_map.get(emp_code) or [(DEF_IN, DEF_OUT)]
+
+                # Para colores: comparamos contra primer_inicio y ultimo_fin
+                prog_first_in, prog_last_out = _first_in_last_out(segs)
+                # Para extra/faltante: suma de todos los tramos
+                prog_total_mins = _sum_sched_minutes(segs)
+
+                color_in_class  = ""
+                color_out_class = ""
+                t_extra = ""
+                t_falt  = ""
 
                 try:
-                    if h_entrada_real and h_salida_real:
-                        t_entrada_real = datetime.strptime(h_entrada_real, fmt_hora)
-                        t_entrada_prog = datetime.strptime(h_entrada_prog, fmt_hora)
-                        t_salida_real  = datetime.strptime(h_salida_real,  fmt_hora)
-                        t_salida_prog  = datetime.strptime(h_salida_prog,  fmt_hora)
+                    if h_in_real and h_out_real and prog_first_in and prog_last_out:
+                        tin_real  = _parse_hhmm_to_dt(h_in_real)
+                        tin_prog  = _parse_hhmm_to_dt(prog_first_in)
+                        tout_real = _parse_hhmm_to_dt(h_out_real)
+                        tout_prog = _parse_hhmm_to_dt(prog_last_out)
 
-                        # Colores llegada
-                        color_entrada_class = "hora-verde" if t_entrada_real <= t_entrada_prog else "hora-rojo"
+                        # LLEGADA: Verde si llega antes/igual; Rojo si tarde
+                        color_in_class = "hora-verde" if tin_real and tin_prog and tin_real <= tin_prog else "hora-rojo"
 
-                        # Colores salida
-                        if t_salida_real > t_salida_prog:
-                            color_salida_class = "hora-azul"
-                        elif t_salida_real == t_salida_prog:
-                            color_salida_class = "hora-verde"
-                        else:
-                            color_salida_class = "hora-rojo"
+                        # SALIDA: Azul si se queda más; Verde si igual; Rojo si se va antes
+                        if tout_real and tout_prog:
+                            if tout_real > tout_prog:
+                                color_out_class = "hora-azul"
+                            elif tout_real == tout_prog:
+                                color_out_class = "hora-verde"
+                            else:
+                                color_out_class = "hora-rojo"
 
-                        # Diferencias en minutos (real vs programado)
-                        total_real = (t_salida_real - t_entrada_real).total_seconds() // 60
-                        total_prog = (t_salida_prog - t_entrada_prog).total_seconds() // 60
-                        diferencia = int(total_real - total_prog)
-
-                        if diferencia > 0:
-                            horas = diferencia // 60
-                            minutos = diferencia % 60
-                            tiempo_extra = f"{horas}h {minutos}m" if horas else f"{minutos} min"
-                        elif diferencia < 0:
-                            diferencia_abs = abs(diferencia)
-                            horas = diferencia_abs // 60
-                            minutos = diferencia_abs % 60
-                            tiempo_faltante = f"{horas}h {minutos}m" if horas else f"{diferencia_abs} min"
-
+                        # Extra/Faltante por minutos totales (real vs programado)
+                        if tin_real and tout_real:
+                            total_real_mins = _mins_between(tin_real, tout_real)
+                            dif = total_real_mins - prog_total_mins
+                            if dif > 0:
+                                h, m = divmod(dif, 60)
+                                t_extra = f"{h}h {m}m" if h else f"{m} min"
+                            elif dif < 0:
+                                dif = abs(dif)
+                                h, m = divmod(dif, 60)
+                                t_falt = f"{h}h {m}m" if h else f"{dif} min"
                 except Exception as ex:
-                    print(f"[WARN] Fila #{i} con error de cálculo: {ex}")
-                    color_entrada_class = ""
-                    color_salida_class = ""
-                    tiempo_extra = ""
-                    tiempo_faltante = ""
+                    print(f"[WARN] Fila #{i} cálculo: {ex}")
 
-                # Adjunta campos usados por el template
-                row['Hora_Entrada']        = h_entrada_real or "—"
-                row['Hora_Salida']         = h_salida_real or "—"
-                row['Color_Entrada_Class'] = color_entrada_class
-                row['Color_Salida_Class']  = color_salida_class
-                row['Tiempo_Extra']        = tiempo_extra
-                row['Tiempo_Faltante']     = tiempo_faltante
+                # Filtro de búsqueda 'q' (servidor): código, nombre o depto
+                if q:
+                    qlow = q.lower()
+                    if not (qlow in emp_code.lower() or qlow in empleado.lower() or qlow in depto.lower()):
+                        continue
+
+                # Campos finales para el template
+                row['Hora_Entrada']        = h_in_real  or "—"
+                row['Hora_Salida']         = h_out_real or "—"
+                row['Color_Entrada_Class'] = color_in_class
+                row['Color_Salida_Class']  = color_out_class
+                row['Tiempo_Extra']        = t_extra
+                row['Tiempo_Faltante']     = t_falt
+
+                # (Opcional) Exponer primer y último horario aplicado (útil para depurar/mostrar)
+                row['Horario_Primera_Entrada'] = prog_first_in or DEF_IN
+                row['Horario_Ultima_Salida']   = prog_last_out or DEF_OUT
 
                 datos.append(row)
 
-            # Muestras
+            # Muestras a consola
             print(f"Total filas procesadas (vista): {len(datos)}")
             for j, r0 in enumerate(datos[:5]):
                 print(f"[{j}] emp={r0.get('ID_Empleado')} fecha={r0.get('Fecha')} "
                       f"in={r0.get('Hora_Entrada')} out={r0.get('Hora_Salida')} "
-                      f"extra={r0.get('Tiempo_Extra')} falt={r0.get('Tiempo_Faltante')}")
+                      f"extra={r0.get('Tiempo_Extra')} falt={r0.get('Tiempo_Faltante')} | "
+                      f"prog_in={r0.get('Horario_Primera_Entrada')} prog_out={r0.get('Horario_Ultima_Salida')}")
 
             if not datos:
                 print("⚠️ No llegaron registros (SQL vacío o filtros dejaron 0 filas).")
@@ -349,6 +515,7 @@ def tiempo_por_hora(request):
         'error': error,
         'fecha_inicio': fecha_inicio,
         'fecha_fin': fecha_fin,
+        'q': q,
         'total_filas': len(datos),
     }
     return render(request, 'reloj/tiempo_por_hora.html', contexto)
