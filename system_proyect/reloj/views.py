@@ -142,7 +142,7 @@ def grafica_detalle(request):
     Devuelve en JSON el detalle de empleados/días para un estado dado:
     - estado: 'PRESENTE' o 'AUSENTE'
     - fecha_inicio, fecha_fin (YYYY-MM-DD)
-    Respuesta: rows = [{emp_code, empleado, fecha, marcas}, ...]
+    Respuesta: {"success": bool, "error": str|None, "rows": [{emp_code, empleado, fecha, marcas}, ...]}
     """
     estado = (request.GET.get('estado') or 'PRESENTE').upper()
     hoy = datetime.today()
@@ -151,67 +151,81 @@ def grafica_detalle(request):
     fecha_inicio = request.GET.get('fecha_inicio', fi_def)
     fecha_fin    = request.GET.get('fecha_fin', ff_def)
 
-    rows_out = []
-    error = None
+    rows_out, error = [], None
 
-    query = f"""
-DECLARE @fechaInicio DATE = '{fecha_inicio}';
-DECLARE @fechaFin DATE = '{fecha_fin}';
+    if estado == 'PRESENTE':
+        # Un registro por empleado/día, con TODAS las marcas ordenadas
+        query = f"""
+        DECLARE @fechaInicio DATE = '{fecha_inicio}';
+        DECLARE @fechaFin    DATE = '{fecha_fin}';
 
-;WITH fechas AS (
-    SELECT @fechaInicio AS Fecha
-    UNION ALL
-    SELECT DATEADD(DAY, 1, Fecha)
-    FROM fechas
-    WHERE Fecha < @fechaFin
-),
-marcas AS (
-    SELECT
-        emp_code,
-        CONVERT(DATE, punch_time) AS fecha,
-        CONVERT(VARCHAR(5), CAST(punch_time AS TIME), 108) AS hora
-    FROM dbo.iclock_transaction
-    WHERE punch_time IS NOT NULL
-)
-SELECT 
-    e.emp_code AS ID_Empleado,
-    e.first_name + ' ' + e.last_name AS Empleado,
-    p.position_code AS Cargo,
-    f.Fecha,
-    ISNULL(
-        (SELECT STRING_AGG(m.hora, ',')
-         FROM marcas m
-         WHERE m.emp_code = e.emp_code AND m.fecha = f.Fecha),
-        ''
-    ) AS Marcas,
-    COUNT(m.hora) AS Cantidad_Marcas,
-    CASE 
-        WHEN COUNT(m.hora) = 0 THEN 'AUSENTE'
-        ELSE 'PRESENTE'
-    END AS Estado
-FROM fechas f
-CROSS JOIN dbo.personnel_employee e
-LEFT JOIN dbo.personnel_position p ON e.position_id = p.position_code
-LEFT JOIN marcas m ON m.emp_code = e.emp_code AND m.fecha = f.Fecha
-WHERE f.Fecha BETWEEN @fechaInicio AND @fechaFin
-GROUP BY e.emp_code, e.first_name, e.last_name, p.position_code, f.Fecha
-ORDER BY e.emp_code, f.Fecha
-OPTION (MAXRECURSION 0);
-"""
+        SELECT
+            e.emp_code                                   AS emp_code,
+            (e.first_name + ' ' + e.last_name)           AS empleado,
+            CONVERT(DATE, t.punch_time)                  AS fecha,
+            STRING_AGG(CONVERT(VARCHAR(5), CAST(t.punch_time AS TIME), 108), ', ')
+                WITHIN GROUP (ORDER BY t.punch_time)     AS marcas
+        FROM dbo.iclock_transaction t
+        INNER JOIN dbo.personnel_employee e ON e.emp_code = t.emp_code
+        WHERE t.punch_time >= @fechaInicio
+          AND t.punch_time <  DATEADD(DAY, 1, @fechaFin)
+        GROUP BY e.emp_code, e.first_name, e.last_name, CONVERT(DATE, t.punch_time)
+        ORDER BY fecha, e.emp_code;
+        """
+        try:
+            with connections['zkbio_sqlserver'].cursor() as cursor:
+                cursor.execute(query)
+                for emp_code, empleado, fecha, marcas in cursor.fetchall():
+                    rows_out.append({
+                        "emp_code": str(emp_code),
+                        "empleado": empleado,
+                        "fecha": fecha.strftime("%Y-%m-%d"),
+                        "marcas": marcas or ""
+                    })
+        except Exception as e:
+            error = str(e)
 
+    else:  # AUSENTE
+        # Universo de empleados x fechas MENOS los que marcaron
+        query = f"""
+        DECLARE @fechaInicio DATE = '{fecha_inicio}';
+        DECLARE @fechaFin    DATE = '{fecha_fin}';
 
-    try:
-        with connections['zkbio_sqlserver'].cursor() as cursor:
-            cursor.execute(query)
-            for emp_code, empleado, fecha, marcas in cursor.fetchall():
-                rows_out.append({
-                    "emp_code": str(emp_code),
-                    "empleado": empleado,
-                    "fecha": fecha.strftime("%Y-%m-%d"),
-                    "marcas": marcas or ""
-                })
-    except Exception as e:
-        error = str(e)
+        ;WITH fechas AS (
+            SELECT @fechaInicio AS f
+            UNION ALL
+            SELECT DATEADD(DAY, 1, f) FROM fechas WHERE f < @fechaFin
+        ),
+        presentes AS (
+            SELECT DISTINCT t.emp_code, CONVERT(DATE, t.punch_time) AS fecha
+            FROM dbo.iclock_transaction t
+            WHERE t.punch_time >= @fechaInicio
+              AND t.punch_time <  DATEADD(DAY, 1, @fechaFin)
+        )
+        SELECT
+            e.emp_code                         AS emp_code,
+            (e.first_name + ' ' + e.last_name) AS empleado,
+            f.f                                AS fecha
+        FROM dbo.personnel_employee e
+        CROSS JOIN fechas f
+        LEFT JOIN presentes p
+               ON p.emp_code = e.emp_code AND p.fecha = f.f
+        WHERE p.emp_code IS NULL
+        ORDER BY f.f, e.emp_code
+        OPTION (MAXRECURSION 0);
+        """
+        try:
+            with connections['zkbio_sqlserver'].cursor() as cursor:
+                cursor.execute(query)
+                for emp_code, empleado, fecha in cursor.fetchall():
+                    rows_out.append({
+                        "emp_code": str(emp_code),
+                        "empleado": empleado,
+                        "fecha": fecha.strftime("%Y-%m-%d"),
+                        "marcas": ""  # ausentes no tienen marcas
+                    })
+        except Exception as e:
+            error = str(e)
 
     return JsonResponse({"success": error is None, "error": error, "rows": rows_out})
 
@@ -223,7 +237,7 @@ def grafica(request):
     """
     hoy = datetime.today()
     fecha_inicio_default = hoy.replace(day=1).strftime('%Y-%m-%d')
-    fecha_fin_default = hoy.strftime('%Y-%m-%d')
+    fecha_fin_default    = hoy.strftime('%Y-%m-%d')
 
     fecha_inicio = request.GET.get('fecha_inicio', fecha_inicio_default)
     fecha_fin    = request.GET.get('fecha_fin', fecha_fin_default)
@@ -234,7 +248,7 @@ def grafica(request):
 
     query = f"""
     DECLARE @fechaInicio DATE = '{fecha_inicio}';
-    DECLARE @fechaFin DATE = '{fecha_fin}';
+    DECLARE @fechaFin    DATE = '{fecha_fin}';
 
     ;WITH fechas AS (
         SELECT @fechaInicio AS Fecha
@@ -247,13 +261,17 @@ def grafica(request):
         SELECT
             e.emp_code,
             f.Fecha,
-            CASE WHEN COUNT(t.punch_time) = 0 THEN 'AUSENTE' ELSE 'PRESENTE' END AS Estado
+            CASE 
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM dbo.iclock_transaction t
+                    WHERE t.emp_code = e.emp_code
+                      AND CONVERT(DATE, t.punch_time) = f.Fecha
+                )
+                THEN 'PRESENTE' ELSE 'AUSENTE'
+            END AS Estado
         FROM fechas f
         CROSS JOIN dbo.personnel_employee e
-        LEFT JOIN dbo.iclock_transaction t
-            ON t.emp_code = e.emp_code
-           AND CONVERT(DATE, t.punch_time) = f.Fecha
-        GROUP BY e.emp_code, f.Fecha
     )
     SELECT Estado, COUNT(*) AS Total
     FROM estado_dia
@@ -264,12 +282,11 @@ def grafica(request):
     try:
         with connections['zkbio_sqlserver'].cursor() as cursor:
             cursor.execute(query)
-            rows = cursor.fetchall()
-            # rows: [('AUSENTE', 123), ('PRESENTE', 456)] (orden puede variar)
-            for estado, total in rows:
-                if (estado or '').upper() == 'PRESENTE':
+            for estado, total in cursor.fetchall():
+                est = (estado or '').upper()
+                if est == 'PRESENTE':
                     presentes = int(total or 0)
-                elif (estado or '').upper() == 'AUSENTE':
+                elif est == 'AUSENTE':
                     ausentes = int(total or 0)
     except Exception as e:
         error = f"Error al consultar la base de datos: {str(e)}"
