@@ -10,19 +10,20 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'reloj/css/reloj.css' %}">
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css"/>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css" />
 
   <style>
-    .hora-rojo  { background:#f8d7da !important; color:#842029 !important; font-weight:600; }
-    .hora-verde { background:#d1e7dd !important; color:#0f5132 !important; font-weight:600; }
-    .hora-azul  { background:#3b8eea !important; color:#fff !important;   font-weight:600; }
-    .chip { padding: 2px 6px; border-radius: .25rem; display: inline-block; }
+    .hora-rojo   { background:#f8d7da !important; color:#842029 !important; font-weight:600; }
+    .hora-verde  { background:#d1e7dd !important; color:#0f5132 !important; font-weight:600; }
+    .hora-azul   { background:#3b8eea !important; color:#fff !important;     font-weight:600; }
+    .chip        { padding:2px 6px; border-radius:.25rem; display:inline-block; }
+    .legend .chip{ font-weight:600; }
   </style>
 </head>
 <body class="bg-light">
 
 <div class="d-flex" id="wrapper">
-  <!-- Sidebar (igual al de Reporte de Asistencia) -->
+  <!-- Sidebar -->
   <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
     <div class="d-flex align-items-center mb-3">
       <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
@@ -30,36 +31,20 @@
     </div>
     <hr class="text-secondary">
     <ul class="nav nav-pills flex-column mb-auto">
-      <li>
-        <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white">
-          <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
-          <i class="fa-solid fa-table me-2"></i> Generar Reporte
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
-          <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'horarios_list' %}" class="nav-link text-white">
-          <i class="fa-solid fa-user-clock me-2"></i> Horarios de Empleados
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white active">
-          <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
-        </a>
-      </li>
-      <li>
-        <a href="{% url 'menu' %}" class="nav-link">
-          <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
-        </a>
-      </li>
+      <li><a href="{% url 'reloj_dashboard' %}" class="nav-link text-white">
+        <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)</a></li>
+      <li><a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
+        <i class="fa-solid fa-table me-2"></i> Generar Reporte</a></li>
+      <li><a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
+        <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica</a></li>
+      <li><a href="{% url 'reloj_plantilla_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-layer-group me-2"></i> Plantillas de Horario</a></li>
+      <li><a href="{% url 'horarios_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-user-clock me-2"></i> Asignaciones de Horario</a></li>
+      <li><a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white active">
+        <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora</a></li>
+      <li><a href="{% url 'menu' %}" class="nav-link">
+        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú</a></li>
     </ul>
     <hr class="text-secondary">
     <div class="dropdown">
@@ -84,7 +69,7 @@
         <div class="navbar-brand d-flex align-items-center gap-3">
           <i class="fa-solid fa-hourglass-half text-primary"></i>
           <span class="fs-4">Reporte Tiempo por Hora</span>
-          <div data-autorefresh-host></div> 
+          <div data-autorefresh-host></div>
         </div>
         <div>
           <a href="{% url 'reloj_dashboard' %}" class="btn btn-outline-secondary btn-sm">
@@ -93,14 +78,21 @@
         </div>
       </div>
     </nav>
-    <!-- /Header -->
 
     <div class="container py-4">
       {% if error %}
-        <div class="alert alert-danger">{{ error }}</div>
+      <div class="alert alert-danger">{{ error }}</div>
       {% endif %}
 
-      <!-- Filtros por fecha + búsqueda (GET) -->
+      <!-- Leyenda rápida -->
+      <div class="legend alert alert-secondary py-2">
+        <span class="me-3"><span class="chip hora-verde">HH:MM</span> A tiempo</span>
+        <span class="me-3"><span class="chip hora-rojo">HH:MM</span> Tarde/Salida antes</span>
+        <span class="me-3"><span class="chip hora-azul">HH:MM</span> Se quedó más</span>
+        <span class="ms-2"><span class="badge bg-dark">No programado</span> sin plantilla/regla ese día</span>
+      </div>
+
+      <!-- Filtros -->
       <form method="get" class="row g-3 align-items-end mb-4">
         <div class="col-auto">
           <label for="fecha_inicio" class="form-label mb-0">Fecha inicio</label>
@@ -112,12 +104,10 @@
         </div>
         <div class="col-auto">
           <label for="q" class="form-label mb-0">Buscar</label>
-          <input type="text" id="q" name="q" value="{{ q }}" class="form-control" placeholder="Empleado, Código o Depto">
+          <input type="text" id="q" name="q" value="{{ q }}" class="form-control" placeholder="Empleado, Código o Cargo">
         </div>
         <div class="col-auto">
-          <button type="submit" class="btn btn-primary">
-            <i class="fa-solid fa-search"></i> Aplicar
-          </button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-search"></i> Aplicar</button>
           <a href="{% url 'tiempo_por_hora' %}" class="btn btn-outline-secondary">Limpiar</a>
         </div>
       </form>
@@ -130,18 +120,20 @@
               <th>ID Empleado</th>
               <th>Empleado</th>
               <th>Fecha</th>
+              <th>Horario Prog.</th>      <!-- NUEVA -->
               <th>Hora Entrada</th>
               <th>Hora Salida</th>
-              <th>Marcas del Día</th>   <!-- NUEVA -->
+              <th>Marcas del Día</th>
               <th>Cantidad Marcas</th>
               <th>Tiempo Extra</th>
               <th>Tiempo Faltante</th>
             </tr>
-            <!-- Filtros por columna (DataTables) -->
+            <!-- Filtros por columna -->
             <tr>
               <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="Filtrar" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="AAAA-MM-DD" /></th>
+              <th><input type="text" class="form-control form-control-sm" placeholder="HH:MM → HH:MM" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="HH:MM" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="HH:MM" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="06:54, 12:03..." /></th>
@@ -157,10 +149,20 @@
                 <td>{{ row.ID_Empleado }}</td>
                 <td>{{ row.Empleado }}</td>
                 <td>{{ row.Fecha|date:"Y-m-d" }}</td>
+
+                <!-- Horario Programado (primera entrada → última salida) + badge si no programado -->
+                <td>
+                  {% if row.No_Programado %}
+                    <span class="badge bg-dark">No programado</span>
+                  {% else %}
+                    {{ row.Horario_Primera_Entrada }} &rarr; {{ row.Horario_Ultima_Salida }}
+                  {% endif %}
+                </td>
+
                 <td class="{{ row.Color_Entrada_Class }}">{{ row.Hora_Entrada }}</td>
                 <td class="{{ row.Color_Salida_Class  }}">{{ row.Hora_Salida }}</td>
 
-                <!-- Marcas del Día: todas separadas por coma; 1ª y última coloreadas -->
+                <!-- Marcas del Día (1ª y última coloreadas) -->
                 <td>
                   {% if row.Marcas_Dia and row.Marcas_Dia|length > 0 %}
                     {% for m in row.Marcas_Dia %}
@@ -183,8 +185,8 @@
               {% endfor %}
             {% else %}
               <tr>
-                <!-- ¡OJO! 9 columnas -->
-                <td colspan="9" class="text-center text-muted py-3">No hay registros disponibles.</td>
+                <!-- 10 columnas -->
+                <td colspan="10" class="text-center text-muted py-3">No hay registros disponibles.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -232,6 +234,5 @@
   });
 </script>
 <script src="{% static 'reloj/js/autorefresh.js' %}"></script>
-
 </body>
 </html>

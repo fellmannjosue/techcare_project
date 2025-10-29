@@ -38,11 +38,21 @@
                         <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
                     </a>
                 </li>
+
+                <!-- NUEVO: Plantillas de horario -->
                 <li>
-                    <a href="{% url 'horarios_list' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-user-clock me-2"></i> Horarios de Empleados
+                    <a href="{% url 'reloj_plantilla_list' %}" class="nav-link text-white">
+                        <i class="fa-solid fa-layer-group me-2"></i> Plantillas de Horario
                     </a>
                 </li>
+
+                <!-- Renombrado: Asignaciones (antes Horarios de Empleados) -->
+                <li>
+                    <a href="{% url 'horarios_list' %}" class="nav-link text-white">
+                        <i class="fa-solid fa-user-clock me-2"></i> Asignaciones de Horario
+                    </a>
+                </li>
+
                 <li>
                     <a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white">
                         <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
@@ -101,7 +111,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="col-md-6 col-lg-4">
                         <div class="card h-100 shadow-sm menu-card"
                             onclick="window.location='{% url 'reloj_grafica' %}'">
@@ -112,19 +122,32 @@
                             </div>
                         </div>
                     </div>
-              
 
+                    <!-- NUEVO: Plantillas -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 shadow-sm menu-card"
+                            onclick="window.location='{% url 'reloj_plantilla_list' %}'">
+                            <div class="card-body text-center">
+                                <i class="fa-solid fa-layer-group fa-2x text-secondary mb-2"></i>
+                                <div class="fw-bold mb-1">Plantillas de Horario</div>
+                                <div class="text-muted small">Define reglas por día (L-D) y turnos</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Renombrado: Asignaciones -->
                     <div class="col-md-6 col-lg-4">
                         <div class="card h-100 shadow-sm menu-card"
                             onclick="window.location='{% url 'horarios_list' %}'">
                             <div class="card-body text-center">
                                 <i class="fa-solid fa-user-clock fa-2x text-warning mb-2"></i>
-                                <div class="fw-bold mb-1">Horarios de Empleados</div>
-                                <div class="text-muted small">Agregar o modificar horarios</div>
+                                <div class="fw-bold mb-1">Asignaciones de Horario</div>
+                                <div class="text-muted small">Vincula empleado ↔ plantilla (con fechas)</div>
                             </div>
                         </div>
                     </div>
-                          <div class="col-md-6 col-lg-4">
+
+                    <div class="col-md-6 col-lg-4">
                         <div class="card h-100 shadow-sm menu-card"
                             onclick="window.location='{% url 'tiempo_por_hora' %}'">
                             <div class="card-body text-center">
@@ -134,15 +157,16 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
+
                 <div class="alert alert-secondary mt-4" role="alert">
-                    Selecciona una opción para generar tu reporte, visualizar la gráfica de asistencias o configurar los
-                    horarios personalizados de empleados.
+                    Selecciona una opción para generar reportes, ver estadísticas o administrar
+                    <b>Plantillas</b> y <b>Asignaciones de Horario</b> para los empleados.
                 </div>
             </div>
         </div>
     </div>
+
     <!-- JS scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>

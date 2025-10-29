@@ -4,112 +4,158 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>{{ modo }} Horario de Empleado</title>
+  <title>{{ modo }} Asignación de Horario (Plantilla)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap / FA / SweetAlert -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="{% static 'reloj/css/reloj.css' %}">
+
+
   <style>
-    .card {
-      max-width: 550px;
-      margin: 50px auto 30px auto;
-      border-radius: 15px;
-    }
-
-    .form-label {
-      font-weight: 500;
-    }
-
-    .form-control:read-only {
-      background: #f6f6f6;
-    }
-
-    @media (max-width: 800px) {
-      .card {
-        margin: 25px auto;
-      }
-    }
+    .card { max-width: 650px; margin: 50px auto 30px auto; border-radius: 14px; }
+    .form-label { font-weight: 500; }
+    .form-control:read-only { background: #f6f6f6; }
+    @media (max-width: 800px) { .card { margin: 25px auto; } }
   </style>
 </head>
 
 <body class="bg-light">
-  <div class="d-flex" id="wrapper">
-    <div class="flex-grow-1">
-      <div class="container py-4">
-        <div class="card shadow">
-          <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">{{ modo }} Horario de Empleado</h5>
+<div class="d-flex" id="wrapper">
+  <div class="flex-grow-1">
+    <div class="container py-4">
+      <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="fa-solid fa-user-clock me-2"></i>{{ modo }} Asignación de Horario (Plantilla)
+          </h5>
+        </div>
+
+        <form method="post"
+              id="{% if modo == 'Agregar' %}formAgregarAsignacion{% else %}formEditarAsignacion{% endif %}"
+              action="{% if modo == 'Agregar' %}{% url 'horarios_add' %}{% else %}{% url 'horarios_edit' asignacion.pk %}{% endif %}"
+              class="p-4 needs-validation" novalidate>
+
+          {% csrf_token %}
+
+          <!-- Empleado (emp_code) -->
+          <div class="mb-3">
+            <label for="id_emp_dropdown" class="form-label">Empleado</label>
+            {{ form.emp_code }}
+            <div class="form-text">Seleccionado: <span id="selected-employee-label">—</span></div>
           </div>
 
-          <form method="post" id="{% if modo == 'Agregar' %}formAgregarHorario{% else %}formEditarHorario{% endif %}"
-            action="{% if modo == 'Agregar' %}{% url 'horarios_add' %}{% else %}{% url 'horarios_edit' horario.pk %}{% endif %}"
-            class="p-4 needs-validation" novalidate>
+          <!-- Nombre empleado (relleno automático desde la etiqueta del select) -->
+          <div class="mb-3">
+            <label for="{{ form.nombre_empleado.id_for_label }}" class="form-label">Nombre Empleado</label>
+            {{ form.nombre_empleado }}
+            <div class="form-text">Se autocompleta al elegir el empleado.</div>
+          </div>
 
-            {% csrf_token %}
+          <!-- Plantilla -->
+          <div class="mb-3">
+            <label for="{{ form.template.id_for_label }}" class="form-label">Plantilla Asignada</label>
+            {{ form.template }}
+          </div>
 
-            <!-- Empleado Dropdown (label: "emp_code - Nombre") -->
-            <div class="mb-3">
-              <label for="id_nombre_dropdown" class="form-label">Empleado</label>
-              {{ form.nombre }}
-              <div class="form-text">Seleccionado: <span id="selected-employee-label">—</span></div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="{{ form.fecha_inicio.id_for_label }}" class="form-label">Vigente Desde</label>
+              {{ form.fecha_inicio }}
             </div>
-
-            <!-- ID Empleado (emp_code) autocompletado -->
-            <div class="mb-3">
-              <label for="id_emp_code" class="form-label">ID Empleado</label>
-              {{ form.emp_code }}
+            <div class="col-md-6 mb-3">
+              <label for="{{ form.fecha_fin.id_for_label }}" class="form-label">Vigente Hasta</label>
+              {{ form.fecha_fin }}
+              <div class="form-text">Deja en blanco si es indefinido.</div>
             </div>
+          </div>
 
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.entrada_manana.id_for_label }}" class="form-label">Entrada Mañana</label>
-                {{ form.entrada_manana }}
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.salida_manana.id_for_label }}" class="form-label">Salida Mañana</label>
-                {{ form.salida_manana }}
-              </div>
-            </div>
+          <!-- Activo -->
+          <div class="mb-3 form-check">
+            {{ form.activo }}
+            <label for="{{ form.activo.id_for_label }}" class="form-check-label ms-1">Activo</label>
+          </div>
 
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.entrada_tarde.id_for_label }}" class="form-label">Entrada Tarde</label>
-                {{ form.entrada_tarde }}
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.salida_tarde.id_for_label }}" class="form-label">Salida Tarde</label>
-                {{ form.salida_tarde }}
-              </div>
-            </div>
+          <div class="alert alert-secondary py-2">
+            <small>
+              <ul class="mb-0">
+                <li>Esta asignación controla el **horario programado** por día según la <b>plantilla</b>.</li>
+                <li>Si varias asignaciones se solapan, se prioriza la de <b>fecha de inicio más reciente</b>.</li>
+                <li>En <b>Tiempo por Hora</b>, se comparan las marcas reales vs. los <b>segmentos</b> de la plantilla (mañana/tarde).</li>
+              </ul>
+            </small>
+          </div>
 
-            <div class="d-flex justify-content-end gap-2">
-              <button type="submit" class="btn btn-success px-4">{{ modo }}</button>
-              <a href="{% url 'horarios_list' %}" class="btn btn-secondary">Cancelar</a>
-            </div>
-          </form>
-        </div>
+          <div class="d-flex justify-content-end gap-2">
+            <button type="submit" class="btn btn-success px-4">
+              <i class="fa-solid fa-save me-2"></i>{{ modo }}
+            </button>
+            <a href="{% url 'horarios_list' %}" class="btn btn-secondary">Cancelar</a>
+          </div>
+        </form>
       </div>
     </div>
   </div>
+</div>
 
-  <!-- JS (orden correcto) -->
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<!-- JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  {% if messages %}
-  <script>
-    window.django_messages = [
-      {% for message in messages %}
-    "{{ message|escapejs }}"{% if not forloop.last %}, {% endif %}
-    {% endfor %}
-  ];
-  </script>
-  {% endif %}
+{% if messages %}
+<script>
+  window.django_messages = [{% for message in messages %}"{{ message|escapejs }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
+  if (window.django_messages.length){
+    Swal.fire({icon:'success', title:'Listo', html: window.django_messages.join('<br>'), timer: 2500, showConfirmButton:false});
+  }
+</script>
+{% endif %}
 
-  <script src="{% static 'reloj/js/horario.js' %}"></script>
+<script>
+  // Helpers
+  function byId(id){ return document.getElementById(id); }
 
+  // Cuando cambia el select de empleado, autocompleta el nombre (después del " - ")
+  function syncNombreEmpleado(){
+    const sel = byId('id_emp_dropdown'); // viene así en el form custom del view
+    const lblSpan = byId('selected-employee-label');
+    const nombreInput = byId('{{ form.nombre_empleado.id_for_label }}');
+    if (!sel) return;
+
+    const opt = sel.options[sel.selectedIndex];
+    const label = opt ? opt.text : '';
+    if (lblSpan) lblSpan.textContent = label || '—';
+
+    const parts = label.split(' - ');
+    const nombre = (parts.length > 1) ? parts[1].trim() : '';
+    if (nombreInput) nombreInput.value = nombre;
+  }
+
+  // Validación básica de fechas (fecha_fin >= fecha_inicio)
+  function validarFechas(e){
+    const fi = byId('{{ form.fecha_inicio.id_for_label }}')?.value;
+    const ff = byId('{{ form.fecha_fin.id_for_label }}')?.value;
+    if (fi && ff && ff < fi){
+      e.preventDefault();
+      Swal.fire({icon:'warning', title:'Rango inválido', text:'La fecha fin no puede ser anterior a la fecha inicio.'});
+      return false;
+    }
+    return true;
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const sel = byId('id_emp_dropdown');
+    if (sel){
+      sel.addEventListener('change', syncNombreEmpleado);
+      syncNombreEmpleado(); // inicial
+    }
+
+    const form = document.querySelector('form');
+    if (form){
+      form.addEventListener('submit', validarFechas);
+    }
+  });
+</script>
 </body>
-
 </html>

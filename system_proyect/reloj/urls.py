@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # Dashboard
     path('', views.dashboard, name='reloj_dashboard'),
 
     # Reportes
@@ -15,7 +16,19 @@ urlpatterns = [
     # Diagnóstico conexión
     path('test_sql/', views.test_sqlserver_connection, name='test_sqlserver_connection'),
 
-    # Gestión de Horarios de empleados
+    # ─────────────────────────────────────────────
+    # Gestión de PLANTILLAS y REGLAS
+    # ─────────────────────────────────────────────
+    path('plantillas/', views.plantilla_list, name='reloj_plantilla_list'),
+    path('plantillas/nueva/', views.plantilla_edit, name='reloj_plantilla_new'),
+    path('plantillas/<int:pk>/', views.plantilla_edit, name='reloj_plantilla_edit'),
+    path('plantillas/<int:template_pk>/regla/nueva/', views.regla_add, name='reloj_regla_add'),
+    path('regla/<int:pk>/', views.regla_edit, name='reloj_regla_edit'),
+
+    # ─────────────────────────────────────────────
+    # Gestión de Horarios por Empleado (ASIGNACIONES)
+    # (Se mantienen los nombres para no romper enlaces previos)
+    # ─────────────────────────────────────────────
     path('horarios/', views.horarios_list, name='horarios_list'),
     path('horarios/agregar/', views.horarios_add, name='horarios_add'),
     path('horarios/editar/<int:pk>/', views.horarios_edit, name='horarios_edit'),
