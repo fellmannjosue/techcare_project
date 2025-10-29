@@ -293,23 +293,43 @@ def exportar_pdf(request):
 # ─────────────────────────────────────────────────────────────
 # REPORTE: listado de marcas por día/empleado (SQL EXACTO)
 # ─────────────────────────────────────────────────────────────
+
+def get_empleado_options():
+    """
+    Devuelve [(emp_code, "emp_code - Nombre Apellido"), ...] para el dropdown.
+    """
+    opciones = []
+    with connections['zkbio_sqlserver'].cursor() as cursor:
+        cursor.execute("""
+            SELECT CAST(emp_code AS VARCHAR(20)) AS code,
+                   (first_name + ' ' + last_name) AS nombre
+            FROM dbo.personnel_employee
+            ORDER BY first_name, last_name
+        """)
+        for code, nombre in cursor.fetchall():
+            code = (code or "").strip()
+            nombre = (nombre or "").strip()
+            opciones.append((code, f"{code} - {nombre}"))
+    return opciones
+
+
 def reporte(request):
     """
     Reporte principal de marcas (string_agg de horas por día/empleado).
     - Filtros: fecha_inicio / fecha_fin.
-    - SQL se mantiene EXACTO como lo compartiste.
+    - Filtro opcional: emp_code (dropdown).
     """
     hoy = datetime.today()
     fecha_inicio_default = hoy.replace(day=1).strftime('%Y-%m-%d')
-    fecha_fin_default = hoy.strftime('%Y-%m-%d')
+    fecha_fin_default    = hoy.strftime('%Y-%m-%d')
 
     fecha_inicio = request.GET.get('fecha_inicio', fecha_inicio_default)
-    fecha_fin = request.GET.get('fecha_fin', fecha_fin_default)
+    fecha_fin    = request.GET.get('fecha_fin', fecha_fin_default)
+    emp_code_f   = (request.GET.get('emp_code') or "").strip()  # ← NUEVO: filtro por empleado
 
     datos = []
     error = None
 
-    # Solo consulta si vienen ambas fechas (evita query sin filtros)
     if request.GET.get('fecha_inicio') and request.GET.get('fecha_fin'):
         query = f"""
 DECLARE @fechaInicio DATE = '{fecha_inicio}';
@@ -353,15 +373,21 @@ GROUP BY e.emp_code, e.first_name, e.last_name, p.position_name, f.Fecha
 ORDER BY e.emp_code, f.Fecha
 OPTION (MAXRECURSION 0);
 """
-
-
         try:
             with connections['zkbio_sqlserver'].cursor() as cursor:
                 cursor.execute(query)
                 rows = cursor.fetchall()
                 columnas = [col[0] for col in cursor.description]
+
                 for r in rows:
-                    datos.append(dict(zip(columnas, r)))
+                    row = dict(zip(columnas, r))
+
+                    # ← NUEVO: si se eligió un empleado, filtra aquí
+                    if emp_code_f and str(row.get('ID_Empleado') or "").strip() != emp_code_f:
+                        continue
+
+                    datos.append(row)
+
         except Exception as e:
             error = f"Error al consultar la base de datos: {str(e)}"
 
@@ -369,7 +395,9 @@ OPTION (MAXRECURSION 0);
         'datos': datos,
         'error': error,
         'fecha_inicio': fecha_inicio,
-        'fecha_fin': fecha_fin
+        'fecha_fin': fecha_fin,
+        'empleados_opts': get_empleado_options(),  # ← NUEVO: opciones para el select
+        'emp_code_f': emp_code_f,                  # ← NUEVO: mantener seleccionado
     }
     return render(request, 'reloj/reporte.html', contexto)
 
