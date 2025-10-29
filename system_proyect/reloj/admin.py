@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import ScheduleTemplate, ScheduleRule, EmployeeScheduleAssignment
+from .models import ScheduleTemplate, ScheduleRule, EmployeeScheduleAssignment,OvertimeRequest
 
 
 # ──────────────────────────────────────────────
@@ -40,4 +40,16 @@ class EmployeeScheduleAssignmentAdmin(admin.ModelAdmin):
     list_filter = ("activo", "template")
     search_fields = ("emp_code", "nombre_empleado")
     ordering = ("-activo", "emp_code")
+    list_per_page = 30
+
+@admin.register(OvertimeRequest)
+class OvertimeRequestAdmin(admin.ModelAdmin):
+    list_display = (
+        "emp_code", "fecha",
+        "minutos_calculados", "minutos_autorizados",
+        "status", "approved_by", "approved_at",
+    )
+    list_filter = ("status", "fecha")
+    search_fields = ("emp_code", "comentario")
+    ordering = ("-fecha", "emp_code")
     list_per_page = 30

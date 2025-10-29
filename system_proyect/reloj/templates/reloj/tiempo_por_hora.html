@@ -120,12 +120,13 @@
               <th>ID Empleado</th>
               <th>Empleado</th>
               <th>Fecha</th>
-              <th>Horario Prog.</th>      <!-- NUEVA -->
+              <th>Horario Prog.</th>
               <th>Hora Entrada</th>
               <th>Hora Salida</th>
               <th>Marcas del Día</th>
               <th>Cantidad Marcas</th>
-              <th>Tiempo Extra</th>
+              <th>Tiempo Extra</th>          <!-- Calc / Aut / Estado + botón -->
+              <th>Autorizado por</th>        <!-- NUEVA -->
               <th>Tiempo Faltante</th>
             </tr>
             <!-- Filtros por columna -->
@@ -138,7 +139,8 @@
               <th><input type="text" class="form-control form-control-sm" placeholder="HH:MM" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="06:54, 12:03..." /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="N°" /></th>
-              <th><input type="text" class="form-control form-control-sm" placeholder="+min / +h" /></th>
+              <th><input type="text" class="form-control form-control-sm" placeholder="Calc/Aut/Estado" /></th>
+              <th><input type="text" class="form-control form-control-sm" placeholder="Nombre/Fecha" /></th>
               <th><input type="text" class="form-control form-control-sm" placeholder="-min / -h" /></th>
             </tr>
           </thead>
@@ -179,14 +181,61 @@
                 </td>
 
                 <td>{{ row.Cantidad_Marcas|default:"0" }}</td>
-                <td>{% if row.Tiempo_Extra %}<span class="badge bg-primary">{{ row.Tiempo_Extra }}</span>{% else %}—{% endif %}</td>
-                <td>{% if row.Tiempo_Faltante %}<span class="badge bg-danger">{{ row.Tiempo_Faltante }}</span>{% else %}—{% endif %}</td>
+
+                <!-- TIEMPO EXTRA (Calc / Aut / Estado + botón Autorizar si aplica) -->
+                <td>
+                  <div class="small">
+                    <div><strong>Calc:</strong> {{ row.Extra_Min_Calculado }} min</div>
+                    <div><strong>Aut:</strong> {{ row.Extra_Min_Autorizado }} min</div>
+                    <div>
+                      <strong>Estado:</strong>
+                      {% if row.Extra_Status == "APPR" %}
+                        <span class="badge bg-success">Aprobado</span>
+                      {% elif row.Extra_Status == "REJC" %}
+                        <span class="badge bg-danger">Rechazado</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Pendiente</span>
+                      {% endif %}
+                    </div>
+                  </div>
+                  {% if row.Can_Authorize %}
+                  <button class="btn btn-sm btn-outline-primary mt-1"
+                          data-bs-toggle="modal"
+                          data-bs-target="#modalOvertime"
+                          data-emp="{{ row.ID_Empleado }}"
+                          data-fecha="{{ row.Fecha|date:'Y-m-d' }}"
+                          data-calc="{{ row.Extra_Min_Calculado }}"
+                          data-aut="{{ row.Extra_Min_Autorizado }}"
+                          data-status="{{ row.Extra_Status }}">
+                    Autorizar
+                  </button>
+                  {% endif %}
+                </td>
+
+                <!-- AUTORIZADO POR -->
+                <td>
+                  {% if row.Extra_Status == "APPR" %}
+                    <div class="small">
+                      <div><strong>{{ row.Extra_Autorizado_Por|default:"—" }}</strong></div>
+                      <div class="text-muted">{{ row.Extra_Autorizado_En|default:"" }}</div>
+                    </div>
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <!-- TIEMPO FALTANTE -->
+                <td>
+                  {% if row.Tiempo_Faltante %}
+                    <span class="badge bg-danger">{{ row.Tiempo_Faltante }}</span>
+                  {% else %}—{% endif %}
+                </td>
               </tr>
               {% endfor %}
             {% else %}
               <tr>
-                <!-- 10 columnas -->
-                <td colspan="10" class="text-center text-muted py-3">No hay registros disponibles.</td>
+                <!-- 11 columnas -->
+                <td colspan="11" class="text-center text-muted py-3">No hay registros disponibles.</td>
               </tr>
             {% endif %}
           </tbody>
@@ -195,6 +244,46 @@
 
       <a href="{% url 'reloj_dashboard' %}" class="btn btn-outline-secondary mt-3">Volver a Reloj</a>
     </div>
+  </div>
+</div>
+
+<!-- MODAL: Autorizar Tiempo Extra -->
+<div class="modal fade" id="modalOvertime" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form id="formOvertime" class="modal-content">
+      {% csrf_token %}
+      <div class="modal-header">
+        <h5 class="modal-title">Autorizar tiempo extra</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" name="emp_code" id="otEmp">
+        <input type="hidden" name="fecha" id="otFecha">
+        <div class="mb-2">
+          <label class="form-label">Minutos calculados</label>
+          <input class="form-control" id="otCalc" readonly>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Minutos autorizados</label>
+          <input class="form-control" name="minutos_autorizados" id="otAut" type="number" min="0" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Estado</label>
+          <select class="form-select" name="status" id="otStatus">
+            <option value="APPR">Aprobado</option>
+            <option value="REJC">Rechazado</option>
+            <option value="PEND">Pendiente</option>
+          </select>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Comentario</label>
+          <input class="form-control" name="comentario" id="otComentario" placeholder="Comentario (opcional)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" type="submit">Guardar</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -230,6 +319,37 @@
           table.column(i).search(this.value).draw();
         }
       });
+    });
+
+    // Modal: precargar datos
+    var modal = document.getElementById('modalOvertime');
+    modal.addEventListener('show.bs.modal', function (ev) {
+      var b = ev.relatedTarget;
+      document.getElementById('otEmp').value   = b.dataset.emp;
+      document.getElementById('otFecha').value = b.dataset.fecha;
+      document.getElementById('otCalc').value  = b.dataset.calc || 0;
+      document.getElementById('otAut').value   = b.dataset.aut || 0;
+      // si viene el status actual, úsalo como seleccionado
+      document.getElementById('otStatus').value = b.dataset.status || 'APPR';
+      document.getElementById('otComentario').value = "";
+    });
+
+    // Enviar autorización (AJAX)
+    document.getElementById('formOvertime').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const form = e.target;
+      const resp = await fetch("{% url 'overtime_approve' %}", {
+        method: "POST",
+        headers: {"X-Requested-With":"XMLHttpRequest"},
+        body: new FormData(form)
+      });
+      const data = await resp.json();
+      if (data.ok) {
+        // Refresca para ver el nuevo Autorizado por, minutos y estado
+        location.reload();
+      } else {
+        alert(data.msg || "Error al autorizar.");
+      }
     });
   });
 </script>

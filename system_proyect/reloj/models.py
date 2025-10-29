@@ -1,5 +1,6 @@
 # reloj/models.py
 from django.db import models
+from django.conf import settings
 
 class ScheduleTemplate(models.Model):
     nombre = models.CharField("Nombre de plantilla", max_length=120, unique=True)
@@ -65,3 +66,59 @@ class EmployeeScheduleAssignment(models.Model):
     def __str__(self):
         fin = self.fecha_fin.isoformat() if self.fecha_fin else "∞"
         return f"{self.emp_code} → {self.template} [{self.fecha_inicio} → {fin}]"
+
+class OvertimeRequest(models.Model):
+    """
+    Registro diario de tiempo extra por empleado.
+    - minutos_calculados: lo que calcula el sistema (post-proceso en la vista).
+    - minutos_autorizados: lo que aprueba el staff desde el modal.
+    - approved_by / approved_at: quién y cuándo autorizó (columna "Autorizado por").
+    """
+    STATUS_CHOICES = [
+        ("PEND", "Pendiente"),
+        ("APPR", "Aprobado"),
+        ("REJC", "Rechazado"),
+    ]
+
+    emp_code = models.CharField("Código empleado", max_length=20, db_index=True)
+    fecha = models.DateField("Fecha", db_index=True)
+
+    minutos_calculados  = models.PositiveIntegerField("Minutos extra calculados", default=0)
+    minutos_autorizados = models.PositiveIntegerField("Minutos extra autorizados", default=0)
+
+    comentario = models.CharField("Comentario", max_length=255, blank=True)
+    status     = models.CharField("Estado", max_length=4, choices=STATUS_CHOICES, default="PEND")
+
+    approved_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Autorizado por",
+        null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="overtime_aprobados"
+    )
+    approved_at = models.DateTimeField("Fecha de autorización", null=True, blank=True)
+
+    created_at  = models.DateTimeField("Creado en", auto_now_add=True)
+    updated_at  = models.DateTimeField("Actualizado en", auto_now=True)
+
+    class Meta:
+        db_table = "reloj_overtime_request"
+        verbose_name = "Tiempo extra"
+        verbose_name_plural = "Tiempos extra"
+        unique_together = ("emp_code", "fecha")
+        indexes = [
+            models.Index(fields=["emp_code", "fecha"]),
+            models.Index(fields=["status"]),
+        ]
+        ordering = ["-fecha", "emp_code"]
+
+    def __str__(self):
+        return f"{self.emp_code} {self.fecha} - {self.get_status_display()}"
+
+    @property
+    def approver_display(self) -> str:
+        """Nombre bonito para mostrar en la columna 'Autorizado por'."""
+        if self.approved_by:
+            full = (self.approved_by.get_full_name() or "").strip()
+            return full or self.approved_by.username
+        return ""

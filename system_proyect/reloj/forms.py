@@ -1,5 +1,8 @@
 from django import forms
-from .models import ScheduleTemplate, ScheduleRule, EmployeeScheduleAssignment
+from .models import (
+    ScheduleTemplate, ScheduleRule, EmployeeScheduleAssignment,
+    OvertimeRequest,   # ← agregado
+)
 
 # ---------------------------------------------------------------------
 # Constantes reutilizables
@@ -223,4 +226,80 @@ class EmployeeScheduleAssignmentForm(forms.ModelForm):
         ff = cleaned.get("fecha_fin")
         if fi and ff and ff < fi:
             self.add_error("fecha_fin", "La fecha fin debe ser mayor o igual a la fecha inicio.")
+        return cleaned
+
+
+# ---------------------------------------------------------------------
+# TIEMPO EXTRA: Formularios
+# ---------------------------------------------------------------------
+class OvertimeApproveForm(forms.ModelForm):
+    """
+    Usado en el modal de autorización (solo staff).
+    """
+    class Meta:
+        model = OvertimeRequest
+        fields = ["minutos_autorizados", "status", "comentario"]
+        widgets = {
+            "minutos_autorizados": forms.NumberInput(attrs={
+                "class": "form-control", "min": 0, "step": 1
+            }),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "comentario": forms.TextInput(attrs={
+                "class": "form-control", "placeholder": "Comentario (opcional)"
+            }),
+        }
+        labels = {
+            "minutos_autorizados": "Minutos autorizados",
+            "status": "Estado",
+            "comentario": "Comentario",
+        }
+
+    def clean_minutos_autorizados(self):
+        v = self.cleaned_data.get("minutos_autorizados") or 0
+        if v < 0:
+            raise forms.ValidationError("Los minutos autorizados no pueden ser negativos.")
+        # Si deseas forzar: autorizados <= calculados, descomenta:
+        # calc = self.instance.minutos_calculados if self.instance else 0
+        # if v > calc:
+        #     raise forms.ValidationError(f"No puede autorizar más de los {calc} minutos calculados.")
+        return v
+
+
+class OvertimeRequestForm(forms.ModelForm):
+    """
+    CRUD completo de tiempos extra (opcional, por si quieres una vista admin/light).
+    """
+    class Meta:
+        model = OvertimeRequest
+        fields = [
+            "emp_code", "fecha",
+            "minutos_calculados", "minutos_autorizados",
+            "status", "comentario",
+        ]
+        widgets = {
+            "emp_code": forms.TextInput(attrs={"class": "form-control", "placeholder": "Código empleado"}),
+            "fecha": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "minutos_calculados": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": 1}),
+            "minutos_autorizados": forms.NumberInput(attrs={"class": "form-control", "min": 0, "step": 1}),
+            "status": forms.Select(attrs={"class": "form-select"}),
+            "comentario": forms.TextInput(attrs={"class": "form-control", "placeholder": "Comentario (opcional)"}),
+        }
+        labels = {
+            "emp_code": "Código empleado",
+            "fecha": "Fecha",
+            "minutos_calculados": "Minutos extra calculados",
+            "minutos_autorizados": "Minutos extra autorizados",
+            "status": "Estado",
+            "comentario": "Comentario",
+        }
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("minutos_calculados", 0) < 0:
+            self.add_error("minutos_calculados", "No puede ser negativo.")
+        if cleaned.get("minutos_autorizados", 0) < 0:
+            self.add_error("minutos_autorizados", "No puede ser negativo.")
+        # Forzar que autorizados <= calculados (opcional):
+        # if cleaned.get("minutos_autorizados", 0) > cleaned.get("minutos_calculados", 0):
+        #     self.add_error("minutos_autorizados", "No puede exceder los minutos calculados.")
         return cleaned

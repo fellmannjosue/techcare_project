@@ -9,12 +9,16 @@ from datetime import datetime, time, date
 from django.utils import timezone
 from django.http import JsonResponse
 from django.contrib import messages
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.utils.dateparse import parse_date
 
 # Modelos (plantillas + reglas + asignaciones)
 from .models import (
     ScheduleTemplate,
     ScheduleRule,
     EmployeeScheduleAssignment,
+    OvertimeRequest
 )
 
 # Formularios
@@ -293,7 +297,6 @@ def grafica_detalle(request):
             error = str(e)
 
     return JsonResponse({"success": error is None, "error": error, "rows": rows_out})
-
 
 def grafica(request):
     """
@@ -731,6 +734,65 @@ def test_sqlserver_connection(request):
 # Tiempo por hora (comparación real vs programado por PLANTILLA)
 # ─────────────────────────────────────────────────────────────
 
+def _fmt_mins(m: int) -> str:
+    """Devuelve 'Xh Ym' o 'M min' para mostrar minutos bonitos."""
+    m = int(m or 0)
+    if m <= 0:
+        return "0 min"
+    h, mm = divmod(m, 60)
+    return f"{h}h {mm}m" if h else f"{mm} min"
+
+
+@login_required
+@require_POST
+def overtime_approve(request):
+    if not (request.user.is_staff or request.user.is_superuser):
+        return JsonResponse({'ok': False, 'msg': 'No autorizado'}, status=403)
+
+    emp_code = (request.POST.get('emp_code') or '').strip()
+    fecha    = parse_date(request.POST.get('fecha') or '')
+    try:
+        minutos_aut = int(request.POST.get('minutos_autorizados') or 0)
+        if minutos_aut < 0:
+            minutos_aut = 0
+    except Exception:
+        return JsonResponse({'ok': False, 'msg': 'Minutos inválidos'}, status=400)
+
+    status = (request.POST.get('status') or 'PEND').upper()
+    if status not in ('APPR', 'REJC', 'PEND'):
+        status = 'PEND'
+
+    comentario = (request.POST.get('comentario') or '').strip()
+
+    if not emp_code or not fecha:
+        return JsonResponse({'ok': False, 'msg': 'Faltan emp_code o fecha'}, status=400)
+
+    # Crear/actualizar el registro
+    ot, _created = OvertimeRequest.objects.get_or_create(
+        emp_code=emp_code,
+        fecha=fecha,
+        defaults={'minutos_calculados': 0}
+    )
+    ot.minutos_autorizados = minutos_aut
+    ot.status = status
+    # Campos de auditoría
+    if hasattr(ot, 'approved_by'):
+        ot.approved_by = request.user
+    if hasattr(ot, 'approved_at'):
+        ot.approved_at = timezone.now()
+    if hasattr(ot, 'comentario') and comentario:
+        ot.comentario = comentario
+
+    # Guardado seguro (solo campos que existan)
+    fields = ['minutos_autorizados', 'status']
+    if hasattr(ot, 'approved_by'): fields.append('approved_by')
+    if hasattr(ot, 'approved_at'): fields.append('approved_at')
+    if hasattr(ot, 'comentario'):  fields.append('comentario')
+    ot.save(update_fields=fields)
+
+    return JsonResponse({'ok': True})
+
+
 def tiempo_por_hora(request):
     """
     Calcula para cada empleado/día (en el rango):
@@ -738,7 +800,7 @@ def tiempo_por_hora(request):
       - Colores de llegada/salida vs horario programado (plantilla/segmentos).
       - Tiempo extra / faltante (real total vs total programado).
       - Marcas del día (todas) separadas por coma y con color en 1ª/última.
-    NOTA: el SQL obtiene las marcas; el horario se resuelve con ORMs (plantillas).
+      - Lee autorizaciones de OvertimeRequest (solo lectura para no bloquear).
     """
     # Filtros básicos
     hoy = datetime.today()
@@ -752,7 +814,7 @@ def tiempo_por_hora(request):
     datos = []
     error = None
 
-    # SQL: MIN/MAX y conteo por empleado/día
+    # SQL: MIN/MAX y conteo por empleado/día (tu SQL intacto)
     query = f"""
 DECLARE @fechaInicio DATE = '{fecha_inicio}';
 DECLARE @fechaFin    DATE = '{fecha_fin}';
@@ -792,6 +854,24 @@ OPTION (MAXRECURSION 0);
             rows = cursor.fetchall()
             columnas = [col[0] for col in cursor.description]
 
+            # ====== Precarga OvertimeRequest en bloque (solo lectura; SIN escrituras) ======
+            # Recolecta claves emp_code/fecha de las filas devueltas por el SQL
+            emp_codes_set = set()
+            for r in rows:
+                emp_codes_set.add(str(r[0]).strip())  # ID_Empleado es la 1a columna
+
+            ot_qs = OvertimeRequest.objects.filter(
+                emp_code__in=emp_codes_set,
+                fecha__gte=fecha_inicio,
+                fecha__lte=fecha_fin,
+            ).only(
+                "emp_code", "fecha",
+                "minutos_autorizados", "minutos_calculados",
+                "status", "approved_by", "approved_at"
+            )
+            ot_map = {(o.emp_code, o.fecha): o for o in ot_qs}
+            # ==============================================================================
+
             # Consulta auxiliar: TODAS las marcas "HH:MM" por empleado/día
             marcas_map = {}  # key: (emp_code_str, fecha_date) -> ["06:54","12:01","13:00","17:25"]
             try:
@@ -830,19 +910,22 @@ OPTION (MAXRECURSION 0);
                 # Segmentos programados desde PLANTILLA/ASIGNACIÓN
                 segs = _segmentos_programados(emp_code, fecha_d)
                 if not segs:
-                    # Sin plantilla o día no laborable -> marcar como no programado (opcional: dejar vacío)
-                    segs = [(DEF_IN, DEF_OUT)]
+                    segs = [(DEF_IN, DEF_OUT)]  # fallback
                     no_programado = True
                 else:
                     no_programado = False
 
                 prog_first_in, prog_last_out = _first_in_last_out(segs)
-                prog_total_mins = _sum_sched_minutes(segs)
+                prog_total_mins = _sum_sched_minutes(segs)  # minutos programados del día
 
                 color_in_class  = ""
                 color_out_class = ""
-                t_extra = ""
-                t_falt  = ""
+
+                # --- Cálculo robusto de trabajado/extra/faltante ---
+                trabajado_min = 0
+                total_real_mins = 0
+                extra_calc_min = 0
+                faltante_min = 0
 
                 try:
                     if h_in_real and h_out_real and prog_first_in and prog_last_out:
@@ -851,10 +934,10 @@ OPTION (MAXRECURSION 0);
                         tout_real = _parse_hhmm_to_dt(h_out_real)
                         tout_prog = _parse_hhmm_to_dt(prog_last_out)
 
-                        # LLEGADA: verde si a tiempo/antes; rojo si tarde
+                        # LLEGADA
                         color_in_class = "hora-verde" if tin_real and tin_prog and tin_real <= tin_prog else "hora-rojo"
 
-                        # SALIDA: azul si más tarde; verde si igual; rojo si antes
+                        # SALIDA
                         if tout_real and tout_prog:
                             if tout_real > tout_prog:
                                 color_out_class = "hora-azul"
@@ -863,17 +946,15 @@ OPTION (MAXRECURSION 0);
                             else:
                                 color_out_class = "hora-rojo"
 
-                        # Extra/Faltante (duración real vs programada)
+                        # Trabajado real
                         if tin_real and tout_real:
                             total_real_mins = _mins_between(tin_real, tout_real)
-                            dif = total_real_mins - prog_total_mins
-                            if dif > 0:
-                                h, m = divmod(dif, 60)
-                                t_extra = f"{h}h {m}m" if h else f"{m} min"
-                            elif dif < 0:
-                                dif = abs(dif)
-                                h, m = divmod(dif, 60)
-                                t_falt = f"{h}h {m}m" if h else f"{dif} min"
+                            trabajado_min = total_real_mins
+
+                    # Diferencias (independiente de colores)
+                    extra_calc_min = max(0, total_real_mins - prog_total_mins)
+                    faltante_min   = max(0, prog_total_mins - total_real_mins)
+
                 except Exception as ex:
                     print(f"[WARN] Cálculo fila #{i}: {ex}")
 
@@ -896,15 +977,43 @@ OPTION (MAXRECURSION 0);
                             cls = color_out_class
                         marcas_coloreadas.append({'t': tmark, 'cls': cls})
 
-                # Ensamble de salida
+                # --- Overtime (SOLO LECTURA desde ot_map; nada de escribir aquí) ---
+                ot = ot_map.get((emp_code, fecha_d))
+                aprobado_por = ""
+                aprobado_en  = ""
+                extra_aut    = 0
+                extra_status = "PEND"
+                if ot:
+                    extra_aut    = ot.minutos_autorizados or 0
+                    extra_status = ot.status or "PEND"
+                    if ot.approved_by:
+                        aprobado_por = (ot.approved_by.get_full_name() or ot.approved_by.username)
+                    if ot.approved_at:
+                        aprobado_en = ot.approved_at.strftime("%Y-%m-%d %H:%M")
+
+                # Ensamble de salida (manteniendo tus claves + nuevas)
                 row['Cargo']                    = cargo
                 row['No_Programado']           = no_programado
                 row['Hora_Entrada']            = h_in_real  or "—"
                 row['Hora_Salida']             = h_out_real or "—"
                 row['Color_Entrada_Class']     = color_in_class
                 row['Color_Salida_Class']      = color_out_class
-                row['Tiempo_Extra']            = t_extra
-                row['Tiempo_Faltante']         = t_falt
+
+                # NUEVOS: números y string bonitos
+                row['Programado_Min']          = int(prog_total_mins or 0)
+                row['Trabajado_Min']           = int(trabajado_min or 0)
+                row['Faltante_Min']            = int(faltante_min or 0)
+                row['Extra_Min_Calculado']     = int(extra_calc_min or 0)
+                row['Extra_Min_Autorizado']    = int(extra_aut or 0)
+                row['Extra_Status']            = extra_status
+                row['Extra_Autorizado_Por']    = aprobado_por
+                row['Extra_Autorizado_En']     = aprobado_en
+                row['Can_Authorize']           = bool(getattr(request.user, "is_staff", False) or getattr(request.user, "is_superuser", False))
+
+                # Compatibilidad con tus columnas de texto previas
+                row['Tiempo_Extra']            = _fmt_mins(row['Extra_Min_Calculado'])
+                row['Tiempo_Faltante']         = _fmt_mins(row['Faltante_Min'])
+
                 row['Horario_Primera_Entrada'] = prog_first_in or DEF_IN
                 row['Horario_Ultima_Salida']   = prog_last_out or DEF_OUT
                 row['Marcas_Dia_Texto']        = ", ".join(marcas_list) if marcas_list else ""
@@ -912,12 +1021,14 @@ OPTION (MAXRECURSION 0);
 
                 datos.append(row)
 
-            # Logs de depuración
+            # Logs de depuración (acota a 5 filas)
             print(f"Total filas procesadas (vista): {len(datos)}")
             for j, r0 in enumerate(datos[:5]):
                 print(f"[{j}] emp={r0.get('ID_Empleado')} fecha={r0.get('Fecha')} "
                       f"in={r0.get('Hora_Entrada')} out={r0.get('Hora_Salida')} "
+                      f"prog_min={r0.get('Programado_Min')} trab_min={r0.get('Trabajado_Min')} "
                       f"extra={r0.get('Tiempo_Extra')} falt={r0.get('Tiempo_Faltante')} | "
+                      f"aut={r0.get('Extra_Min_Autorizado')} {r0.get('Extra_Status')} por={r0.get('Extra_Autorizado_Por')} | "
                       f"prog_in={r0.get('Horario_Primera_Entrada')} prog_out={r0.get('Horario_Ultima_Salida')} | "
                       f"marcas={r0.get('Marcas_Dia_Texto')}")
 

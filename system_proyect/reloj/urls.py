@@ -35,4 +35,5 @@ urlpatterns = [
 
     # Tiempo por hora
     path('tiempo-por-hora/', views.tiempo_por_hora, name='tiempo_por_hora'),
+    path('overtime/approve/', views.overtime_approve, name='overtime_approve'), 
 ]
