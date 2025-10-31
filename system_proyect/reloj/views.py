@@ -2,6 +2,7 @@
 # VIEWS · RELOJ (Asistencia con Plantillas de Horario)
 # ─────────────────────────────────────────────────────────────
 from django.shortcuts import render, get_object_or_404, redirect
+import json
 from django.db import connections, transaction
 from django.urls import reverse
 from django import forms
@@ -15,6 +16,7 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.dateparse import parse_date
 from django.conf import settings
+from django.views.decorators.http import require_GET
 
 # Modelos (plantillas + reglas + asignaciones + extras)
 from .models import (
@@ -1077,49 +1079,133 @@ def overtime_authorize(request):
 # GOOGLE FORMS HOOK · Tiempo compensatorio
 # ─────────────────────────────────────────────────────────────
 
+def _parse_date_flexible(s: str):
+    """Acepta 'YYYY-MM-DD', 'DD/MM/YYYY' o 'MM/DD/YYYY' y retorna date (o None)."""
+    if not s:
+        return None
+    s = s.strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except Exception:
+            pass
+    return None
+
+
+@require_GET
+def compensatorio_employees_list(request):
+    # Auth por el mismo token compartido
+    token = request.headers.get("X-Forms-Token") or request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token != getattr(settings, "GOOGLE_FORMS_SHARED_TOKEN", ""):
+        return JsonResponse({"ok": False, "error": "Forbidden"}, status=403)
+
+    rows = []
+    try:
+        with connections['zkbio_sqlserver'].cursor() as c:
+            c.execute("""
+                SELECT CAST(emp_code AS VARCHAR(20)) AS code,
+                       (first_name + ' ' + last_name) AS nombre
+                FROM dbo.personnel_employee
+                ORDER BY first_name, last_name
+            """)
+            rows = c.fetchall()
+    except Exception as ex:
+        return JsonResponse({"ok": False, "error": f"SQL error: {ex}"}, status=500)
+
+    choices = [{"code": (code or "").strip(),
+                "label": f"{(code or '').strip()} — {(nombre or '').strip()}"} for code, nombre in rows]
+
+    return JsonResponse({"ok": True, "choices": choices})
+
 @csrf_exempt
+@require_POST
 def compensatorio_google_hook(request):
     """
-    Endpoint para recibir submissions desde Google Forms via Apps Script.
-    Autenticación: Header Authorization: Bearer <GOOGLE_FORMS_SHARED_TOKEN>
+    Endpoint para Google Forms (Apps Script).
+    - Auth: Authorization: Bearer <TOKEN>  (y fallbacks X-Forms-Token, ?token=)
+    - JSON: {emp_code, fecha, minutos_registrados, motivo, ...}
+    - Resuelve nombre_empleado oficial desde ZKBioTime.
     """
-    if request.method != "POST":
-        return HttpResponseBadRequest("Método no permitido")
+    # --- Auth robusto por token compartido ---
+    expected = getattr(settings, "GOOGLE_FORMS_SHARED_TOKEN", "")
+    raw = (
+        request.headers.get("Authorization")
+        or request.META.get("HTTP_AUTHORIZATION")
+        or request.headers.get("X-Forms-Token")
+        or request.GET.get("token")
+    )
+    token = ""
+    if raw:
+        token = raw.split(" ", 1)[1].strip() if str(raw).startswith("Bearer ") else str(raw).strip()
 
-    auth = request.headers.get("Authorization","")
-    token = auth.replace("Bearer ", "").strip()
-    if token != getattr(settings, "GOOGLE_FORMS_SHARED_TOKEN", ""):
-        return JsonResponse({"ok": False, "msg": "Unauthorized"}, status=401)
+    if not token:
+        return JsonResponse({"success": False, "error": "Falta token"}, status=401)
+    if token != expected:
+        return JsonResponse({"success": False, "error": "Token inválido"}, status=403)
 
+    # --- Parse body ---
     try:
-        import json
-        data = json.loads(request.body.decode("utf-8"))
-    except Exception:
-        return JsonResponse({"ok": False, "msg": "JSON inválido"}, status=400)
+        data = json.loads(request.body.decode("utf-8") or "{}")
+    except Exception as ex:
+        return JsonResponse({"success": False, "error": f"JSON inválido: {ex}"}, status=400)
 
     emp_code = (data.get("emp_code") or "").strip()
-    nombre   = (data.get("nombre_empleado") or "").strip()
-    fecha    = parse_date(data.get("fecha") or "")
+    if not emp_code:
+        return JsonResponse({"success": False, "error": "emp_code requerido"}, status=400)
+
+    fecha = _parse_date_flexible((data.get("fecha") or "").strip())
+    if not fecha:
+        return JsonResponse({"success": False, "error": "fecha inválida"}, status=400)
+
     try:
         minutos = int(data.get("minutos_registrados") or 0)
-        if minutos < 0: minutos = 0
+        if minutos < 0:
+            minutos = 0
     except Exception:
-        return JsonResponse({"ok": False, "msg": "Minutos inválidos"}, status=400)
-    motivo   = (data.get("motivo") or "").strip()
+        return JsonResponse({"success": False, "error": "minutos_registrados inválido"}, status=400)
 
-    if not (emp_code and nombre and fecha):
-        return JsonResponse({"ok": False, "msg": "Faltan campos obligatorios"}, status=400)
+    motivo = (data.get("motivo") or "").strip()
 
-    obj = TiempoCompensatorio.objects.create(
+    # --- Resolver nombre oficial desde ZKBioTime ---
+    try:
+        with connections["zkbio_sqlserver"].cursor() as c:
+            c.execute(
+                """
+                SELECT (first_name + ' ' + last_name) AS nombre
+                FROM dbo.personnel_employee
+                WHERE CAST(emp_code AS VARCHAR(20)) = %s
+                """,
+                [emp_code],
+            )
+            row = c.fetchone()
+    except Exception as ex:
+        return JsonResponse({"success": False, "error": f"Error SQLServer: {ex}"}, status=500)
+
+    if not row:
+        return JsonResponse({"success": False, "error": "emp_code no existe en ZKBioTime"}, status=400)
+
+    nombre_oficial = (row[0] or "").strip()
+
+    # --- Crear/actualizar registro (clave emp_code+fecha) ---
+    obj, created = TiempoCompensatorio.objects.update_or_create(
         emp_code=emp_code,
-        nombre_empleado=nombre,
         fecha=fecha,
-        minutos_registrados=minutos,
-        motivo=motivo,
-        estado='PEND',
+        defaults={
+            "nombre_empleado": nombre_oficial,  # ignoramos el nombre del Form
+            "minutos_registrados": minutos,
+            "motivo": motivo,
+        },
     )
-    return JsonResponse({"ok": True, "id": obj.id})
 
+    return JsonResponse({
+        "success": True,
+        "created": created,
+        "id": obj.id,
+        "emp_code": emp_code,
+        "nombre": nombre_oficial,
+        "fecha": fecha.isoformat(),
+        "minutos": minutos,
+    })
 
 # ─────────────────────────────────────────────────────────────
 # CRUD · Feriados

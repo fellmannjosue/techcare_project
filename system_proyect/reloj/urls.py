@@ -65,6 +65,8 @@ urlpatterns = [
 
     # Hook Google Forms (POST Apps Script)
     path('google/compensatorio/ingresar/', views.compensatorio_google_hook, name='compensatorio_google_hook'),
+    path('google/compensatorio/empleados/', views.compensatorio_employees_list, name='compensatorio_employees_list'),
+
 
     # ─────────────────────────────────────────────
     # Permisos
