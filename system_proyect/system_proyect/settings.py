@@ -248,6 +248,14 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', 'dvex nxbf quaj nxtc')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
+
+
+
+GOOGLE_FORMS_SHARED_TOKEN = os.getenv("GOOGLE_FORMS_SHARED_TOKEN", "")
+
+
+
+
 # ─────────────────────────────────────────────────────────────
 # 14. CAMPO PRIMARY KEY POR DEFECTO
 # ─────────────────────────────────────────────────────────────

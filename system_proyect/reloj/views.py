@@ -7,18 +7,25 @@ from django.urls import reverse
 from django import forms
 from datetime import datetime, time, date
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.contrib import messages
+from django.core.paginator import Paginator
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.dateparse import parse_date
+from django.conf import settings
 
-# Modelos (plantillas + reglas + asignaciones)
+# Modelos (plantillas + reglas + asignaciones + extras)
 from .models import (
     ScheduleTemplate,
     ScheduleRule,
     EmployeeScheduleAssignment,
-    OvertimeRequest
+    OvertimeRequest,
+    Feriado,
+    SabadoEspecial,
+    TiempoCompensatorio,
+    PermisoEmpleado,
 )
 
 # Formularios
@@ -27,6 +34,10 @@ from .forms import (
     ScheduleRuleForm,          # edición individual (un día)
     RuleBulkForm,              # creación/actualización en lote (checkbox días)
     EmployeeScheduleAssignmentForm,
+    FeriadoForm,
+    SabadoEspecialForm,
+    TiempoCompensatorioForm,
+    PermisoEmpleadoForm,
 )
 
 # ─────────────────────────────────────────────────────────────
@@ -36,6 +47,10 @@ from .forms import (
 def _is_ajax(request):
     """Devuelve True si la petición es AJAX (para respuestas JSON en modales)."""
     return request.headers.get('x-requested-with') == 'XMLHttpRequest'
+
+
+def staff_required(view_func):
+    return login_required(user_passes_test(lambda u: u.is_staff or u.is_superuser)(view_func))
 
 
 FMT_HHMM = "%H:%M"  # formato estándar HH:MM
@@ -64,8 +79,13 @@ def _to_hhmm(val):
 
     if isinstance(val, str):
         s = val.strip()
-        if len(s) >= 5 and s[2] == ':':  # ya parece 'HH:MM...'
-            return s[:5]
+        if len(s) >= 5 and len(s.split(":")[0]) in (1, 2) and s[2] == ':':
+            # ya parece 'HH:MM...' (y soporta 'H:MM')
+            # normaliza a 5 caracteres si viene 'H:MM'
+            parts = s.split(":")
+            hh = parts[0].zfill(2)
+            mm = parts[1][:2]
+            return f"{hh}:{mm}"
         for pat in ("%H:%M:%S", "%Y-%m-%d %H:%M:%S"):
             try:
                 return datetime.strptime(s, pat).strftime(FMT_HHMM)
@@ -84,6 +104,9 @@ def _parse_hhmm_to_dt(hhmm):
     if not hhmm:
         return None
     try:
+        # Asegura dos dígitos en horas
+        h, m = hhmm.split(":")
+        hhmm = f"{int(h):02d}:{int(m):02d}"
         return datetime.strptime(hhmm, FMT_HHMM)
     except Exception:
         return None
@@ -197,6 +220,7 @@ def get_empleados_zkbiotime():
 # Dashboard principal
 # ─────────────────────────────────────────────────────────────
 
+@login_required
 def dashboard(request):
     """Renderiza el panel principal del módulo Reloj."""
     return render(request, 'reloj/dashboard.html')
@@ -206,6 +230,7 @@ def dashboard(request):
 # Gráfica: detalle (modal) y totales (pastel)
 # ─────────────────────────────────────────────────────────────
 
+@login_required
 def grafica_detalle(request):
     """
     (Modal) Devuelve JSON con filas por 'estado' entre fechas:
@@ -298,6 +323,8 @@ def grafica_detalle(request):
 
     return JsonResponse({"success": error is None, "error": error, "rows": rows_out})
 
+
+@login_required
 def grafica(request):
     """
     (Vista) Renderiza la página de gráfico pastel:
@@ -374,6 +401,7 @@ def grafica(request):
 # Exportar PDF (placeholder)
 # ─────────────────────────────────────────────────────────────
 
+@login_required
 def exportar_pdf(request):
     """
     Placeholder: Renderiza el reporte como HTML con flag 'pdf'.
@@ -403,6 +431,7 @@ def get_empleado_options():
     return opciones
 
 
+@login_required
 def reporte(request):
     """
     (Vista) Reporte principal de marcas:
@@ -494,12 +523,14 @@ OPTION (MAXRECURSION 0);
 # CRUD · Plantillas y Reglas (con creación en lote)
 # ─────────────────────────────────────────────────────────────
 
+@login_required
 def plantilla_list(request):
     """Lista de plantillas de horario (con enlace para editar y agregar reglas)."""
     plantillas = ScheduleTemplate.objects.all().order_by("nombre")
     return render(request, "reloj/plantilla_list.html", {"plantillas": plantillas})
 
 
+@login_required
 def plantilla_edit(request, pk=None):
     """
     Crear/editar una plantilla. Si existe, muestra sus reglas.
@@ -518,6 +549,7 @@ def plantilla_edit(request, pk=None):
     return render(request, "reloj/plantilla_form.html", {"form": form, "plantilla": plantilla, "reglas": reglas})
 
 
+@login_required
 def regla_add(request, template_pk):
     """
     Crea/actualiza reglas **en lote** para varios días a la vez con checkboxes.
@@ -571,6 +603,7 @@ def regla_add(request, template_pk):
     })
 
 
+@login_required
 def regla_edit(request, pk):
     """
     Edición individual de una regla existente (un solo día).
@@ -592,6 +625,7 @@ def regla_edit(request, pk):
 # Mantengo nombres horarios_list/add/edit para no romper tus URLs
 # ─────────────────────────────────────────────────────────────
 
+@login_required
 def horarios_list(request):
     """
     Lista de asignaciones de plantilla por empleado.
@@ -624,6 +658,7 @@ def horarios_list(request):
     })
 
 
+@login_required
 def horarios_add(request):
     """
     Alta de asignación de plantilla a empleado (modal o página completa).
@@ -664,6 +699,7 @@ def horarios_add(request):
     return render(request, 'reloj/asignacion_form.html', {'form': form, 'modo': 'Agregar'})
 
 
+@login_required
 def horarios_edit(request, pk):
     """
     Edición de una asignación existente (modal o página completa).
@@ -715,6 +751,7 @@ def horarios_edit(request, pk):
 # Test de conexión a SQL Server (útil para validar ODBC)
 # ─────────────────────────────────────────────────────────────
 
+@login_required
 def test_sqlserver_connection(request):
     """
     Ejecuta una consulta mínima en ZKBioTime para validar la conexión.
@@ -744,55 +781,6 @@ def _fmt_mins(m: int) -> str:
 
 
 @login_required
-@require_POST
-def overtime_approve(request):
-    if not (request.user.is_staff or request.user.is_superuser):
-        return JsonResponse({'ok': False, 'msg': 'No autorizado'}, status=403)
-
-    emp_code = (request.POST.get('emp_code') or '').strip()
-    fecha    = parse_date(request.POST.get('fecha') or '')
-    try:
-        minutos_aut = int(request.POST.get('minutos_autorizados') or 0)
-        if minutos_aut < 0:
-            minutos_aut = 0
-    except Exception:
-        return JsonResponse({'ok': False, 'msg': 'Minutos inválidos'}, status=400)
-
-    status = (request.POST.get('status') or 'PEND').upper()
-    if status not in ('APPR', 'REJC', 'PEND'):
-        status = 'PEND'
-
-    comentario = (request.POST.get('comentario') or '').strip()
-
-    if not emp_code or not fecha:
-        return JsonResponse({'ok': False, 'msg': 'Faltan emp_code o fecha'}, status=400)
-
-    # Crear/actualizar el registro
-    ot, _created = OvertimeRequest.objects.get_or_create(
-        emp_code=emp_code,
-        fecha=fecha,
-        defaults={'minutos_calculados': 0}
-    )
-    ot.minutos_autorizados = minutos_aut
-    ot.status = status
-    # Campos de auditoría
-    if hasattr(ot, 'approved_by'):
-        ot.approved_by = request.user
-    if hasattr(ot, 'approved_at'):
-        ot.approved_at = timezone.now()
-    if hasattr(ot, 'comentario') and comentario:
-        ot.comentario = comentario
-
-    # Guardado seguro (solo campos que existan)
-    fields = ['minutos_autorizados', 'status']
-    if hasattr(ot, 'approved_by'): fields.append('approved_by')
-    if hasattr(ot, 'approved_at'): fields.append('approved_at')
-    if hasattr(ot, 'comentario'):  fields.append('comentario')
-    ot.save(update_fields=fields)
-
-    return JsonResponse({'ok': True})
-
-
 def tiempo_por_hora(request):
     """
     Calcula para cada empleado/día (en el rango):
@@ -800,7 +788,8 @@ def tiempo_por_hora(request):
       - Colores de llegada/salida vs horario programado (plantilla/segmentos).
       - Tiempo extra / faltante (real total vs total programado).
       - Marcas del día (todas) separadas por coma y con color en 1ª/última.
-      - Lee autorizaciones de OvertimeRequest (solo lectura para no bloquear).
+      - Sincroniza Tiempo Extra con OvertimeRequest (minutos calculados y autorizados).
+    NOTA: el SQL obtiene las marcas; el horario se resuelve con ORMs (plantillas).
     """
     # Filtros básicos
     hoy = datetime.today()
@@ -853,24 +842,6 @@ OPTION (MAXRECURSION 0);
             cursor.execute(query)
             rows = cursor.fetchall()
             columnas = [col[0] for col in cursor.description]
-
-            # ====== Precarga OvertimeRequest en bloque (solo lectura; SIN escrituras) ======
-            # Recolecta claves emp_code/fecha de las filas devueltas por el SQL
-            emp_codes_set = set()
-            for r in rows:
-                emp_codes_set.add(str(r[0]).strip())  # ID_Empleado es la 1a columna
-
-            ot_qs = OvertimeRequest.objects.filter(
-                emp_code__in=emp_codes_set,
-                fecha__gte=fecha_inicio,
-                fecha__lte=fecha_fin,
-            ).only(
-                "emp_code", "fecha",
-                "minutos_autorizados", "minutos_calculados",
-                "status", "approved_by", "approved_at"
-            )
-            ot_map = {(o.emp_code, o.fecha): o for o in ot_qs}
-            # ==============================================================================
 
             # Consulta auxiliar: TODAS las marcas "HH:MM" por empleado/día
             marcas_map = {}  # key: (emp_code_str, fecha_date) -> ["06:54","12:01","13:00","17:25"]
@@ -977,19 +948,27 @@ OPTION (MAXRECURSION 0);
                             cls = color_out_class
                         marcas_coloreadas.append({'t': tmark, 'cls': cls})
 
-                # --- Overtime (SOLO LECTURA desde ot_map; nada de escribir aquí) ---
-                ot = ot_map.get((emp_code, fecha_d))
-                aprobado_por = ""
-                aprobado_en  = ""
-                extra_aut    = 0
-                extra_status = "PEND"
-                if ot:
-                    extra_aut    = ot.minutos_autorizados or 0
-                    extra_status = ot.status or "PEND"
+                # --- Sincronizar con OvertimeRequest (minutos calculados) ---
+                try:
+                    ot, _ = OvertimeRequest.objects.get_or_create(
+                        emp_code=emp_code, fecha=fecha_d,
+                        defaults={"minutos_calculados": int(extra_calc_min)}
+                    )
+                    if ot.minutos_calculados != int(extra_calc_min):
+                        ot.minutos_calculados = int(extra_calc_min)
+                        ot.save(update_fields=["minutos_calculados"])
+                    # Campos para UI
+                    aprobado_por = ""
                     if ot.approved_by:
                         aprobado_por = (ot.approved_by.get_full_name() or ot.approved_by.username)
-                    if ot.approved_at:
-                        aprobado_en = ot.approved_at.strftime("%Y-%m-%d %H:%M")
+                    aprobado_en = ot.approved_at.strftime("%Y-%m-%d %H:%M") if ot.approved_at else ""
+                    can_authorize = bool(getattr(request.user, "is_staff", False) or getattr(request.user, "is_superuser", False))
+                except Exception as ex:
+                    print(f"[WARN] Overtime sync #{i}: {ex}")
+                    aprobado_por = ""
+                    aprobado_en = ""
+                    can_authorize = False
+                    ot = None
 
                 # Ensamble de salida (manteniendo tus claves + nuevas)
                 row['Cargo']                    = cargo
@@ -1004,11 +983,11 @@ OPTION (MAXRECURSION 0);
                 row['Trabajado_Min']           = int(trabajado_min or 0)
                 row['Faltante_Min']            = int(faltante_min or 0)
                 row['Extra_Min_Calculado']     = int(extra_calc_min or 0)
-                row['Extra_Min_Autorizado']    = int(extra_aut or 0)
-                row['Extra_Status']            = extra_status
+                row['Extra_Min_Autorizado']    = int((ot.minutos_autorizados if ot else 0) or 0)
+                row['Extra_Status']            = (ot.status if ot else "PEND")
                 row['Extra_Autorizado_Por']    = aprobado_por
                 row['Extra_Autorizado_En']     = aprobado_en
-                row['Can_Authorize']           = bool(getattr(request.user, "is_staff", False) or getattr(request.user, "is_superuser", False))
+                row['Can_Authorize']           = can_authorize
 
                 # Compatibilidad con tus columnas de texto previas
                 row['Tiempo_Extra']            = _fmt_mins(row['Extra_Min_Calculado'])
@@ -1021,7 +1000,7 @@ OPTION (MAXRECURSION 0);
 
                 datos.append(row)
 
-            # Logs de depuración (acota a 5 filas)
+            # Logs de depuración
             print(f"Total filas procesadas (vista): {len(datos)}")
             for j, r0 in enumerate(datos[:5]):
                 print(f"[{j}] emp={r0.get('ID_Empleado')} fecha={r0.get('Fecha')} "
@@ -1048,3 +1027,335 @@ OPTION (MAXRECURSION 0);
         'total_filas': len(datos),
     }
     return render(request, 'reloj/tiempo_por_hora.html', contexto)
+
+
+# ─────────────────────────────────────────────────────────────
+# AUTORIZAR TIEMPO EXTRA (JSON)
+# ─────────────────────────────────────────────────────────────
+
+@staff_required
+@require_POST
+def overtime_authorize(request):
+    """
+    Autoriza/Rechaza minutos de tiempo extra.
+    Espera JSON:
+      { "emp_code":"0001", "fecha":"YYYY-MM-DD", "minutos": 30, "status":"APPR"|"REJC", "comentario": "opc" }
+    Devuelve JSON: { success, msg }
+    """
+    try:
+        data = request.POST or {}
+        # Soporta JSON en body
+        if request.content_type.startswith("application/json"):
+            import json
+            data = json.loads(request.body.decode("utf-8"))
+        emp_code = (data.get("emp_code") or "").strip()
+        fecha = parse_date(data.get("fecha") or "")
+        minutos = int(data.get("minutos") or 0)
+        status = (data.get("status") or "APPR").upper()
+        comentario = (data.get("comentario") or "").strip()
+
+        if status not in ("APPR", "REJC"):
+            return JsonResponse({"success": False, "msg": "Estado inválido."}, status=400)
+        if not (emp_code and fecha is not None):
+            return JsonResponse({"success": False, "msg": "Datos incompletos."}, status=400)
+        if minutos < 0:
+            minutos = 0
+
+        ot, _ = OvertimeRequest.objects.get_or_create(emp_code=emp_code, fecha=fecha)
+        ot.minutos_autorizados = minutos if status == "APPR" else 0
+        ot.status = status
+        ot.comentario = comentario
+        ot.approved_by = request.user
+        ot.approved_at = timezone.now()
+        ot.save()
+        return JsonResponse({"success": True, "msg": "Actualizado."})
+    except Exception as e:
+        return JsonResponse({"success": False, "msg": str(e)}, status=500)
+
+
+# ─────────────────────────────────────────────────────────────
+# GOOGLE FORMS HOOK · Tiempo compensatorio
+# ─────────────────────────────────────────────────────────────
+
+@csrf_exempt
+def compensatorio_google_hook(request):
+    """
+    Endpoint para recibir submissions desde Google Forms via Apps Script.
+    Autenticación: Header Authorization: Bearer <GOOGLE_FORMS_SHARED_TOKEN>
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("Método no permitido")
+
+    auth = request.headers.get("Authorization","")
+    token = auth.replace("Bearer ", "").strip()
+    if token != getattr(settings, "GOOGLE_FORMS_SHARED_TOKEN", ""):
+        return JsonResponse({"ok": False, "msg": "Unauthorized"}, status=401)
+
+    try:
+        import json
+        data = json.loads(request.body.decode("utf-8"))
+    except Exception:
+        return JsonResponse({"ok": False, "msg": "JSON inválido"}, status=400)
+
+    emp_code = (data.get("emp_code") or "").strip()
+    nombre   = (data.get("nombre_empleado") or "").strip()
+    fecha    = parse_date(data.get("fecha") or "")
+    try:
+        minutos = int(data.get("minutos_registrados") or 0)
+        if minutos < 0: minutos = 0
+    except Exception:
+        return JsonResponse({"ok": False, "msg": "Minutos inválidos"}, status=400)
+    motivo   = (data.get("motivo") or "").strip()
+
+    if not (emp_code and nombre and fecha):
+        return JsonResponse({"ok": False, "msg": "Faltan campos obligatorios"}, status=400)
+
+    obj = TiempoCompensatorio.objects.create(
+        emp_code=emp_code,
+        nombre_empleado=nombre,
+        fecha=fecha,
+        minutos_registrados=minutos,
+        motivo=motivo,
+        estado='PEND',
+    )
+    return JsonResponse({"ok": True, "id": obj.id})
+
+
+# ─────────────────────────────────────────────────────────────
+# CRUD · Feriados
+# ─────────────────────────────────────────────────────────────
+
+@staff_required
+def feriados_list(request):
+    qs = Feriado.objects.all().order_by("-fecha")
+    paginator = Paginator(qs, 20)
+    page = request.GET.get("page")
+    feriados = paginator.get_page(page)
+    return render(request, "reloj/feriados_list.html", {"feriados": feriados})
+
+
+@staff_required
+def feriado_new(request):
+    if request.method == "POST":
+        form = FeriadoForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.creado_por = request.user
+            obj.save()
+            messages.success(request, "Feriado creado.")
+            return redirect("reloj_feriados_list")
+    else:
+        form = FeriadoForm()
+    return render(request, "reloj/feriado_form.html", {"form": form, "modo": "Agregar"})
+
+
+@staff_required
+def feriado_edit(request, pk):
+    obj = get_object_or_404(Feriado, pk=pk)
+    if request.method == "POST":
+        form = FeriadoForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Feriado actualizado.")
+            return redirect("reloj_feriados_list")
+    else:
+        form = FeriadoForm(instance=obj)
+    return render(request, "reloj/feriado_form.html", {"form": form, "modo": "Editar", "obj": obj})
+
+
+@staff_required
+def feriado_delete(request, pk):
+    obj = get_object_or_404(Feriado, pk=pk)
+    if request.method == "POST":
+        obj.delete()
+        messages.success(request, "Feriado eliminado.")
+        return redirect("reloj_feriados_list")
+    return render(request, "reloj/confirm_delete.html", {"obj": obj, "titulo": "Eliminar feriado"})
+
+
+# ─────────────────────────────────────────────────────────────
+# CRUD · Sábados especiales
+# ─────────────────────────────────────────────────────────────
+
+@staff_required
+def sabados_list(request):
+    qs = SabadoEspecial.objects.all().order_by("-fecha")
+    paginator = Paginator(qs, 20)
+    page = request.GET.get("page")
+    sabados = paginator.get_page(page)
+    return render(request, "reloj/sabados_list.html", {"sabados": sabados})
+
+
+@staff_required
+def sabado_new(request):
+    if request.method == "POST":
+        form = SabadoEspecialForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.creado_por = request.user
+            obj.save()
+            messages.success(request, "Sábado especial creado.")
+            return redirect("reloj_sabados_list")
+    else:
+        form = SabadoEspecialForm()
+    return render(request, "reloj/sabado_form.html", {"form": form, "modo": "Agregar"})
+
+
+@staff_required
+def sabado_edit(request, pk):
+    obj = get_object_or_404(SabadoEspecial, pk=pk)
+    if request.method == "POST":
+        form = SabadoEspecialForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Sábado especial actualizado.")
+            return redirect("reloj_sabados_list")
+    else:
+        form = SabadoEspecialForm(instance=obj)
+    return render(request, "reloj/sabado_form.html", {"form": form, "modo": "Editar", "obj": obj})
+
+
+@staff_required
+def sabado_delete(request, pk):
+    obj = get_object_or_404(SabadoEspecial, pk=pk)
+    if request.method == "POST":
+        obj.delete()
+        messages.success(request, "Sábado especial eliminado.")
+        return redirect("reloj_sabados_list")
+    return render(request, "reloj/confirm_delete.html", {"obj": obj, "titulo": "Eliminar sábado especial"})
+
+
+# ─────────────────────────────────────────────────────────────
+# CRUD · Tiempo compensatorio (capturas)
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def compensatorio_list(request):
+    """
+    Cualquiera autenticado puede ver su lista filtrada por emp_code si quieres;
+    aquí mostramos todos (puedes filtrar por request.user.is_staff si lo prefieres).
+    """
+    qs = TiempoCompensatorio.objects.all().order_by("-fecha", "-creado_en")
+    emp_code_f = (request.GET.get("emp_code") or "").strip()
+    if emp_code_f:
+        qs = qs.filter(emp_code__iexact=emp_code_f)
+
+    paginator = Paginator(qs, 25)
+    page = request.GET.get("page")
+    items = paginator.get_page(page)
+    return render(request, "reloj/compensatorio_list.html", {"items": items, "emp_code_f": emp_code_f})
+
+
+@login_required
+def compensatorio_new(request):
+    if request.method == "POST":
+        form = TiempoCompensatorioForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.registrado_por = request.user
+            obj.estado = "PEND"
+            obj.save()
+            messages.success(request, "Tiempo compensatorio registrado (pendiente).")
+            return redirect("reloj_compensatorio_list")
+    else:
+        form = TiempoCompensatorioForm()
+    return render(request, "reloj/compensatorio_form.html", {"form": form, "modo": "Agregar"})
+
+
+@staff_required
+def compensatorio_edit(request, pk):
+    obj = get_object_or_404(TiempoCompensatorio, pk=pk)
+    if request.method == "POST":
+        form = TiempoCompensatorioForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Registro actualizado.")
+            return redirect("reloj_compensatorio_list")
+    else:
+        form = TiempoCompensatorioForm(instance=obj)
+    return render(request, "reloj/compensatorio_form.html", {"form": form, "modo": "Editar", "obj": obj})
+
+
+@staff_required
+def compensatorio_delete(request, pk):
+    obj = get_object_or_404(TiempoCompensatorio, pk=pk)
+    if request.method == "POST":
+        obj.delete()
+        messages.success(request, "Registro eliminado.")
+        return redirect("reloj_compensatorio_list")
+    return render(request, "reloj/confirm_delete.html", {"obj": obj, "titulo": "Eliminar registro de tiempo compensatorio"})
+
+
+# ─────────────────────────────────────────────────────────────
+# CRUD · Permisos
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def permisos_list(request):
+    qs = PermisoEmpleado.objects.all().order_by("-fecha_inicio", "emp_code")
+    emp_code_f = (request.GET.get("emp_code") or "").strip()
+    if emp_code_f:
+        qs = qs.filter(emp_code__iexact=emp_code_f)
+    paginator = Paginator(qs, 25)
+    page = request.GET.get("page")
+    items = paginator.get_page(page)
+    return render(request, "reloj/permisos_list.html", {"items": items, "emp_code_f": emp_code_f})
+
+
+@login_required
+def permiso_new(request):
+    if request.method == "POST":
+        form = PermisoEmpleadoForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.registrado_por = request.user
+            obj.save()
+            messages.success(request, "Permiso registrado (pendiente de aprobación).")
+            return redirect("reloj_permisos_list")
+    else:
+        form = PermisoEmpleadoForm()
+    return render(request, "reloj/permiso_form.html", {"form": form, "modo": "Agregar"})
+
+
+@staff_required
+def permiso_edit(request, pk):
+    obj = get_object_or_404(PermisoEmpleado, pk=pk)
+    if request.method == "POST":
+        form = PermisoEmpleadoForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Permiso actualizado.")
+            return redirect("reloj_permisos_list")
+    else:
+        form = PermisoEmpleadoForm(instance=obj)
+    return render(request, "reloj/permiso_form.html", {"form": form, "modo": "Editar", "obj": obj})
+
+
+@staff_required
+@require_POST
+def permiso_approve(request, pk):
+    """Aprobar/rechazar permiso rápido (AJAX o POST normal)."""
+    obj = get_object_or_404(PermisoEmpleado, pk=pk)
+    action = (request.POST.get("action") or "").lower()
+    comentario = (request.POST.get("comentario") or "").strip()
+    if action not in ("aprobar", "rechazar"):
+        return HttpResponseBadRequest("Acción inválida")
+    obj.aprobado = (action == "aprobar")
+    obj.autorizado_por = request.user
+    if comentario:
+        obj.comentario_autorizacion = comentario
+    obj.save()
+    if _is_ajax(request):
+        return JsonResponse({"success": True, "aprobado": obj.aprobado})
+    messages.success(request, "Permiso actualizado.")
+    return redirect("reloj_permisos_list")
+
+
+@staff_required
+def permiso_delete(request, pk):
+    obj = get_object_or_404(PermisoEmpleado, pk=pk)
+    if request.method == "POST":
+        obj.delete()
+        messages.success(request, "Permiso eliminado.")
+        return redirect("reloj_permisos_list")
+    return render(request, "reloj/confirm_delete.html", {"obj": obj, "titulo": "Eliminar permiso"})
