@@ -1,7 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <title>Dashboard Reloj (Asistencia)</title>
@@ -11,166 +10,217 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'reloj/css/reloj.css' %}">
 </head>
-
 <body class="bg-light">
 
-    <div class="d-flex" id="wrapper">
-        <!-- Sidebar principal estilo TechCare -->
-        <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
-            <div class="d-flex align-items-center mb-3">
-                <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
-                <span class="fs-5 fw-bold">TechCare</span>
-            </div>
-            <hr class="text-secondary">
-            <ul class="nav nav-pills flex-column mb-auto">
-                <li>
-                    <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white active">
-                        <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-table me-2"></i> Generar Reporte
-                    </a>
-                </li>
-                <li>
-                    <a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
-                    </a>
-                </li>
-
-                <!-- NUEVO: Plantillas de horario -->
-                <li>
-                    <a href="{% url 'reloj_plantilla_list' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-layer-group me-2"></i> Plantillas de Horario
-                    </a>
-                </li>
-
-                <!-- Renombrado: Asignaciones (antes Horarios de Empleados) -->
-                <li>
-                    <a href="{% url 'horarios_list' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-user-clock me-2"></i> Asignaciones de Horario
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white">
-                        <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
-                    </a>
-                </li>
-
-                <li>
-                    <a href="{% url 'menu' %}" class="nav-link">
-                        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
-                    </a>
-                </li>
-            </ul>
-            <hr class="text-secondary">
-            <div class="dropdown">
-                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
-                    data-bs-toggle="dropdown">
-                    <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32"
-                        class="rounded-circle me-2">
-                    <strong>{{ request.user.username }}</strong>
+<div class="d-flex" id="wrapper">
+    <!-- Sidebar principal estilo TechCare -->
+    <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+        <div class="d-flex align-items-center mb-3">
+            <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+            <span class="fs-5 fw-bold">TechCare</span>
+        </div>
+        <hr class="text-secondary">
+        <ul class="nav nav-pills flex-column mb-auto">
+            <li>
+                <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white active">
+                    <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)
                 </a>
-                <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-                    <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a>
-                    </li>
-                    <li>
-                        <hr class="dropdown-divider">
-                    </li>
-                    <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i>
-                            Cerrar Sesión</a></li>
-                </ul>
+            </li>
+            <li>
+                <a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-table me-2"></i> Generar Reporte
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reloj_plantilla_list' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-layer-group me-2"></i> Plantillas de Horario
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'horarios_list' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-user-clock me-2"></i> Asignaciones de Horario
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reloj_compensatorio_list' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-stopwatch me-2"></i> Tiempo Compensatorio
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reloj_feriados_list' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-calendar-days me-2"></i> Feriados
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reloj_sabados_list' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-calendar-week me-2"></i> Sábados Especiales
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'reloj_permisos_list' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-clipboard-list me-2"></i> Permisos
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'menu' %}" class="nav-link text-white">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
+                </a>
+            </li>
+        </ul>
+        <hr class="text-secondary">
+        <div class="dropdown">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+                data-bs-toggle="dropdown">
+                <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32"
+                    class="rounded-circle me-2">
+                <strong>{{ request.user.username }}</strong>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+                <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+            </ul>
+        </div>
+    </nav>
+    <!-- /Sidebar -->
+
+    <!-- Main content -->
+    <div class="flex-grow-1 d-flex flex-column min-vh-100">
+        <!-- Header -->
+        <nav class="navbar navbar-light bg-white shadow-sm px-3">
+            <div class="container-fluid">
+                <div class="navbar-brand d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-clock text-primary"></i>
+                    <span class="fs-4">Dashboard Reloj (Asistencia)</span>
+                </div>
             </div>
         </nav>
-        <!-- /Sidebar -->
+        <!-- /Header -->
 
-        <!-- Main content -->
-        <div class="flex-grow-1 d-flex flex-column min-vh-100">
-            <!-- Header -->
-            <nav class="navbar navbar-light bg-white shadow-sm px-3">
-                <div class="container-fluid">
-                    <div class="navbar-brand d-flex align-items-center gap-3">
-                        <i class="fa-solid fa-clock text-primary"></i>
-                        <span class="fs-4">Dashboard Reloj (Asistencia)</span>
-                    </div>
-                </div>
-            </nav>
-            <!-- /Header -->
-
-            <div class="container py-4">
-                <div class="row g-4 mb-4">
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm menu-card"
-                            onclick="window.location='{% url 'reloj_reporte' %}'">
-                            <div class="card-body text-center">
-                                <i class="fa-solid fa-table fa-2x text-success mb-2"></i>
-                                <div class="fw-bold mb-1">Generar Reporte</div>
-                                <div class="text-muted small">Consultar asistencias y ausencias</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm menu-card"
-                            onclick="window.location='{% url 'reloj_grafica' %}'">
-                            <div class="card-body text-center">
-                                <i class="fa-solid fa-chart-bar fa-2x text-info mb-2"></i>
-                                <div class="fw-bold mb-1">Ver Gráfica</div>
-                                <div class="text-muted small">Visualizar estadísticas de ausencias</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- NUEVO: Plantillas -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm menu-card"
-                            onclick="window.location='{% url 'reloj_plantilla_list' %}'">
-                            <div class="card-body text-center">
-                                <i class="fa-solid fa-layer-group fa-2x text-secondary mb-2"></i>
-                                <div class="fw-bold mb-1">Plantillas de Horario</div>
-                                <div class="text-muted small">Define reglas por día (L-D) y turnos</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Renombrado: Asignaciones -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm menu-card"
-                            onclick="window.location='{% url 'horarios_list' %}'">
-                            <div class="card-body text-center">
-                                <i class="fa-solid fa-user-clock fa-2x text-warning mb-2"></i>
-                                <div class="fw-bold mb-1">Asignaciones de Horario</div>
-                                <div class="text-muted small">Vincula empleado ↔ plantilla (con fechas)</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 shadow-sm menu-card"
-                            onclick="window.location='{% url 'tiempo_por_hora' %}'">
-                            <div class="card-body text-center">
-                                <i class="fa-solid fa-hourglass-half fa-2x text-primary mb-2"></i>
-                                <div class="fw-bold mb-1">Tiempo por Hora</div>
-                                <div class="text-muted small">Ver control exacto de horas y puntualidad</div>
-                            </div>
+        <div class="container py-4">
+            <div class="row g-4 mb-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_reporte' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-table fa-2x text-success mb-2"></i>
+                            <div class="fw-bold mb-1">Generar Reporte</div>
+                            <div class="text-muted small">Consultar asistencias y ausencias</div>
                         </div>
                     </div>
                 </div>
 
-                <div class="alert alert-secondary mt-4" role="alert">
-                    Selecciona una opción para generar reportes, ver estadísticas o administrar
-                    <b>Plantillas</b> y <b>Asignaciones de Horario</b> para los empleados.
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_grafica' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-chart-bar fa-2x text-info mb-2"></i>
+                            <div class="fw-bold mb-1">Ver Gráfica</div>
+                            <div class="text-muted small">Visualizar estadísticas de ausencias</div>
+                        </div>
+                    </div>
                 </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_plantilla_list' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-layer-group fa-2x text-secondary mb-2"></i>
+                            <div class="fw-bold mb-1">Plantillas de Horario</div>
+                            <div class="text-muted small">Define reglas por día (L-D) y turnos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'horarios_list' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-user-clock fa-2x text-warning mb-2"></i>
+                            <div class="fw-bold mb-1">Asignaciones de Horario</div>
+                            <div class="text-muted small">Vincula empleado ↔ plantilla (con fechas)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'tiempo_por_hora' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-hourglass-half fa-2x text-primary mb-2"></i>
+                            <div class="fw-bold mb-1">Tiempo por Hora</div>
+                            <div class="text-muted small">Ver control exacto de horas y puntualidad</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_compensatorio_list' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-stopwatch fa-2x text-info mb-2"></i>
+                            <div class="fw-bold mb-1">Tiempo Compensatorio</div>
+                            <div class="text-muted small">Registrar y aprobar tiempo compensatorio</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_feriados_list' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-calendar-days fa-2x text-success mb-2"></i>
+                            <div class="fw-bold mb-1">Feriados</div>
+                            <div class="text-muted small">Gestiona los días feriados del año</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_sabados_list' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-calendar-week fa-2x text-warning mb-2"></i>
+                            <div class="fw-bold mb-1">Sábados Especiales</div>
+                            <div class="text-muted small">Horarios y control de sábados</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm menu-card"
+                        onclick="window.location='{% url 'reloj_permisos_list' %}'">
+                        <div class="card-body text-center">
+                            <i class="fa-solid fa-clipboard-list fa-2x text-danger mb-2"></i>
+                            <div class="fw-bold mb-1">Permisos</div>
+                            <div class="text-muted small">Gestión y aprobación de permisos</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-secondary mt-4" role="alert">
+                Selecciona una opción para generar reportes, ver estadísticas o administrar <b>Plantillas</b>,
+                <b>Asignaciones de Horario</b> y módulos de <b>Tiempo Compensatorio</b>, <b>Feriados</b>,
+                <b>Sábados Especiales</b> y <b>Permisos</b> para los empleados.
             </div>
         </div>
     </div>
+</div>
 
-    <!-- JS scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
-    <script src="{% static 'reloj/js/reloj.js' %}" defer></script>
+<!-- JS scripts -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
+<script src="{% static 'reloj/js/reloj.js' %}" defer></script>
 </body>
-
 </html>

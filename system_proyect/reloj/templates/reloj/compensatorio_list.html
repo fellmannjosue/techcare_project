@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Tiempo Compensatorio - Lista</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome y Bootstrap Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { background: #f8fafb; }
+    .sidebar {
+      min-width: 230px; max-width: 230px; min-height: 100vh;
+      background: #1a2330; color: #fff; position: fixed; top: 0; left: 0; bottom: 0;
+      display: flex; flex-direction: column; z-index: 1030;
+    }
+    .sidebar .nav-link {
+      color: #cfd8dc; font-weight: 500; margin-bottom: 2px; border-radius: 4px; transition: background .1s;
+    }
+    .sidebar .nav-link.active, .sidebar .nav-link:hover { background: #212e41; color: #fff; }
+    .sidebar .sidebar-header {
+      font-size: 1.2rem; font-weight: bold; padding: 20px 1rem 1rem 1.5rem;
+      letter-spacing: 1px; border-bottom: 1px solid #222b3c; margin-bottom: 0.5rem;
+    }
+    .main-content { margin-left: 230px; padding: 36px 20px 20px 20px; }
+    @media (max-width: 991.98px) {
+      .sidebar { position: static; min-width: 100vw; max-width: 100vw; min-height: auto; flex-direction: row; }
+      .main-content { margin-left: 0; padding-top: 100px; }
+    }
+    .table td, .table th { vertical-align: middle; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="d-flex align-items-center mb-3 p-3 pb-0">
+    <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
+    <span class="fs-5 fw-bold">TechCare</span>
+  </div>
+  <hr class="text-secondary">
+  <ul class="nav nav-pills flex-column mb-auto px-3">
+    <li>
+      <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white">
+        <i class="fa-solid fa-clock me-2"></i> Reloj (Asistencia)
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_reporte' %}" class="nav-link text-white">
+        <i class="fa-solid fa-table me-2"></i> Generar Reporte
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_grafica' %}" class="nav-link text-white">
+        <i class="fa-solid fa-chart-bar me-2"></i> Ver Gráfica
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_plantilla_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-layer-group me-2"></i> Plantillas de Horario
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'horarios_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-user-clock me-2"></i> Asignaciones de Horario
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'tiempo_por_hora' %}" class="nav-link text-white">
+        <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_compensatorio_list' %}" class="nav-link text-white active">
+        <i class="fa-solid fa-stopwatch me-2"></i> Tiempo Compensatorio
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_feriados_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-calendar-days me-2"></i> Feriados
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_sabados_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-calendar-week me-2"></i> Sábados Especiales
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_permisos_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-clipboard-list me-2"></i> Permisos
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'menu' %}" class="nav-link text-white">
+        <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
+      </a>
+    </li>
+  </ul>
+  <hr class="text-secondary">
+  <div class="dropdown p-3 pt-0">
+    <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
+      data-bs-toggle="dropdown">
+      <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32"
+        class="rounded-circle me-2">
+      <strong>{{ request.user.username }}</strong>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
+      <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+    </ul>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main-content">
+  <div class="container-fluid">
+    <div class="d-flex align-items-center mb-3">
+      <h3 class="me-auto mb-0">Tiempo Compensatorio</h3>
+      <!-- No botón Nuevo -->
+    </div>
+
+    <!-- Filtros -->
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-auto">
+        <label for="emp_code" class="form-label mb-0 small text-muted">Filtrar por emp_code</label>
+        <input type="text" class="form-control" id="emp_code" name="emp_code" value="{{ emp_code_f }}" placeholder="Ej. 2">
+      </div>
+      <div class="col-auto align-self-end">
+        <button class="btn btn-outline-secondary" type="submit">Filtrar</button>
+        <a class="btn btn-link" href="{% url 'reloj_compensatorio_list' %}">Limpiar</a>
+      </div>
+    </form>
+
+    <!-- Mensajes -->
+    {% if messages %}
+      {% for m in messages %}
+        <div class="alert alert-{{ m.tags }} alert-dismissible fade show" role="alert">
+          {{ m }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Tabla -->
+    <div class="card shadow-sm">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>emp_code</th>
+              <th>Nombre</th>
+              <th>Minutos</th>
+              <th>Motivo</th>
+              <th>Estado</th>
+              <th>Creado</th>
+              <th style="width:140px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for it in items %}
+            <tr>
+              <td>{{ forloop.counter0|add:items.start_index }}</td>
+              <td>{{ it.fecha|date:"Y-m-d" }}</td>
+              <td><code>{{ it.emp_code }}</code></td>
+              <td>{{ it.nombre_empleado }}</td>
+              <td>{{ it.minutos_registrados }}</td>
+              <td>{{ it.motivo }}</td>
+              <td>
+                {% if it.estado == "APPR" %}
+                  <span class="badge bg-success">Aprobado</span>
+                {% elif it.estado == "REJC" %}
+                  <span class="badge bg-danger">Rechazado</span>
+                {% else %}
+                  <span class="badge bg-warning text-dark">Pendiente</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if it.creado_en %}{{ it.creado_en|date:"Y-m-d H:i" }}{% endif %}
+              </td>
+              <td>
+                {% if request.user.is_staff or request.user.is_superuser %}
+                  {% if it.estado == "PEND" %}
+                    <a class="btn btn-sm btn-success"
+                      href="{% url 'reloj_compensatorio_authorize' it.pk %}">
+                      <i class="fa fa-check-circle"></i> Autorizar
+                    </a>
+                  {% else %}
+                    <span class="text-muted small">—</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted small">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="9" class="text-center text-muted py-4">Sin registros.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <div class="card-body">
+        <nav aria-label="Paginación">
+          <ul class="pagination mb-0">
+            {% if items.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ items.previous_page_number }}&emp_code={{ emp_code_f }}">«</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">«</span></li>
+            {% endif %}
+
+            <li class="page-item disabled">
+              <span class="page-link">Página {{ items.number }} de {{ items.paginator.num_pages }}</span>
+            </li>
+
+            {% if items.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ items.next_page_number }}&emp_code={{ emp_code_f }}">»</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">»</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

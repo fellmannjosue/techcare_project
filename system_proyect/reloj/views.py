@@ -1091,7 +1091,6 @@ def _parse_date_flexible(s: str):
             pass
     return None
 
-
 @require_GET
 def compensatorio_employees_list(request):
     # Auth por el mismo token compartido
@@ -1187,15 +1186,15 @@ def compensatorio_google_hook(request):
     nombre_oficial = (row[0] or "").strip()
 
     # --- Crear/actualizar registro (clave emp_code+fecha) ---
-    obj, created = TiempoCompensatorio.objects.update_or_create(
+    obj = TiempoCompensatorio.objects.create(
         emp_code=emp_code,
+        nombre_empleado=nombre_oficial,
         fecha=fecha,
-        defaults={
-            "nombre_empleado": nombre_oficial,  # ignoramos el nombre del Form
-            "minutos_registrados": minutos,
-            "motivo": motivo,
-        },
+     minutos_registrados=minutos,
+        motivo=motivo,
     )
+    created = True
+
 
     return JsonResponse({
         "success": True,
@@ -1330,6 +1329,25 @@ def compensatorio_list(request):
     page = request.GET.get("page")
     items = paginator.get_page(page)
     return render(request, "reloj/compensatorio_list.html", {"items": items, "emp_code_f": emp_code_f})
+
+
+@staff_required
+def compensatorio_authorize(request, pk):
+    obj = get_object_or_404(TiempoCompensatorio, pk=pk)
+    if request.method == "POST":
+        estado = request.POST.get("estado")
+        minutos = int(request.POST.get("minutos_autorizados") or 0)
+        comentario = (request.POST.get("comentario") or "").strip()
+        obj.estado = estado
+        obj.minutos_autorizados = minutos
+        obj.comentario_autorizacion = comentario
+        obj.autorizado_por = request.user
+        obj.autorizado_en = timezone.now()
+        obj.save()
+        messages.success(request, "Tiempo compensatorio autorizado correctamente.")
+        return redirect("reloj_compensatorio_list")
+    return render(request, "reloj/compensatorio_authorize.html", {"obj": obj})
+
 
 
 @login_required

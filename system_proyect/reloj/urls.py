@@ -62,6 +62,8 @@ urlpatterns = [
     path('compensatorio/nuevo/', views.compensatorio_new, name='reloj_compensatorio_new'),
     path('compensatorio/<int:pk>/editar/', views.compensatorio_edit, name='reloj_compensatorio_edit'),
     path('compensatorio/<int:pk>/eliminar/', views.compensatorio_delete, name='reloj_compensatorio_delete'),
+    path('compensatorio/<int:pk>/autorizar/', views.compensatorio_authorize, name='reloj_compensatorio_authorize'),
+
 
     # Hook Google Forms (POST Apps Script)
     path('google/compensatorio/ingresar/', views.compensatorio_google_hook, name='compensatorio_google_hook'),
