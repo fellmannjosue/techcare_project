@@ -33,15 +33,25 @@ class Computadora(models.Model):
     fecha_instalado = models.DateField("Fecha de Instalación")
     observaciones   = models.TextField("Observaciones", blank=True, null=True)
 
-    category = models.CharField('Categoría',
+    category = models.CharField(
+        'Categoría',
         max_length=100,
         choices=InventoryItem.CATEGORY_CHOICES,
-        blank=True, null=True
+        blank=True,
+        null=True
     )
-    # created_at removido
+
+    # NUEVO CAMPO PARA AGRUPAR
+    grupo = models.PositiveIntegerField(
+        "Grupo",
+        blank=True,
+        null=True,
+        help_text="Número de grupo para clasificar computadoras"
+    )
 
     def __str__(self):
         return f"{self.asset_id} – {self.modelo}"
+
 
 
 class Televisor(models.Model):

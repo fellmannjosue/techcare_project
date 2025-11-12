@@ -583,27 +583,31 @@ def editar_progress_report(request, pk):
                 mat['asignacion'] = asignacion
                 mat['comentario'] = comentario
                 # SOLO asigna el docente si está vacío
-                if not mat.get('docente'):
-                    mat['docente'] = usuario_actual
+            if mat["editable"]:
+                  mat['docente'] = usuario_actual
+
             nuevas_materias.append(mat)
 
-        # 2️⃣ Procesa TODAS las filas de 'Asociadas'
+# Procesa TODAS las filas de 'Asociadas'
         asignaciones_asociadas = request.POST.getlist('asignacion_Asociadas[]')
         comentarios_asociadas = request.POST.getlist('comentario_Asociadas[]')
-        # Los nombres de los docentes asociados pueden venir en POST (si pones un input), si no, asigna usuario_actual a todos los nuevos
-        # Si quieres que sólo el que edita quede como docente, déjalos así:
+
         for i in range(len(asignaciones_asociadas)):
-            # Si tienes filas de 'Asociadas' ya existentes, usa el docente de esas filas; si no, pon el usuario actual
-            docente_valor = usuario_actual
-            if i < len(asociadas_indices_existentes) and asociadas_indices_existentes[i].get('docente'):
+             # Conserva el docente si ya existía para ese índice, si no, usa usuario_actual
+                     docente_valor = usuario_actual
+        if i < len(asociadas_indices_existentes) and asociadas_indices_existentes[i].get('docente'):
                 docente_valor = asociadas_indices_existentes[i]['docente']
-            nuevas_materias.append({
-                'materia': 'Asociadas',
-                'asignacion': asignaciones_asociadas[i],
-                'comentario': comentarios_asociadas[i],
-                'docente': docente_valor,
-                'editable': True,  # Esto es sólo para el template
-            })
+             # Si el usuario actual es quien edita (editable), entonces sobreescribe
+        if i < len(asociadas_indices_existentes) and asociadas_indices_existentes[i].get('editable'):
+            docente_valor = usuario_actual
+        nuevas_materias.append({
+        'materia': 'Asociadas',
+        'asignacion': asignaciones_asociadas[i],
+        'comentario': comentarios_asociadas[i],
+        'docente': docente_valor,
+        'editable': True,  # Solo para el template
+    })
+
 
         # 3️⃣ Actualiza los campos generales y guarda
         reporte.materias_json = json.dumps(nuevas_materias)

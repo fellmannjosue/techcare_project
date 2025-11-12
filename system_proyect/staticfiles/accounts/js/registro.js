@@ -67,6 +67,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "lflores@ana-hn.org",
     "llopez@ana-hn.org",
     "lvalladares@ana-hn.org",
+    "mariafernandavalle2bacha@ana-hn.org",
     "malvarado@ana-hn.org",
     "mcarias@ana-hn.org",
     "mcastro@ana-hn.org",

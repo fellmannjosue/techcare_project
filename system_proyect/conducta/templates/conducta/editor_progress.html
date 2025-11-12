@@ -57,35 +57,59 @@
               <th style="width:180px;">Materia</th>
               <th style="width:230px;">Asignación</th>
               <th>Comentario/Observación</th>
-              <th style="width:180px;">Docente</th>
             </tr>
           </thead>
           <tbody>
             {% for mat in materias %}
-            <tr>
-              <td>
-                <input type="text" class="form-control" value="{{ mat.materia }}" readonly>
-                {% if mat.materia == "Asociadas" and forloop.first %}
+              {% if mat.materia == "Asociadas" %}
+                {% if forloop.first %}
+                  <!-- PRIMERA FILA de Asociadas incluye el botón + -->
+                  <tr class="fila-asociada">
+                    <td>
+                      <input type="text" class="form-control" value="Asociadas" readonly>
+                      <button type="button" class="btn btn-outline-primary btn-sm btn-add-asociada" id="btnAddAsociada" title="Agregar fila Asociada">+</button>
+                    </td>
+                    <td>
+                      <input type="text" name="asignacion_Asociadas[]" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                    </td>
+                    <td>
+                      <input type="text" name="comentario_Asociadas[]" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                    </td>
+                  </tr>
+                {% else %}
+                  <!-- Otras filas de Asociadas -->
+                  <tr class="fila-asociada">
+                    <td><input type="text" class="form-control" value="Asociadas" readonly></td>
+                    <td>
+                      <input type="text" name="asignacion_Asociadas[]" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                    </td>
+                    <td>
+                      <input type="text" name="comentario_Asociadas[]" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                    </td>
+                  </tr>
+                {% endif %}
+              {% else %}
+                <!-- Materias normales -->
+                <tr>
+                  <td><input type="text" class="form-control" value="{{ mat.materia }}" readonly></td>
+                  <td>
+                    <input type="text" name="asignacion_{{ mat.materia }}" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                  </td>
+                  <td>
+                    <input type="text" name="comentario_{{ mat.materia }}" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
+                  </td>
+                </tr>
+              {% endif %}
+            {% empty %}
+              <!-- Si NO hay materias asociadas, muestra fila vacía con el botón + -->
+              <tr class="fila-asociada">
+                <td>
+                  <input type="text" class="form-control" value="Asociadas" readonly>
                   <button type="button" class="btn btn-outline-primary btn-sm btn-add-asociada" id="btnAddAsociada" title="Agregar fila Asociada">+</button>
-                {% endif %}
-              </td>
-              <td>
-                <input type="text" name="asignacion_{{ mat.materia }}{% if mat.materia == 'Asociadas' %}[]{% endif %}" value="{{ mat.asignacion }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
-              </td>
-              <td>
-                <input type="text" name="comentario_{{ mat.materia }}{% if mat.materia == 'Asociadas' %}[]{% endif %}" value="{{ mat.comentario }}" class="form-control" {% if not mat.editable %}readonly{% endif %}>
-              </td>
-              <td>
-                <input type="text" class="form-control" value="{{ mat.docente }}" readonly>
-                {% if mat.editable and not mat.docente %}
-                  <div class="docente-mini text-success">Serás registrado como: {{ usuario_actual }}</div>
-                {% elif mat.editable and mat.docente == usuario_actual %}
-                  <div class="docente-mini text-primary">Editando como: {{ usuario_actual }}</div>
-                {% elif mat.docente %}
-                  <div class="docente-mini text-secondary">Registrado por: {{ mat.docente }}</div>
-                {% endif %}
-              </td>
-            </tr>
+                </td>
+                <td><input type="text" name="asignacion_Asociadas[]" class="form-control"></td>
+                <td><input type="text" name="comentario_Asociadas[]" class="form-control"></td>
+              </tr>
             {% endfor %}
           </tbody>
         </table>
@@ -130,24 +154,26 @@
   <script>
     // Agregar nueva fila Asociadas dinámicamente
     document.addEventListener('DOMContentLoaded', function() {
-      const tabla = document.getElementById('tabla-materias').getElementsByTagName('tbody')[0];
+      function crearFilaAsociada() {
+        const tr = document.createElement('tr');
+        tr.classList.add('fila-asociada');
+        tr.innerHTML = `
+          <td><input type="text" class="form-control" value="Asociadas" readonly></td>
+          <td><input type="text" name="asignacion_Asociadas[]" class="form-control"></td>
+          <td><input type="text" name="comentario_Asociadas[]" class="form-control"></td>
+        `;
+        return tr;
+      }
+      // Permite varios botones si hay varias filas pero solo el primero visible
       const btnAdd = document.getElementById('btnAddAsociada');
       if (btnAdd) {
         btnAdd.addEventListener('click', function() {
-          // Crea una fila nueva igual a la estructura de Asociadas pero vacía
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td><input type="text" class="form-control" value="Asociadas" readonly></td>
-            <td><input type="text" name="asignacion_Asociadas[]" class="form-control"></td>
-            <td><input type="text" name="comentario_Asociadas[]" class="form-control"></td>
-            <td><input type="text" class="form-control" value="{{ usuario_actual }}" readonly>
-              <div class="docente-mini text-success">Serás registrado como: {{ usuario_actual }}</div>
-            </td>
-          `;
-          tabla.appendChild(row);
+          const tabla = document.getElementById('tabla-materias').getElementsByTagName('tbody')[0];
+          tabla.appendChild(crearFilaAsociada());
         });
       }
     });
   </script>
 </body>
 </html>
+  

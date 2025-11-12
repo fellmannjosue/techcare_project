@@ -17,6 +17,12 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.utils.dateparse import parse_date
 from django.conf import settings
 from django.views.decorators.http import require_GET
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import landscape, letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+from django.utils.dateparse import parse_date
 
 # Modelos (plantillas + reglas + asignaciones + extras)
 from .models import (
@@ -42,6 +48,118 @@ from .forms import (
     PermisoEmpleadoForm,
 )
 
+
+
+
+
+# ─────────────────────────────────────────────────────────────
+# Exportar PDF (placeholder)
+# ─────────────────────────────────────────────────────────────
+
+@login_required
+def exportar_pdf(request):
+    # Lee filtros GET igual que tu view de reporte
+    hoy = datetime.today()
+    fecha_inicio = request.GET.get('fecha_inicio', hoy.replace(day=1).strftime('%Y-%m-%d'))
+    fecha_fin = request.GET.get('fecha_fin', hoy.strftime('%Y-%m-%d'))
+    emp_code_f = (request.GET.get('emp_code') or "").strip()
+
+    datos = []
+    columnas = []
+
+    # Ejecuta el mismo query que tu reporte
+    query = f"""
+    DECLARE @fechaInicio DATE = '{fecha_inicio}';
+    DECLARE @fechaFin    DATE = '{fecha_fin}';
+
+    ;WITH fechas AS (
+        SELECT @fechaInicio AS Fecha
+        UNION ALL
+        SELECT DATEADD(DAY, 1, Fecha)
+        FROM fechas
+        WHERE Fecha < @fechaFin
+    ),
+    marcas AS (
+        SELECT
+            CAST(t.emp_code AS VARCHAR(20)) AS emp_code,
+            CONVERT(DATE, t.punch_time)     AS fecha,
+            CONVERT(VARCHAR(5), CAST(t.punch_time AS TIME), 108) AS hora,
+            t.punch_time
+        FROM dbo.iclock_transaction t
+        WHERE t.punch_time IS NOT NULL
+    )
+    SELECT 
+        e.emp_code                               AS ID_Empleado,
+        e.first_name + ' ' + e.last_name         AS Empleado,
+        ISNULL(p.position_name, '-')             AS Cargo,
+        f.Fecha,
+        ISNULL((
+            SELECT STRING_AGG(m2.hora, ', ') WITHIN GROUP (ORDER BY m2.punch_time)
+            FROM marcas m2
+            WHERE m2.emp_code = CAST(e.emp_code AS VARCHAR(20))
+              AND m2.fecha    = f.Fecha
+        ), '')                                   AS Marcas,
+        COUNT(m.hora)                             AS Cantidad_Marcas,
+        CASE WHEN COUNT(m.hora) = 0 THEN 'AUSENTE' ELSE 'PRESENTE' END AS Estado
+    FROM fechas f
+    CROSS JOIN dbo.personnel_employee e
+    LEFT JOIN dbo.personnel_position p ON p.id = TRY_CONVERT(INT, e.position_id)
+    LEFT JOIN marcas m
+           ON m.emp_code = CAST(e.emp_code AS VARCHAR(20))
+          AND m.fecha    = f.Fecha
+    GROUP BY e.emp_code, e.first_name, e.last_name, p.position_name, f.Fecha
+    ORDER BY e.emp_code, f.Fecha
+    OPTION (MAXRECURSION 0);
+    """
+
+    try:
+        with connections['zkbio_sqlserver'].cursor() as cursor:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            columnas = [col[0] for col in cursor.description]
+            for r in rows:
+                row = dict(zip(columnas, r))
+                # Aplica filtro emp_code si corresponde
+                if emp_code_f and str(row.get('ID_Empleado') or "").strip() != emp_code_f:
+                    continue
+                datos.append(row)
+    except Exception as e:
+        return HttpResponse(f"Error al generar PDF: {str(e)}")
+
+    # ----- PDF GENERATION -----
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = 'attachment; filename="reporte_asistencia.pdf"'
+
+    doc = SimpleDocTemplate(response, pagesize=landscape(letter), leftMargin=20, rightMargin=20, topMargin=20, bottomMargin=20)
+    styles = getSampleStyleSheet()
+    elements = []
+
+    elements.append(Paragraph("Reporte de Asistencia", styles["Title"]))
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph(f"Desde: {fecha_inicio} &nbsp;&nbsp;&nbsp; Hasta: {fecha_fin}", styles["Normal"]))
+    elements.append(Spacer(1, 8))
+
+    # Encabezados (los mismos que en la tabla)
+    data = [columnas]
+    # Filas de datos
+    for row in datos:
+        data.append([row[c] for c in columnas])
+
+    table = Table(data, repeatRows=1)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#2C3E50")),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTSIZE', (0,0), (-1,0), 11),
+        ('FONTSIZE', (0,1), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,0), 8),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#34495E")),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.whitesmoke, colors.lightgrey]),
+    ]))
+    elements.append(table)
+    doc.build(elements)
+    return response
 # ─────────────────────────────────────────────────────────────
 # Utilidades generales
 # ─────────────────────────────────────────────────────────────
@@ -398,18 +516,6 @@ def grafica(request):
     }
     return render(request, 'reloj/grafica.html', contexto)
 
-
-# ─────────────────────────────────────────────────────────────
-# Exportar PDF (placeholder)
-# ─────────────────────────────────────────────────────────────
-
-@login_required
-def exportar_pdf(request):
-    """
-    Placeholder: Renderiza el reporte como HTML con flag 'pdf'.
-    Si luego activas ReportLab/WeasyPrint, reutiliza este contexto.
-    """
-    return render(request, 'reloj/reporte.html', {'pdf': True})
 
 
 # ─────────────────────────────────────────────────────────────

@@ -60,6 +60,26 @@
           <i class="fa-solid fa-hourglass-half me-2"></i> Tiempo por Hora
         </a>
       </li>
+          <li>
+      <a href="{% url 'reloj_compensatorio_list' %}" class="nav-link text-white active">
+        <i class="fa-solid fa-stopwatch me-2"></i> Tiempo Compensatorio
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_feriados_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-calendar-days me-2"></i> Feriados
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_sabados_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-calendar-week me-2"></i> Sábados Especiales
+      </a>
+    </li>
+    <li>
+      <a href="{% url 'reloj_permisos_list' %}" class="nav-link text-white">
+        <i class="fa-solid fa-clipboard-list me-2"></i> Permisos
+      </a>
+    </li>
       <li>
         <a href="{% url 'menu' %}" class="nav-link">
           <i class="fa-solid fa-arrow-left me-2"></i> Volver al Menú
