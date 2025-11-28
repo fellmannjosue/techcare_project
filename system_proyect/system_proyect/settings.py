@@ -216,7 +216,7 @@ LOGIN_REDIRECT_URL = '/accounts/menu/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # Duración de la sesión: 1 hora (en segundos)
-SESSION_COOKIE_AGE = 60 * 60  # 3600 segundos
+SESSION_COOKIE_AGE = 60 * 60 * 4  # 3600 segundos
 
 # Renovar la sesión con cada request (se reinicia si el usuario navega)
 SESSION_SAVE_EVERY_REQUEST = True
