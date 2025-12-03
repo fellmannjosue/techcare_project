@@ -261,30 +261,37 @@ def inventario_datashows(request):
 @login_required
 def inventario_registros(request):
     """
-    Vista que consolida todos los ítems de inventario en un solo listado
-    (sin formulario de actualización de categoría).
+    Vista que carga cada categoría de inventario en listas separadas
+    para que los TABS del template puedan mostrar los datos correctamente.
     """
-    year = datetime.datetime.now().year
-    mapping = [
-        (Computadora, 'Computadora', 'modelo'),
-        (Televisor,   'Televisor',   'modelo'),
-        (Impresora,   'Impresora',   'nombre'),
-        (Router,      'Router',      'modelo'),
-        (DataShow,    'DataShow',    'serie'),
-    ]
-    items_qs = None
-    for Model, label, field in mapping:
-        qs = Model.objects.annotate(
-            tipo=Value(label, output_field=CharField()),
-            descripcion=F(field),
-            categoria=F('category'),
-        ).values('tipo', 'id', 'descripcion', 'categoria')
-        items_qs = qs if items_qs is None else items_qs.union(qs)
 
-    return render(request, 'inventario/inventario_registros.html', {
-        'items': items_qs,
-        'year':  year,
+    year = datetime.datetime.now().year
+
+    # Cargar registros individuales (orden correcto ascendente)
+    computadoras = Computadora.objects.all().order_by('id')
+    impresoras   = Impresora.objects.all().order_by('id')
+    televisores  = Televisor.objects.all().order_by('id')
+    routers      = Router.objects.all().order_by('id')
+    datashows    = DataShow.objects.all().order_by('id')
+
+    # MONITORES (si aún no existe el modelo, no romper)
+    try:
+        from .models import Monitor
+        monitores = Monitor.objects.all().order_by('id')
+    except:
+        monitores = []
+
+    # Enviar todo al HTML
+    return render(request, "inventario/inventario_registros.html", {
+        "computadoras": computadoras,
+        "impresoras":   impresoras,
+        "televisores":  televisores,
+        "routers":      routers,
+        "datashows":    datashows,
+        "monitores":    monitores,
+        "year":         year,
     })
+
 
 
 def download_model_pdf(request, tipo, pk):
