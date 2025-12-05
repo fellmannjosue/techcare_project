@@ -1,4 +1,35 @@
-/.env
-/media/*.pyc
+# Entorno virtual
+venv/
+ENV/
+env/
+
+# Variables de entorno
+.env
+
+# Archivos generados por Python
 __pycache__/
-media/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de Django
+db.sqlite3
+
+# Archivos temporales
+*.log
+*.pot
+*.pyc
+*.mo
+
+# Carpeta de archivos subidos por usuarios
+/media/
+
+# Archivos de compilación de static
+/staticfiles/
+
+# Configuración de sistema
+*.pid
+*.seed
+
+# Archivos de VSCode
+.vscode/
