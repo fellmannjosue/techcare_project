@@ -1,35 +1,128 @@
-# Entorno virtual
+########################
+# ENTORNOS VIRTUALES
+########################
 venv/
-ENV/
 env/
+ENV/
+.venv/
 
-# Variables de entorno
+########################
+# VARIABLES DE ENTORNO
+########################
 .env
+.env.*
+*.key
+*.pem
 
-# Archivos generados por Python
+########################
+# ARCHIVOS PYTHON
+########################
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
 
-# Archivos de Django
+########################
+# BASES DE DATOS LOCALES
+########################
 db.sqlite3
+*.sqlite3
+*.db
+*.db3
 
-# Archivos temporales
+########################
+# ARCHIVOS DJANGO
+########################
+# Archivos de migración (opcionales si quieres evitar exponer estructura interna)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Caché de Django / archivos temporales
 *.log
 *.pot
-*.pyc
 *.mo
+*.pickle
+*.pkl
+*.tmp
 
-# Carpeta de archivos subidos por usuarios
+########################
+# ARCHIVOS SUBIDOS POR USUARIOS
+########################
 /media/
+/media/*
 
-# Archivos de compilación de static
+########################
+# STATICFILES
+########################
 /staticfiles/
+/static_root/
 
-# Configuración de sistema
+########################
+# ARCHIVOS PESADOS / REPORTES / EXPORTS
+########################
+*.pdf
+*.xlsx
+*.xls
+*.csv
+*.zip
+*.rar
+*.7z
+*.bak
+*.tar.gz
+*.sql
+*.dump
+
+########################
+# ARCHIVOS SENSIBLES DEL SISTEMA
+########################
 *.pid
 *.seed
+*.crt
+*.csr
+*.pem
+*.p12
+*.jks
 
-# Archivos de VSCode
+########################
+# ARCHIVOS DE EDITORES
+########################
 .vscode/
+.idea/
+*.swp
+*.swo
+
+########################
+# SISTEMA OPERATIVO
+########################
+.DS_Store
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+########################
+# PYTHON PACKAGING
+########################
+build/
+dist/
+*.egg-info/
+.eggs/
+MANIFEST
+
+########################
+# BACKUPS O RESTAURACIONES
+########################
+/backups/
+/restore/
+*.old
+*.orig
+*.save
+
+########################
+# ARCHIVOS PERSONALIZADOS DEL PROYECTO TECHCARE
+########################
+/datos/
+/datos/*
+
+# Capturas internas que no quieras subir
+/system_proyect/media/
+/system_proyect/media/*
+
