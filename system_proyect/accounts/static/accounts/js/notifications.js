@@ -1,104 +1,44 @@
-// Notificaciones AJAX para la campana (TechCare)
+const URL_NOTIS = "/core/api/notificaciones/";
+const URL_MARCAR = "/core/api/notificaciones/marcar/";
 
-// Endpoints Django (ajusta si cambian tus rutas)
-const notifUrl = "/core/notificaciones/";
-const marcarLeidasUrl = "/core/notificaciones/marcar-leidas/";
-
-// IDs de elementos HTML
-const badgeId = "badgeNotificaciones";
-const listaId = "listaNotificaciones";
-const soundId = "notifSound";
-
-let notificacionesPrevias = new Set();
+let notisPrevias = new Set();
 
 function playNotifSound() {
-  try {
-    document.getElementById(soundId).play();
-  } catch (e) {}
+    let audio = document.getElementById("notifSound");
+    if (audio) audio.play().catch(() => {});
 }
 
-function mostrarBadge(count) {
-  const badge = document.getElementById(badgeId);
-  if (!badge) return;
-  if (count > 0) {
-    badge.style.display = '';
-    badge.textContent = count;
-  } else {
-    badge.style.display = 'none';
-    badge.textContent = '';
-  }
+function actualizarCampana(cantidad) {
+    let badge = document.getElementById("badgeNotificaciones");
+    if (!badge) return;
+
+    if (cantidad > 0) {
+        badge.style.display = "inline-block";
+        badge.innerText = cantidad;
+    } else {
+        badge.style.display = "none";
+    }
 }
 
-function renderNotificaciones(notis) {
-  const lista = document.getElementById(listaId);
-  if (!lista) return;
-  lista.innerHTML = '';
-  if (notis.length === 0) {
-    lista.innerHTML = '<li class="dropdown-item text-muted text-center">No hay notificaciones nuevas</li>';
-    return;
-  }
-  notis.forEach(n => {
-    const li = document.createElement('li');
-    li.className = "dropdown-item";
-    li.innerHTML = `
-      <div>
-        <span class="badge bg-${n.tipo === 'alerta' ? 'warning' : (n.tipo === 'error' ? 'danger' : (n.tipo === 'exito' ? 'success' : 'primary'))} me-2">&nbsp;</span>
-        <strong>${n.mensaje}</strong>
-        <div class="small text-muted">${n.fecha}</div>
-      </div>
-    `;
-    lista.appendChild(li);
-  });
-  // Botón para marcar como leídas
-  const liBtn = document.createElement('li');
-  liBtn.innerHTML = `
-    <button class="btn btn-sm btn-link w-100 text-center" id="marcarLeidasBtn">Marcar todas como leídas</button>
-  `;
-  lista.appendChild(liBtn);
-  document.getElementById('marcarLeidasBtn').onclick = marcarTodasLeidas;
-}
-
-function marcarTodasLeidas() {
-  fetch(notifUrl, { credentials: 'include' })
-    .then(r => r.json())
-    .then(data => {
-      const ids = data.notificaciones.map(n => n.id);
-      if (ids.length === 0) return;
-      fetch(marcarLeidasUrl, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
-        body: JSON.stringify({ids: ids})
-      }).then(() => {
-        mostrarBadge(0);
-        renderNotificaciones([]);
-      });
-    });
-}
-
-// Utilidad para CSRF (si usas Django)
-function getCSRFToken() {
-  let value = "; " + document.cookie;
-  let parts = value.split("; csrftoken=");
-  if (parts.length === 2) return parts.pop().split(";").shift();
-}
-
-// Polling cada 15 segundos
 function cargarNotificaciones() {
-  fetch(notifUrl, { credentials: 'include' })
+    fetch(URL_NOTIS)
     .then(r => r.json())
     .then(data => {
-      const notis = data.notificaciones || [];
-      mostrarBadge(notis.length);
-      renderNotificaciones(notis);
-      // Sonido solo si hay nuevas
-      const idsActuales = new Set(notis.map(n => n.id));
-      const nuevas = [...idsActuales].filter(x => !notificacionesPrevias.has(x));
-      if (nuevas.length > 0) playNotifSound();
-      notificacionesPrevias = idsActuales;
-    });
+        if (!data.ok) return;
+
+        let notis = data.notificaciones || [];
+
+        let idsActuales = new Set(notis.map(n => n.id));
+        let nuevas = [...idsActuales].filter(id => !notisPrevias.has(id));
+
+        if (nuevas.length > 0) playNotifSound();
+
+        notisPrevias = idsActuales;
+
+        actualizarCampana(notis.length);
+    })
+    .catch(err => console.error("Error notif:", err));
 }
 
-// Lanzar al cargar la página y cada 15 segundos
-setInterval(cargarNotificaciones, 15000);
-document.addEventListener('DOMContentLoaded', cargarNotificaciones);
+setInterval(cargarNotificaciones, 5000);
+document.addEventListener("DOMContentLoaded", cargarNotificaciones);

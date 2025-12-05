@@ -8,43 +8,66 @@ from django.core.mail import send_mail
 from django.conf import settings
 import datetime
 
+# ⬅️ Nuevo sistema de notificaciones globales
+from core.utils_notifications import crear_notificacion
+
 from .forms import MaestroRegisterForm
 from citas_billingue.models import Appointment_bl
 from tickets.models import Ticket
 
+
+# =====================================================
+# 🔐 LOGIN GENERAL DEL SISTEMA
+# =====================================================
 def login_view(request):
     """
-    Login unificado para todos los usuarios. Usa el checkbox 'is_maestro' para lógica especial.
+    Login unificado para todos los usuarios.
+    - Maestros → dashboard maestro
+    - Técnicos → dashboard tickets
+    - Superuser → menú principal
     """
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         is_maestro = request.POST.get('is_maestro') == 'on'
+
         user = authenticate(request, username=username, password=password)
+
         if user:
             login(request, user)
             request.session['show_welcome'] = True
             messages.success(request, f'¡Bienvenido {user.first_name}!')
-            # Redirección según checkbox/grupo
-            if is_maestro or user.groups.filter(name__in=['maestros_bilingue', 'maestros_colegio']).exists():
+
+            # Redirecciones
+            if is_maestro or user.groups.filter(name__in=[
+                'maestros_bilingue', 'maestros_colegio'
+            ]).exists():
                 return redirect('dashboard_maestro')
-            elif user.groups.filter(name='tecnicos').exists():
+
+            if user.groups.filter(name='tecnicos').exists():
                 return redirect('tickets_dashboard')
-            elif user.is_superuser:
+
+            if user.is_superuser:
                 return redirect('menu')
+
             return redirect('menu')
-        else:
-            messages.error(request, 'Credenciales inválidas, inténtalo de nuevo.')
+
+        messages.error(request, 'Credenciales inválidas.')
+
     year = datetime.datetime.now().year
     return render(request, 'accounts/login.html', {'year': year})
 
 
+# =====================================================
+# 📝 REGISTRO DE MAESTROS / ADMIN / STAFF
+# =====================================================
 def register_maestro(request):
     """
-    Registro moderno para maestros, administrativos y staff.
+    Registro completo con envío de correo y asignación de grupos.
     """
     if request.method == 'POST':
         form = MaestroRegisterForm(request.POST)
+
         if form.is_valid():
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
@@ -53,7 +76,7 @@ def register_maestro(request):
             cargo = form.cleaned_data['cargo']
             password = form.cleaned_data['password']
 
-            # Username será igual a email
+            # Crear usuario
             user = User.objects.create_user(
                 username=email,
                 email=email,
@@ -61,130 +84,143 @@ def register_maestro(request):
                 first_name=first_name,
                 last_name=last_name
             )
-            # Asignar grupo y staff según área
+
+            # Asignar grupos
             if area == 'bilingue':
                 group_name = 'maestros_bilingue' if cargo == 'docente' else 'admin_bilingue'
-                group, _ = Group.objects.get_or_create(name=group_name)
-                user.groups.add(group)
             elif area == 'colegio':
                 group_name = 'maestros_colegio' if cargo == 'docente' else 'admin_colegio'
-                group, _ = Group.objects.get_or_create(name=group_name)
-                user.groups.add(group)
-            elif area == 'administracion':
+            else:
+                group_name = 'administracion'
                 user.is_staff = True
-                group, _ = Group.objects.get_or_create(name='administracion')
-                user.groups.add(group)
+
+            group, _ = Group.objects.get_or_create(name=group_name)
+            user.groups.add(group)
             user.save()
 
-            # Enviar correo automático con datos de acceso
+            # Enviar correo
             try:
                 send_mail(
-        'Bienvenido al Sistema TechCare',
-        (
-            f'Se ha creado una cuenta para ti en el sistema TechCare.\n\n'
-            f'Usuario: {email}\n'
-            f'Contraseña: {password}\n\n'
-            'Por seguridad, te recomendamos cambiar tu contraseña en tu primer acceso.\n\n'
-            'Saludos,\nSoporte Técnico ANA-HN'
-        ),
-        settings.DEFAULT_FROM_EMAIL,
-        [email],
-        fail_silently=False,
-    )
+                    'Bienvenido al Sistema TechCare',
+                    (
+                        f'Se ha creado una cuenta para ti.\n\n'
+                        f'Usuario: {email}\n'
+                        f'Contraseña: {password}\n\n'
+                        'Cambia tu contraseña en el primer inicio de sesión.'
+                    ),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                    fail_silently=False,
+                )
             except Exception as e:
-                messages.warning(request, f"Usuario creado, pero no se pudo enviar el correo: {e}")
+                messages.warning(request, f"Cuenta creada, pero no se envió el correo: {e}")
 
-            messages.success(request, "¡Registro exitoso! Ahora puedes iniciar sesión.")
+            messages.success(request, "¡Registro exitoso!")
             return redirect('login')
+
     else:
         form = MaestroRegisterForm()
+
     year = datetime.datetime.now().year
     return render(request, 'accounts/register.html', {'form': form, 'year': year})
 
+
+# =====================================================
+# 🖥 MENU PRINCIPAL
+# =====================================================
 @login_required
 def menu_view(request):
     """
-    Dashboard principal:  
-    Muestra botones solo según grupo/permiso/superuser.
+    Panel principal de TechCare, con tarjetas estadísticas
+    y visibilidad por módulos.
     """
     user = request.user
     year = datetime.datetime.now().year
 
-    # Notificaciones
     citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
     tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
 
-    # Roles / Grupos
+    # Roles
     is_admin            = user.is_superuser
     is_group_citas_bl   = user.groups.filter(name='citas bilingue').exists()
     is_group_citas_col  = user.groups.filter(name='citas colegio').exists()
     is_group_enfermeria = user.groups.filter(name='enfermeria').exists()
     is_group_inventario = user.groups.filter(name='inventario').exists()
-    is_group_reloj = user.groups.filter(name='reloj').exists()
+    is_group_reloj      = user.groups.filter(name='reloj').exists()
 
+    is_coord_bilingue = user.groups.filter(name='coordinador_bilingue').exists()
+    is_coord_colegio  = user.groups.filter(name='coordinador_colegio').exists()
 
-    # Permisos individuales
-    can_view_inventario   = user.has_perm('inventario.view_inventariomedicamento')
-    can_view_maintenance  = user.has_perm('mantenimiento.view_mantenimiento')
-    can_view_tickets      = user.has_perm('tickets.view_ticket')
-    can_view_sponsors     = user.has_perm('sponsors.view_sponsor')
-    can_view_seguridad    = user.has_perm('seguridad.view_seguridad')
-
-    # NUEVO: Coordinadores
-    is_coordinador_bilingue = user.groups.filter(name='coordinador_bilingue').exists()
-    is_coordinador_colegio  = user.groups.filter(name='coordinador_colegio').exists()
+    # Permisos
+    can_view_inventory  = user.has_perm('inventario.view_inventariomedicamento')
+    can_view_maintenance = user.has_perm('mantenimiento.view_mantenimiento')
+    can_view_tickets     = user.has_perm('tickets.view_ticket')
+    can_view_sponsors    = user.has_perm('sponsors.view_sponsor')
+    can_view_seguridad   = user.has_perm('seguridad.view_seguridad')
 
     context = {
-        'year':               year,
-        'citas_pendientes':   citas_pendientes,
+        'year': year,
+        'citas_pendientes': citas_pendientes,
         'tickets_pendientes': tickets_pendientes,
-        'show_inventory':   is_admin or can_view_inventario or is_group_inventario,
+
+        'show_inventory':   is_admin or can_view_inventory or is_group_inventario,
         'show_maintenance': is_admin or can_view_maintenance,
         'show_tickets':     is_admin or can_view_tickets,
         'show_sponsors':    is_admin or can_view_sponsors,
         'show_seguridad':   is_admin or can_view_seguridad,
         'show_citas_bl':    is_admin or is_group_citas_bl,
         'show_citas_col':   is_admin or is_group_citas_col,
-        'show_enfermeria':  is_admin or is_group_citas_bl or is_group_enfermeria,
-        'show_coordinador_bilingue': is_admin or is_coordinador_bilingue,
-        'show_coordinador_colegio':  is_admin or is_coordinador_colegio,
-        'show_reloj': is_admin or is_group_reloj,
+        'show_enfermeria':  is_admin or is_group_enfermeria,
+        'show_reloj':       is_admin or is_group_reloj,
 
+        'show_coordinador_bilingue': is_admin or is_coord_bilingue,
+        'show_coordinador_colegio':  is_admin or is_coord_colegio,
     }
+
     return render(request, 'accounts/menu.html', context)
 
+
+# =====================================================
+# 🔔 NOTIFICACIONES AVANZADAS PARA EL MENÚ
+# =====================================================
 @login_required
-def check_new_notifications(request):
+def notify_tickets(request):
     """
-    Devuelve JSON con los totales de citas y tickets pendientes.
+    Devuelve tickets pendientes para la campana del menú.
+    Se conecta con ticket_notify.js
     """
-    citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
-    tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
+    abiertos = Ticket.objects.filter(status="pendiente").count()
+    recientes = Ticket.objects.filter(status="pendiente").order_by('-id')[:5]
+
     return JsonResponse({
-        'citas_pendientes':   citas_pendientes,
-        'tickets_pendientes': tickets_pendientes
+        "total": abiertos,
+        "tickets": [
+            {
+                "id": t.id,
+                "ticket_id": t.ticket_id,
+                "name": t.name,
+                "fecha": t.fecha_creacion.strftime("%d/%m/%Y %H:%M")
+            }
+            for t in recientes
+        ]
     })
 
+
+# =====================================================
+# 🔚 LOGOUT GENERAL
+# =====================================================
 def logout_view(request):
-    """
-    Cierra la sesión y redirige al login.
-    """
     inactive = request.GET.get('inactive')
     logout(request)
-    if inactive:
-        messages.info(request, 'Sesión cerrada por inactividad.')
-    else:
-        messages.info(request, 'Sesión cerrada correctamente.')
+    messages.info(request, 'Sesión cerrada por inactividad.' if inactive else 'Sesión cerrada correctamente.')
     return redirect('login')
 
+
+# =====================================================
+# 🔚 LOGOUT PARA MAESTROS
+# =====================================================
 def maestro_logout(request):
-    """
-    Cierra la sesión y redirige al login.
-    """
     inactive = request.GET.get('inactive')
     logout(request)
-    if inactive:
-        messages.info(request, 'Sesión cerrada por inactividad.')
-    else:
-        messages.info(request, 'Sesión cerrada correctamente.')
+    messages.info(request, 'Sesión cerrada por inactividad.' if inactive else 'Sesión cerrada correctamente.')
     return redirect('login')

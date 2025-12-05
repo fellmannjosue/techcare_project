@@ -1,7 +1,7 @@
 from django.urls import path
-from . import views
+from .views_notifications import notificaciones_usuario, marcar_notificaciones_leidas
 
 urlpatterns = [
-    path('notificaciones/', views.notificaciones_usuario, name='notificaciones_usuario'),
-    path('notificaciones/marcar-leidas/', views.marcar_notificaciones_leidas, name='marcar_notificaciones_leidas'),
+    path("api/notificaciones/", notificaciones_usuario, name="api_notificaciones"),
+    path("api/notificaciones/marcar/", marcar_notificaciones_leidas, name="api_notificaciones_marcar"),
 ]
