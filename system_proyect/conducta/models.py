@@ -21,6 +21,7 @@ COORDINADORES_BL = [
     ("Miss Alcerro", "Miss Alcerro"),
     ("Miss Angela", "Miss Angela"),
 ]
+
 COORDINADORES_COL = [
     ("profe. Licona", "Profe. Licona"),
     ("profe. Felipe", "Profe. Felipe"),

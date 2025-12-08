@@ -12,7 +12,6 @@ import datetime
 from core.utils_notifications import crear_notificacion
 
 from .forms import MaestroRegisterForm
-from citas_billingue.models import Appointment_bl
 from tickets.models import Ticket
 
 
@@ -137,10 +136,68 @@ def menu_view(request):
     user = request.user
     year = datetime.datetime.now().year
 
-    citas_pendientes   = Appointment_bl.objects.filter(status='pendiente').count()
-    tickets_pendientes = Ticket.objects.filter(status='pendiente').count()
+    # =====================================================
+    # 🔥 TICKETS (todos los NO resueltos)
+    # =====================================================
+    tickets_pendientes = Ticket.objects.exclude(status__iexact="Resuelto").count()
 
-    # Roles
+    # =====================================================
+    # 🔥 CITAS BL
+    # =====================================================
+    try:
+        from citas_billingue.models import Appointment_bl
+        citas_bl = Appointment_bl.objects.exclude(status__iexact="Resuelto").count()
+    except:
+        citas_bl = 0
+
+    # =====================================================
+    # 🔥 CITAS COL
+    # =====================================================
+    try:
+        from citas_colegio.models import Appointment_col
+        citas_col = Appointment_col.objects.exclude(status__iexact="Resuelto").count()
+    except:
+        citas_col = 0
+
+    # =====================================================
+    # 🔥 REPORTES DE CONDUCTA — BILINGÜE
+    # =====================================================
+    try:
+        from conducta.models import ReporteInformativo, ReporteConductual, ProgressReport
+
+        reportes_bl = (
+            ReporteInformativo.objects.filter(area='bilingue', estado='enviado').count() +
+            ReporteConductual.objects.filter(area='bilingue', estado='enviado').count() +
+            ProgressReport.objects.filter(estado='enviado').count()
+        )
+    except:
+        reportes_bl = 0
+
+    # =====================================================
+    # 🔥 REPORTES DE CONDUCTA — COLEGIO
+    # =====================================================
+    try:
+        from conducta.models import ReporteInformativo, ReporteConductual
+
+        reportes_col = (
+            ReporteInformativo.objects.filter(area='colegio', estado='enviado').count() +
+            ReporteConductual.objects.filter(area='colegio', estado='enviado').count()
+        )
+    except:
+        reportes_col = 0
+
+    # =====================================================
+    # 🔥 RELOJ (compensatorios / permisos)
+    # =====================================================
+    try:
+        from reloj.models import Solicitud
+        reloj_pendientes = Solicitud.objects.exclude(estado__iexact="Aprobado").count()
+    except:
+        reloj_pendientes = 0
+
+    # =====================================================
+    # 🔰 ROLES Y PERMISOS
+    # =====================================================
     is_admin            = user.is_superuser
     is_group_citas_bl   = user.groups.filter(name='citas bilingue').exists()
     is_group_citas_col  = user.groups.filter(name='citas colegio').exists()
@@ -151,18 +208,30 @@ def menu_view(request):
     is_coord_bilingue = user.groups.filter(name='coordinador_bilingue').exists()
     is_coord_colegio  = user.groups.filter(name='coordinador_colegio').exists()
 
-    # Permisos
-    can_view_inventory  = user.has_perm('inventario.view_inventariomedicamento')
+    # =====================================================
+    # 🔐 PERMISOS
+    # =====================================================
+    can_view_inventory   = user.has_perm('inventario.view_inventariomedicamento')
     can_view_maintenance = user.has_perm('mantenimiento.view_mantenimiento')
     can_view_tickets     = user.has_perm('tickets.view_ticket')
     can_view_sponsors    = user.has_perm('sponsors.view_sponsor')
     can_view_seguridad   = user.has_perm('seguridad.view_seguridad')
 
+    # =====================================================
+    # CONTEXTO FINAL PARA EL HTML
+    # =====================================================
     context = {
         'year': year,
-        'citas_pendientes': citas_pendientes,
-        'tickets_pendientes': tickets_pendientes,
 
+        # ---------- Tarjetas del dashboard ----------
+        'tickets_pendientes': tickets_pendientes,
+        'citas_bl': citas_bl,
+        'citas_col': citas_col,
+        'reportes_bl': reportes_bl,
+        'reportes_col': reportes_col,
+        'reloj_pendientes': reloj_pendientes,
+
+        # ---------- Visibilidad según rol ----------
         'show_inventory':   is_admin or can_view_inventory or is_group_inventario,
         'show_maintenance': is_admin or can_view_maintenance,
         'show_tickets':     is_admin or can_view_tickets,
@@ -178,6 +247,7 @@ def menu_view(request):
     }
 
     return render(request, 'accounts/menu.html', context)
+
 
 
 # =====================================================
