@@ -1,104 +1,169 @@
-// Notificaciones AJAX para la campana (TechCare)
+// =======================================
+// CONFIG
+// =======================================
+const URL_NOTIS = "/core/api/notificaciones/";
+const URL_MARCAR = "/core/api/notificaciones/marcar/";
 
-// Endpoints Django (ajusta si cambian tus rutas)
-const notifUrl = "/core/notificaciones/";
-const marcarLeidasUrl = "/core/notificaciones/marcar-leidas/";
+let notisPrevias = new Set();
+let dropdownAbierto = false;
 
-// IDs de elementos HTML
-const badgeId = "badgeNotificaciones";
-const listaId = "listaNotificaciones";
-const soundId = "notifSound";
-
-let notificacionesPrevias = new Set();
-
+// =======================================
+// Reproducir sonido
+// =======================================
 function playNotifSound() {
-  try {
-    document.getElementById(soundId).play();
-  } catch (e) {}
+    let audio = document.getElementById("notifSound");
+    if (audio) {
+        audio.volume = 0.5;
+        audio.play().catch(() => {});
+    }
 }
 
-function mostrarBadge(count) {
-  const badge = document.getElementById(badgeId);
-  if (!badge) return;
-  if (count > 0) {
-    badge.style.display = '';
-    badge.textContent = count;
-  } else {
-    badge.style.display = 'none';
-    badge.textContent = '';
-  }
+// =======================================
+// Actualiza el número del badge
+// =======================================
+function actualizarCampana(cantidad) {
+    let badge = document.getElementById("badgeNotificaciones");
+    if (!badge) return;
+
+    if (cantidad > 0) {
+        badge.classList.remove("d-none");
+        badge.style.display = "inline-block";
+        badge.innerText = cantidad;
+    } else {
+        badge.classList.add("d-none");
+        badge.style.display = "none";
+    }
 }
 
-function renderNotificaciones(notis) {
-  const lista = document.getElementById(listaId);
-  if (!lista) return;
-  lista.innerHTML = '';
-  if (notis.length === 0) {
-    lista.innerHTML = '<li class="dropdown-item text-muted text-center">No hay notificaciones nuevas</li>';
-    return;
-  }
-  notis.forEach(n => {
-    const li = document.createElement('li');
-    li.className = "dropdown-item";
-    li.innerHTML = `
-      <div>
-        <span class="badge bg-${n.tipo === 'alerta' ? 'warning' : (n.tipo === 'error' ? 'danger' : (n.tipo === 'exito' ? 'success' : 'primary'))} me-2">&nbsp;</span>
-        <strong>${n.mensaje}</strong>
-        <div class="small text-muted">${n.fecha}</div>
-      </div>
-    `;
-    lista.appendChild(li);
-  });
-  // Botón para marcar como leídas
-  const liBtn = document.createElement('li');
-  liBtn.innerHTML = `
-    <button class="btn btn-sm btn-link w-100 text-center" id="marcarLeidasBtn">Marcar todas como leídas</button>
-  `;
-  lista.appendChild(liBtn);
-  document.getElementById('marcarLeidasBtn').onclick = marcarTodasLeidas;
-}
+// =======================================
+// Renderiza notificaciones en el dropdown
+// =======================================
+function renderizarLista(notis) {
+    let lista = document.getElementById("listaNotificaciones");
+    if (!lista) return;
 
-function marcarTodasLeidas() {
-  fetch(notifUrl, { credentials: 'include' })
-    .then(r => r.json())
-    .then(data => {
-      const ids = data.notificaciones.map(n => n.id);
-      if (ids.length === 0) return;
-      fetch(marcarLeidasUrl, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCSRFToken()},
-        body: JSON.stringify({ids: ids})
-      }).then(() => {
-        mostrarBadge(0);
-        renderNotificaciones([]);
-      });
+    lista.innerHTML = "";
+
+    if (notis.length === 0) {
+        lista.innerHTML = `
+            <li class="p-3 text-center text-muted">
+                <i class="fa-regular fa-bell-slash fa-lg mb-2"></i><br>
+                Sin notificaciones
+            </li>`;
+        return;
+    }
+
+    notis.forEach(n => {
+        let item = document.createElement("li");
+
+        item.innerHTML = `
+            <div class="p-2 border-bottom small">
+                <div class="fw-bold text-primary">
+                    ${n.modulo.toUpperCase()}
+                </div>
+                <div>${n.mensaje}</div>
+                <div class="text-muted" style="font-size: 11px;">
+                    ${n.fecha}
+                </div>
+            </div>
+        `;
+
+        lista.appendChild(item);
     });
 }
 
-// Utilidad para CSRF (si usas Django)
-function getCSRFToken() {
-  let value = "; " + document.cookie;
-  let parts = value.split("; csrftoken=");
-  if (parts.length === 2) return parts.pop().split(";").shift();
-}
-
-// Polling cada 15 segundos
+// =======================================
+// Cargar notificaciones del backend
+// =======================================
 function cargarNotificaciones() {
-  fetch(notifUrl, { credentials: 'include' })
+    fetch(URL_NOTIS)
     .then(r => r.json())
     .then(data => {
-      const notis = data.notificaciones || [];
-      mostrarBadge(notis.length);
-      renderNotificaciones(notis);
-      // Sonido solo si hay nuevas
-      const idsActuales = new Set(notis.map(n => n.id));
-      const nuevas = [...idsActuales].filter(x => !notificacionesPrevias.has(x));
-      if (nuevas.length > 0) playNotifSound();
-      notificacionesPrevias = idsActuales;
-    });
+        if (!data.ok) return;
+
+        let notis = data.notificaciones || [];
+
+        // IDs actuales
+        let idsActuales = new Set(notis.map(n => n.id));
+
+        // Detectar nuevas notificaciones
+        let nuevas = [...idsActuales].filter(id => !notisPrevias.has(id));
+        if (nuevas.length > 0 && notisPrevias.size > 0) {
+            playNotifSound();
+        }
+
+        // Actualizar set
+        notisPrevias = idsActuales;
+
+        // Actualizar campanita
+        actualizarCampana(notis.length);
+
+        // Si el dropdown está abierto → renderizar
+        if (dropdownAbierto) {
+            renderizarLista(notis);
+        }
+    })
+    .catch(err => console.error("Error al cargar notificaciones:", err));
 }
 
-// Lanzar al cargar la página y cada 15 segundos
-setInterval(cargarNotificaciones, 15000);
-document.addEventListener('DOMContentLoaded', cargarNotificaciones);
+// =======================================
+// Marcar notificaciones como leídas
+// =======================================
+function marcarNotificacionesLeidas() {
+    fetch(URL_MARCAR, { method: "POST", headers: { "X-CSRFToken": getCSRFToken() }})
+    .then(r => r.json())
+    .then(() => {
+        actualizarCampana(0);
+        notisPrevias.clear();
+    })
+    .catch(err => console.error("Error al marcar leídas:", err));
+}
+
+// =======================================
+// Detectar apertura del dropdown
+// =======================================
+document.addEventListener("DOMContentLoaded", () => {
+    let dropdown = document.getElementById("notifDropdownToggle");
+
+    if (dropdown) {
+        dropdown.addEventListener("click", () => {
+            dropdownAbierto = true;
+
+            // Cargar inmediatamente lo más reciente
+            fetch(URL_NOTIS)
+            .then(r => r.json())
+            .then(data => {
+                if (data.ok) {
+                    renderizarLista(data.notificaciones);
+                    marcarNotificacionesLeidas();
+                }
+            });
+        });
+    }
+
+    cargarNotificaciones();
+});
+
+// =======================================
+// Ejecución cada 5 segundos
+// =======================================
+setInterval(cargarNotificaciones, 5000);
+
+// =======================================
+// Extra: obtener CSRF token
+// =======================================
+function getCSRFToken() {
+    let cookieValue = null;
+    const name = 'csrftoken';
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let c of cookies) {
+            c = c.trim();
+            if (c.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(c.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
