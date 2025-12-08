@@ -11,7 +11,7 @@ urlpatterns = [
     path('menu/', views.menu_view, name='menu'),
 
     # Notificaciones para dashboard
-    path('check-new-notifications/', views.check_new_notifications, name='check_new_notifications'),
+  
 
     # Recuperación de contraseña (vistas estándar de Django)
     path('password_reset/', auth_views.PasswordResetView.as_view(), name='password_reset'),

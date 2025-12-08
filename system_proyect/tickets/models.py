@@ -11,6 +11,10 @@ class Ticket(models.Model):
     attachment = models.FileField(upload_to='attachments/', null=True, blank=True)
     status = models.CharField(max_length=50, default='Enviado')
     comments = models.TextField(blank=True, null=True)
+
+    # ⭐ CAMPO NUEVO PARA BLOQUEAR A LA IA
+    ia_bloqueada = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -28,10 +32,12 @@ class Ticket(models.Model):
                 last_number = 1
 
             self.ticket_id = f"TICKET-{date_part}-{last_number:04d}"
+
         super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.ticket_id} - {self.name}"
+
 
 class TicketComment(models.Model):
     TIPO_CHOICES = (

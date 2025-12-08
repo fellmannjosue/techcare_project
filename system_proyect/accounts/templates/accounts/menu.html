@@ -31,6 +31,7 @@
           </a>
         </li>
         {% endif %}
+
         {% if show_reloj %}
         <li>
           <a href="{% url 'reloj_dashboard' %}" class="nav-link text-white">
@@ -42,14 +43,14 @@
         {% if show_inventory %}
         <li>
           <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-            href="#submenuInventario" role="button" aria-expanded="false" aria-controls="submenuInventario">
+            href="#submenuInventario">
             <span><i class="fa-solid fa-boxes-stacked me-2"></i> Inventario</span>
             <i class="fa fa-angle-down"></i>
           </a>
           <div class="collapse" id="submenuInventario">
             <ul class="list-unstyled ps-4">
-              <li><a href="{% url 'inventario:dashboard' %}" class="nav-link"><i class="fa-regular fa-circle me-2"></i>
-                  Panel Inventario</a></li>
+              <li><a href="{% url 'inventario:dashboard' %}" class="nav-link">
+                  <i class="fa-regular fa-circle me-2"></i> Panel Inventario</a></li>
             </ul>
           </div>
         </li>
@@ -58,14 +59,14 @@
         {% if show_sponsors %}
         <li>
           <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-            href="#submenuSponsors" role="button" aria-expanded="false" aria-controls="submenuSponsors">
+            href="#submenuSponsors">
             <span><i class="fa-solid fa-hand-holding-heart me-2"></i> Sponsors</span>
             <i class="fa fa-angle-down"></i>
           </a>
           <div class="collapse" id="submenuSponsors">
             <ul class="list-unstyled ps-4">
-              <li><a href="{% url 'sponsors:sponsors_dashboard' %}" class="nav-link"><i
-                    class="fa-regular fa-circle me-2"></i> Dashboard Sponsors</a></li>
+              <li><a href="{% url 'sponsors:sponsors_dashboard' %}" class="nav-link">
+                  <i class="fa-regular fa-circle me-2"></i> Dashboard Sponsors</a></li>
             </ul>
           </div>
         </li>
@@ -74,14 +75,14 @@
         {% if show_seguridad %}
         <li>
           <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-            href="#submenuSeguridad" role="button" aria-expanded="false" aria-controls="submenuSeguridad">
+            href="#submenuSeguridad">
             <span><i class="fa-solid fa-shield-halved me-2"></i> Seguridad</span>
             <i class="fa fa-angle-down"></i>
           </a>
           <div class="collapse" id="submenuSeguridad">
             <ul class="list-unstyled ps-4">
-              <li><a href="{% url 'seguridad:dashboard' %}" class="nav-link"><i class="fa-regular fa-circle me-2"></i>
-                  Dashboard Seguridad</a></li>
+              <li><a href="{% url 'seguridad:dashboard' %}" class="nav-link">
+                  <i class="fa-regular fa-circle me-2"></i> Dashboard Seguridad</a></li>
             </ul>
           </div>
         </li>
@@ -90,14 +91,14 @@
         {% if show_enfermeria %}
         <li>
           <a class="nav-link text-white d-flex justify-content-between align-items-center" data-bs-toggle="collapse"
-            href="#submenuEnfermeria" role="button" aria-expanded="false" aria-controls="submenuEnfermeria">
+            href="#submenuEnfermeria">
             <span><i class="fa-solid fa-notes-medical me-2"></i> Enfermería</span>
             <i class="fa fa-angle-down"></i>
           </a>
           <div class="collapse" id="submenuEnfermeria">
             <ul class="list-unstyled ps-4">
-              <li><a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="nav-link"><i
-                    class="fa-regular fa-circle me-2"></i> Panel Enfermería</a></li>
+              <li><a href="{% url 'enfermeria:enfermeria_dashboard' %}" class="nav-link">
+                  <i class="fa-regular fa-circle me-2"></i> Panel Enfermería</a></li>
             </ul>
           </div>
         </li>
@@ -134,6 +135,7 @@
           </a>
         </li>
         {% endif %}
+
         {% if show_coordinador_colegio %}
         <li>
           <a href="{% url 'dashboard_coordinador' area='colegio' %}" class="nav-link text-white">
@@ -142,6 +144,7 @@
         </li>
         {% endif %}
       </ul>
+
       <hr class="text-secondary">
       <div class="dropdown">
         <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle"
@@ -150,12 +153,11 @@
           <strong>{{ request.user.username }}</strong>
         </a>
         <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-          <li><a class="dropdown-item" href="{% url 'admin:index' %}"><i class="fa fa-cog me-2"></i> Admin</a></li>
-          <li>
-            <hr class="dropdown-divider">
-          </li>
-          <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar
-              Sesión</a></li>
+          <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+              <i class="fa fa-cog me-2"></i> Admin</a></li>
+          <li><hr class="dropdown-divider"></li>
+          <li><a class="dropdown-item" href="{% url 'logout' %}">
+              <i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
         </ul>
       </div>
     </nav>
@@ -163,82 +165,100 @@
 
     <!-- Main content -->
     <div class="flex-grow-1 d-flex flex-column min-vh-100">
+
       <!-- Header -->
       <nav class="navbar navbar-light bg-white shadow-sm px-3">
         <div class="container-fluid">
           <div class="navbar-brand d-flex align-items-center gap-3">
             <span class="fs-4">Panel Principal</span>
           </div>
-          <div class="d-flex align-items-center gap-3">
-            <!-- Notificaciones CAMPANITA AJAX -->
+
+          <div class="d-flex align-items-center gap-4">
+
+            <!-- 🔔 CAMPANITA DE NOTIFICACIONES GLOBAL -->
             <div class="dropdown">
-              <a href="#" id="notifDropdownToggle" data-bs-toggle="dropdown" aria-expanded="false"
-                class="position-relative">
+              <a href="#" id="notifDropdownToggle" 
+                 data-bs-toggle="dropdown" aria-expanded="false"
+                 class="position-relative">
                 <i class="fa-solid fa-bell fa-lg"></i>
+
                 <span id="badgeNotificaciones"
-                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  style="display:none;">0</span>
+                      class="position-absolute top-0 start-100 translate-middle badge 
+                             rounded-pill bg-danger d-none">0</span>
               </a>
-              <ul class="dropdown-menu dropdown-menu-end p-0" aria-labelledby="notifDropdownToggle"
-                style="min-width: 340px; max-height: 360px; overflow-y: auto;">
+
+              <ul class="dropdown-menu dropdown-menu-end p-0"
+                  aria-labelledby="notifDropdownToggle"
+                  style="min-width: 350px; max-height: 360px; overflow-y: auto;">
+                
                 <li>
-                  <div class="dropdown-header border-bottom bg-light">Notificaciones recientes</div>
+                  <div class="dropdown-header border-bottom bg-light fw-bold">
+                    Notificaciones recientes
+                  </div>
                 </li>
+
                 <ul id="listaNotificaciones" class="list-unstyled mb-0"></ul>
               </ul>
             </div>
-            <audio id="notifSound" src="{% static 'accounts/sound/notification.mp3' %}" preload="auto"></audio>
+
+            <audio id="notifSound"
+                   src="{% static 'accounts/sound/notification.mp3' %}"
+                   preload="auto"></audio>
             <!-- /Notificaciones -->
           </div>
         </div>
       </nav>
       <!-- /Header -->
 
-      <!-- Cards de resumen -->
+      <!-- Cards resumen -->
       <div class="container-fluid my-4">
         <div class="row g-3">
+
           {% if show_tickets %}
           <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm bg-primary text-white h-100">
-              <div class="card-body d-flex flex-column align-items-start">
-                <div class="mb-2"><i class="fa-solid fa-ticket-alt fa-2x"></i></div>
-                <div class="card-title">Tickets abiertos</div>
+              <div class="card-body">
+                <i class="fa-solid fa-ticket-alt fa-2x mb-2"></i>
+                <div>Tickets abiertos</div>
                 <h3>{{ tickets_pendientes|default:"0" }}</h3>
                 <span class="small">Pendientes de resolver</span>
               </div>
             </div>
           </div>
           {% endif %}
+
           {% if show_citas_bl or show_citas_col %}
           <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm bg-success text-white h-100">
-              <div class="card-body d-flex flex-column align-items-start">
-                <div class="mb-2"><i class="fa-solid fa-calendar-check fa-2x"></i></div>
-                <div class="card-title">Citas próximas</div>
+              <div class="card-body">
+                <i class="fa-solid fa-calendar-check fa-2x mb-2"></i>
+                <div>Citas próximas</div>
                 <h3>{{ citas_pendientes|default:"0" }}</h3>
                 <span class="small">Por atender</span>
               </div>
             </div>
           </div>
           {% endif %}
+
           {% if show_inventory %}
           <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm bg-info text-white h-100">
-              <div class="card-body d-flex flex-column align-items-start">
-                <div class="mb-2"><i class="fa-solid fa-boxes-stacked fa-2x"></i></div>
-                <div class="card-title">Inventario</div>
+              <div class="card-body">
+                <i class="fa-solid fa-boxes-stacked fa-2x mb-2"></i>
+                <div>Inventario</div>
                 <h3>{{ inventario_total|default:"—" }}</h3>
                 <span class="small">Activos registrados</span>
               </div>
             </div>
           </div>
           {% endif %}
+
           {% if show_sponsors %}
           <div class="col-12 col-md-3">
             <div class="card border-0 shadow-sm bg-warning text-white h-100">
-              <div class="card-body d-flex flex-column align-items-start">
-                <div class="mb-2"><i class="fa-solid fa-hand-holding-heart fa-2x"></i></div>
-                <div class="card-title">Sponsors</div>
+              <div class="card-body">
+                <i class="fa-solid fa-hand-holding-heart fa-2x mb-2"></i>
+                <div>Sponsors</div>
                 <h3>{{ sponsors_total|default:"—" }}</h3>
                 <span class="small">Activos</span>
               </div>
@@ -247,15 +267,15 @@
           {% endif %}
         </div>
       </div>
-      <!-- /Cards de resumen -->
 
-      <!-- Menú principal tipo grid de iconos -->
+      <!-- MENU GRID -->
       <div class="container pb-5">
         <div class="row row-cols-2 row-cols-md-4 g-4 justify-content-center">
+
           {% if show_tickets %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'technician_dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'technician_dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-ticket-alt fa-2x mb-2"></i>
                 <div>Sistema de Tickets</div>
@@ -263,10 +283,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_reloj %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'reloj_dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'reloj_dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-clock fa-2x mb-2"></i>
                 <div>Reloj (Asistencia)</div>
@@ -274,10 +295,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_inventory %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'inventario:dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'inventario:dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-boxes-stacked fa-2x mb-2"></i>
                 <div>Inventario</div>
@@ -285,10 +307,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_maintenance %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'mantenimiento:maintenance_dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'mantenimiento:maintenance_dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-screwdriver-wrench fa-2x mb-2"></i>
                 <div>Ficha de Mantenimiento</div>
@@ -296,10 +319,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_citas_bl %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'dashboard_bl' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'dashboard_bl' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-calendar-check fa-2x mb-2"></i>
                 <div>Citas BL</div>
@@ -307,10 +331,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_citas_col %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'dashboard_col' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'dashboard_col' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-calendar-days fa-2x mb-2"></i>
                 <div>Citas COL/VOC</div>
@@ -318,10 +343,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_sponsors %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'sponsors:sponsors_dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'sponsors:sponsors_dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-hand-holding-heart fa-2x mb-2"></i>
                 <div>Sponsors</div>
@@ -329,10 +355,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_enfermeria %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'enfermeria:enfermeria_dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'enfermeria:enfermeria_dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-notes-medical fa-2x mb-2"></i>
                 <div>Enfermería</div>
@@ -340,10 +367,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_seguridad %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'seguridad:dashboard' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'seguridad:dashboard' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-shield-halved fa-2x mb-2"></i>
                 <div>Seguridad</div>
@@ -351,10 +379,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_coordinador_bilingue %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'dashboard_coordinador' area='bilingue' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'dashboard_coordinador' area='bilingue' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-chalkboard-user fa-2x mb-2"></i>
                 <div>Coord. Bilingüe</div>
@@ -362,10 +391,11 @@
             </div>
           </div>
           {% endif %}
+
           {% if show_coordinador_colegio %}
           <div class="col">
-            <div class="card menu-item shadow-sm h-100 text-center"
-              onclick="window.location='{% url 'dashboard_coordinador' area='colegio' %}'">
+            <div class="card menu-item shadow-sm text-center h-100"
+                 onclick="window.location='{% url 'dashboard_coordinador' area='colegio' %}'">
               <div class="card-body">
                 <i class="fa-solid fa-user-tie fa-2x mb-2"></i>
                 <div>Coord. Colegio</div>
@@ -373,20 +403,23 @@
             </div>
           </div>
           {% endif %}
+
         </div>
       </div>
-      <!-- /Menú principal -->
+      <!-- /MENU GRID -->
 
-      <div class="footer">
+      <div class="footer text-center py-3">
         © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer. Todos los derechos reservados.
       </div>
+
     </div>
   </div>
+
   <!-- JS scripts -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
   <script src="{% static 'accounts/js/notifications.js' %}" defer></script>
-</body>
 
+</body>
 </html>
