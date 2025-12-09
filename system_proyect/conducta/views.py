@@ -462,15 +462,6 @@ def historial_maestro_colegio(request):
         'area': 'colegio',
     })
 
-# ----------- EDITOR DE REPORTES ( SOLO COORDINADOR) -----------
-def es_coordinador(user):
-    return user.is_staff or user.groups.filter(name__icontains="coordinador").exists()
-
-
-# Cambia estos según tu lógica o roles
-COORDINADORES_BL = ["Mrs. Osorto", "Miss Alcerro", "Miss Angela"]
-COORDINADORES_COLEGIO = ["Profe. Licona", "Profe. Felipe", "Profe. Gabriela"]
-
 # ────────────────
 # EDITAR CONDUCTUAL
 # ────────────────
@@ -1221,3 +1212,12 @@ def historial_alumno_coordinador(request, alumno_id):
     }
     html = render_to_string('conducta/lista_reportes.html', context)
     return HttpResponse(html)
+
+# ----------- EDITOR DE REPORTES ( SOLO COORDINADOR) -----------
+def es_coordinador(user):
+    return user.is_staff or user.groups.filter(name__icontains="coordinador").exists()
+
+
+# Cambia estos según tu lógica o roles
+COORDINADORES_BL = ["Mrs. Osorto", "Miss Alcerro", "Miss Angela"]
+COORDINADORES_COLEGIO = ["Profe. Licona", "Profe. Felipe", "Profe. Gabriela"]

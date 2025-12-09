@@ -7,44 +7,42 @@
    - Citas Colegio/VOC
    - Coordinación BL
    - Coordinación Colegio
-   - Reloj (Permisos / Compensatorio)
 
    Y los coloca en las tarjetas del Panel Principal.
-   También prepara la apertura de modales (futuro).
+   También prepara apertura de modales (futuro).
    ================================================================ */
 
 // ===============================
 // 1. ENDPOINTS DEL BACKEND
 // ===============================
 
-const URL_TICKETS       = "/core/api/summary/tickets/";
-const URL_CITAS_BL      = "/core/api/summary/citas_bl/";
-const URL_CITAS_COL     = "/core/api/summary/citas_col/";
-const URL_COORD_BL      = "/core/api/summary/coordinacion_bl/";
-const URL_COORD_COL     = "/core/api/summary/coordinacion_col/";
-const URL_RELOJ         = "/core/api/summary/reloj/";
+const URL_TICKETS      = "/core/api/summary/tickets/";
+const URL_CITAS_BL     = "/core/api/summary/citas_bl/";
+const URL_CITAS_COL    = "/core/api/summary/citas_col/";
+const URL_COORD_BL     = "/core/api/summary/coordinacion_bl/";
+const URL_COORD_COL    = "/core/api/summary/coordinacion_col/";
+// const URL_RELOJ      = "/core/api/summary/reloj/";  // 🚧 En construcción
 
 
 // ===============================
 // 2. ELEMENTOS HTML A ACTUALIZAR
 // ===============================
 
-// Cada tarjeta del dashboard tiene un <h3> donde mostramos el total
 const cardTickets   = document.getElementById("card-tickets-total");
 const cardCitasBL   = document.getElementById("card-citas-bl-total");
 const cardCitasCOL  = document.getElementById("card-citas-col-total");
 const cardCoordBL   = document.getElementById("card-coord-bl-total");
 const cardCoordCOL  = document.getElementById("card-coord-col-total");
-const cardReloj     = document.getElementById("card-reloj-total");
+// const cardReloj   = document.getElementById("card-reloj-total");  // 🚧 En construcción
 
-// Guardará los últimos datos (para abrir modales)
+// Contenedor de datos por módulo
 let resumenDatos = {
     tickets: [],
     citas_bl: [],
     citas_col: [],
     coord_bl: [],
     coord_col: [],
-    reloj: [],
+    // reloj: [],   // 🚧 En construcción
 };
 
 
@@ -94,10 +92,12 @@ async function actualizarDashboard() {
     if (cardCoordCOL) cardCoordCOL.innerText = cc.total ?? 0;
     resumenDatos.coord_col = cc.items;
 
-    // ---- Reloj ----
+    // ---- Reloj (DESACTIVADO) ----
+    /*
     const r = await cargarResumen(URL_RELOJ);
     if (cardReloj) cardReloj.innerText = r.total ?? 0;
     resumenDatos.reloj = r.items;
+    */
 }
 
 
@@ -110,7 +110,7 @@ setInterval(actualizarDashboard, 10000);
 
 
 // ==================================================================
-// 6. (FUTURO) FUNCIÓN PARA MOSTRAR MODALES AL CLICAR UNA TARJETA
+// 6. MOSTRAR MODAL DE DETALLES (FUTURO)
 // ==================================================================
 
 window.abrirModalResumen = function (modulo) {

@@ -1,38 +1,46 @@
 # ============================================================
-# 🔎 RESÚMENES GLOBALES PARA DASHBOARDS TECHCARE
+# 🔎 RESÚMENES GLOBALES PARA DASHBOARD PRINCIPAL TECHCARE
 # ------------------------------------------------------------
-# Este archivo NO crea notificaciones y NO usa la tabla
-# Notificacion. Su único propósito es devolver datos rápidos
-# para actualizar tarjetas del panel (tickets, citas, reloj,
-# reportes, etc.)
+# Este archivo SOLO devuelve datos rápidos (JSON).
+# NO modifica nada, NO crea notificaciones.
 # ============================================================
 
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 
-# Importación de modelos desde cada módulo
+# Importación de modelos
 from tickets.models import Ticket
 from citas_billingue.models import Appointment_bl
 from citas_colegio.models import Appointment_col
-from conducta.models import ReporteInformativo, ReporteConductual, ProgressReport
-from reloj.models import TiempoCompensatorio, PermisoEmpleado
+from conducta.models import (
+    ReporteInformativo,
+    ReporteConductual,
+    ProgressReport
+)
+
+# 🔔 Estos dos son opcionales (módulo en construcción)
+try:
+    from reloj.models import TiempoCompensatorio, PermisoEmpleado
+except:
+    TiempoCompensatorio = None
+    PermisoEmpleado = None
 
 
 # ============================================================
-# 🧩 UTILIDAD — Formateo de fechas para JSON
+# 🧩 UTILIDAD — Formato de fecha para JSON
 # ============================================================
 def fmt(dt):
     return dt.strftime("%d/%m/%Y %H:%M")
 
 
 # ============================================================
-# 📌 RESUMEN DE TICKETS — Para técnicos y administración
+# 📌 RESUMEN: TICKETS
 # ============================================================
 @require_GET
 @login_required
 def summary_tickets(request):
-    pendientes = Ticket.objects.filter(status="pendiente").order_by("-id")
+    pendientes = Ticket.objects.exclude(status__iexact="Resuelto").order_by("-id")
 
     return JsonResponse({
         "total": pendientes.count(),
@@ -42,7 +50,7 @@ def summary_tickets(request):
                 "ticket_id": t.ticket_id,
                 "titulo": f"Ticket #{t.ticket_id}",
                 "descripcion": f"{t.name}: {t.description[:60]}...",
-                "fecha": fmt(t.fecha_creacion),
+                "fecha": fmt(t.created_at),
             }
             for t in pendientes[:5]
         ]
@@ -50,21 +58,21 @@ def summary_tickets(request):
 
 
 # ============================================================
-# 📌 RESUMEN CITAS BL — Para administración y coordinación BL
+# 📌 RESUMEN: CITAS BILINGÜE
 # ============================================================
 @require_GET
 @login_required
 def summary_citas_bl(request):
-    citas = Appointment_bl.objects.filter(status="pendiente").order_by("-id")
+    citas = Appointment_bl.objects.exclude(status__iexact="Resuelto").order_by("-id")
 
     return JsonResponse({
         "total": citas.count(),
         "items": [
             {
                 "id": c.id,
-                "titulo": f"Cita BL — {c.padre}",
-                "descripcion": f"Maestro: {c.maestro}",
-                "fecha": fmt(c.fecha),
+                "titulo": f"Cita BL — {c.parent_name}",
+                "descripcion": f"Maestro: {c.teacher.name}",
+                "fecha": f"{c.date} {c.time}",
             }
             for c in citas[:5]
         ]
@@ -72,21 +80,21 @@ def summary_citas_bl(request):
 
 
 # ============================================================
-# 📌 RESUMEN CITAS COLEGIO/VOC — Para coordinación y admin
+# 📌 RESUMEN: CITAS COLEGIO/VOC
 # ============================================================
 @require_GET
 @login_required
 def summary_citas_col(request):
-    citas = Appointment_col.objects.filter(status="pendiente").order_by("-id")
+    citas = Appointment_col.objects.exclude(status__iexact="Resuelto").order_by("-id")
 
     return JsonResponse({
         "total": citas.count(),
         "items": [
             {
                 "id": c.id,
-                "titulo": f"Cita Colegio/Voc — {c.padre}",
-                "descripcion": f"Maestro: {c.maestro}",
-                "fecha": fmt(c.fecha),
+                "titulo": f"Cita Colegio — {c.parent_name}",
+                "descripcion": f"Maestro: {c.teacher.name}",
+                "fecha": f"{c.date} {c.time}",
             }
             for c in citas[:5]
         ]
@@ -94,24 +102,30 @@ def summary_citas_col(request):
 
 
 # ============================================================
-# 📌 RESUMEN REPORTES — Coordinación Bilingüe
+# 📌 RESUMEN: REPORTES — COORDINACIÓN BL
 # ============================================================
 @require_GET
 @login_required
 def summary_coordinacion_bl(request):
-    info = ReporteInformativo.objects.filter(area="bilingue").order_by("-id")[:3]
-    conducta = ReporteConductual.objects.filter(area="bilingue").order_by("-id")[:3]
-    progress = ProgressReport.objects.filter(area="bilingue").order_by("-id")[:3]
+    """
+    ❗ IMPORTANTE:
+    Esto NO es el dashboard del coordinador.
+    Solo envía un resumen simple para el dashboard principal.
+    """
+
+    info = ReporteInformativo.objects.filter(area="bilingue").order_by("-fecha")[:5]
+    conducta = ReporteConductual.objects.filter(area="bilingue").order_by("-fecha")[:5]
+    progress = ProgressReport.objects.all().order_by("-fecha")[:5]
 
     recientes = list(info) + list(conducta) + list(progress)
-    recientes.sort(key=lambda x: x.id, reverse=True)
+    recientes.sort(key=lambda x: x.fecha, reverse=True)
 
     return JsonResponse({
         "total": len(recientes),
         "items": [
             {
                 "id": r.id,
-                "titulo": "Nuevo Reporte BL",
+                "titulo": "Reporte Bilingüe",
                 "descripcion": str(r),
                 "fecha": fmt(r.fecha),
             }
@@ -121,24 +135,23 @@ def summary_coordinacion_bl(request):
 
 
 # ============================================================
-# 📌 RESUMEN REPORTES — Coordinación Colegio
+# 📌 RESUMEN: REPORTES — COORDINACIÓN COLEGIO
 # ============================================================
 @require_GET
 @login_required
 def summary_coordinacion_col(request):
-    info = ReporteInformativo.objects.filter(area="colegio").order_by("-id")[:3]
-    conducta = ReporteConductual.objects.filter(area="colegio").order_by("-id")[:3]
-    progress = ProgressReport.objects.filter(area="colegio").order_by("-id")[:3]
+    info = ReporteInformativo.objects.filter(area="colegio").order_by("-fecha")[:5]
+    conducta = ReporteConductual.objects.filter(area="colegio").order_by("-fecha")[:5]
 
-    recientes = list(info) + list(conducta) + list(progress)
-    recientes.sort(key=lambda x: x.id, reverse=True)
+    recientes = list(info) + list(conducta)
+    recientes.sort(key=lambda x: x.fecha, reverse=True)
 
     return JsonResponse({
         "total": len(recientes),
         "items": [
             {
                 "id": r.id,
-                "titulo": "Nuevo Reporte Colegio",
+                "titulo": "Reporte Colegio",
                 "descripcion": str(r),
                 "fecha": fmt(r.fecha),
             }
@@ -148,25 +161,29 @@ def summary_coordinacion_col(request):
 
 
 # ============================================================
-# 📌 RESUMEN RELOJ — Permisos y Compensatorios Pendientes
+# 📌 RESUMEN: RELOJ (Permisos / Compensatorio)
 # ============================================================
 @require_GET
 @login_required
 def summary_reloj(request):
-    permisos = PermisoEmpleado.objects.filter(status="pendiente").order_by("-id")[:5]
-    compensatorios = TiempoCompensatorio.objects.filter(status="pendiente").order_by("-id")[:5]
+
+    if not TiempoCompensatorio or not PermisoEmpleado:
+        return JsonResponse({"total": 0, "items": []})
+
+    permisos = PermisoEmpleado.objects.filter(aprobado=False).order_by("-fecha_inicio")[:5]
+    compensatorios = TiempoCompensatorio.objects.filter(estado="PEND").order_by("-fecha")[:5]
 
     recientes = list(permisos) + list(compensatorios)
-    recientes.sort(key=lambda x: x.id, reverse=True)
+    recientes.sort(key=lambda x: getattr(x, "fecha", None) or getattr(x, "fecha_inicio", None), reverse=True)
 
     return JsonResponse({
         "total": len(recientes),
         "items": [
             {
                 "id": r.id,
-                "titulo": "Solicitud en Reloj",
+                "titulo": "Solicitud Reloj",
                 "descripcion": str(r),
-                "fecha": fmt(r.fecha),
+                "fecha": str(getattr(r, "fecha", None) or getattr(r, "fecha_inicio", "")),
             }
             for r in recientes[:5]
         ]

@@ -218,6 +218,13 @@ def menu_view(request):
     can_view_seguridad   = user.has_perm('seguridad.view_seguridad')
 
     # =====================================================
+    # 🚫 BLOQUEO DE TARJETAS PARA USUARIOS ESPECÍFICOS
+    # =====================================================
+    # admin2 y admin3 NO deben ver ninguna tarjeta
+    blocked_users = ["admin2", "admin3"]
+    show_cards = user.username not in blocked_users
+
+    # =====================================================
     # CONTEXTO FINAL PARA EL HTML
     # =====================================================
     context = {
@@ -230,6 +237,9 @@ def menu_view(request):
         'reportes_bl': reportes_bl,
         'reportes_col': reportes_col,
         'reloj_pendientes': reloj_pendientes,
+
+        # ---------- Mostrar/ocultar TODAS las tarjetas ----------
+        'show_cards': show_cards,
 
         # ---------- Visibilidad según rol ----------
         'show_inventory':   is_admin or can_view_inventory or is_group_inventario,
@@ -247,6 +257,7 @@ def menu_view(request):
     }
 
     return render(request, 'accounts/menu.html', context)
+
 
 
 

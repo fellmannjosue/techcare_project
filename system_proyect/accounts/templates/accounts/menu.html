@@ -198,60 +198,82 @@
       <audio id="notifSound" src="{% static 'accounts/sound/notification.mp3' %}" preload="auto"></audio>
     </nav>
 
-    <!-- TARJETAS -->
-    <div class="container-fluid mt-4">
-      <div class="row g-3">
+   <!-- TARJETAS -->
+{% if show_cards %}
+<div class="container-fluid mt-4">
+    <div class="row g-3">
 
+        <!-- TARJETA: TICKETS -->
+        {% if show_tickets %}
         <div class="col-md-4">
-          <div class="main-card card-tickets">
-            <i class="fa-solid fa-ticket fa-2x"></i>
-            <h3 id="card-tickets-total">0</h3>
-            <small>Tickets abiertos</small>
-          </div>
+            <div class="main-card card-tickets" onclick="abrirModalResumen('tickets')">
+                <i class="fa-solid fa-ticket fa-2x"></i>
+                <h3 id="card-tickets-total">{{ tickets_pendientes }}</h3>
+                <small>Tickets abiertos</small>
+            </div>
         </div>
+        {% endif %}
 
+        <!-- TARJETA: CITAS BL -->
+        {% if show_citas_bl %}
         <div class="col-md-4">
-          <div class="main-card card-citas-bl">
-            <i class="fa-solid fa-calendar-check fa-2x"></i>
-            <h3 id="card-citas-bl-total">0</h3>
-            <small>Citas BL pendientes</small>
-          </div>
+            <div class="main-card card-citas-bl" onclick="abrirModalResumen('citas_bl')">
+                <i class="fa-solid fa-calendar-check fa-2x"></i>
+                <h3 id="card-citas-bl-total">{{ citas_bl }}</h3>
+                <small>Citas BL pendientes</small>
+            </div>
         </div>
+        {% endif %}
 
+        <!-- TARJETA: CITAS COLEGIO -->
+        {% if show_citas_col %}
         <div class="col-md-4">
-          <div class="main-card card-citas-col">
-            <i class="fa-solid fa-calendar-days fa-2x"></i>
-            <h3 id="card-citas-col-total">0</h3>
-            <small>Citas Colegio/VOC pendientes</small>
-          </div>
+            <div class="main-card card-citas-col" onclick="abrirModalResumen('citas_col')">
+                <i class="fa-solid fa-calendar-days fa-2x"></i>
+                <h3 id="card-citas-col-total">{{ citas_col }}</h3>
+                <small>Citas Colegio/VOC pendientes</small>
+            </div>
         </div>
+        {% endif %}
 
+        <!-- TARJETA: REPORTES BL -->
+        {% if show_coordinador_bilingue %}
         <div class="col-md-4">
-          <div class="main-card card-coord-bl">
-            <i class="fa-solid fa-person-chalkboard fa-2x"></i>
-            <h3 id="card-coord-bl-total">0</h3>
-            <small>Reportes nuevos BL</small>
-          </div>
+            <div class="main-card card-coord-bl" onclick="abrirModalResumen('coord_bl')">
+                <i class="fa-solid fa-person-chalkboard fa-2x"></i>
+                <h3 id="card-coord-bl-total">{{ reportes_bl }}</h3>
+                <small>Reportes nuevos BL</small>
+            </div>
         </div>
+        {% endif %}
 
+        <!-- TARJETA: REPORTES COLEGIO -->
+        {% if show_coordinador_colegio %}
         <div class="col-md-4">
-          <div class="main-card card-coord-col">
-            <i class="fa-solid fa-user-group fa-2x"></i>
-            <h3 id="card-coord-col-total">0</h3>
-            <small>Reportes nuevos Colegio</small>
-          </div>
+            <div class="main-card card-coord-col" onclick="abrirModalResumen('coord_col')">
+                <i class="fa-solid fa-user-group fa-2x"></i>
+                <h3 id="card-coord-col-total">{{ reportes_col }}</h3>
+                <small>Reportes nuevos Colegio</small>
+            </div>
         </div>
+        {% endif %}
 
+        <!-- TARJETA: RELOJ (DESACTIVADA POR AHORA) -->
+        <!--
+        {% if show_reloj %}
         <div class="col-md-4">
-          <div class="main-card card-reloj">
-            <i class="fa-solid fa-clock fa-2x"></i>
-            <h3 id="card-reloj-total">0</h3>
-            <small>Solicitudes pendientes</small>
-          </div>
+            <div class="main-card card-reloj" onclick="abrirModalResumen('reloj')">
+                <i class="fa-solid fa-clock fa-2x"></i>
+                <h3 id="card-reloj-total">{{ reloj_pendientes }}</h3>
+                <small>Solicitudes pendientes</small>
+            </div>
         </div>
+        {% endif %}
+        -->
 
-      </div>
     </div>
+</div>
+{% endif %}
 
     <!-- GRID DE MÓDULOS -->
     <div class="container my-4 pb-5">
