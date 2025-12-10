@@ -1,67 +1,60 @@
 $(document).ready(function () {
 
-    // ------------------------------------------------------------
-    // 1. EVENTO: CLICK EN BOTÓN EDITAR
-    // ------------------------------------------------------------
-    $(document).on("click", ".editar-btn", function () {
-        const pcID = $(this).data("id");
-        const url = `/inventario/computadoras/edit-form/${pcID}/`;
+    // Abrir modal de edición
+    $(document).on("click", ".editar-computadora", function () {
+        let id = $(this).data("id");
 
-        // Spinner de carga
         $("#modal-computadora-body").html(`
             <div class="text-center py-5">
-              <div class="spinner-border text-primary"></div>
-              <p class="mt-2">Cargando datos...</p>
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2">Cargando datos...</p>
             </div>
         `);
 
-        // Llamada AJAX para traer el formulario
-        $.get(url, function (response) {
-            $("#modal-computadora-body").html(response);
+        $("#modalEditarComputadora").modal("show");
 
-            // Mostrar modal
-            const modal = new bootstrap.Modal(
-                document.getElementById("modalEditarComputadora")
-            );
-            modal.show();
-        }).fail(function () {
-            $("#modal-computadora-body").html(`
-                <div class="alert alert-danger">
-                    Error cargando formulario. Intente nuevamente.
-                </div>
-            `);
+        $.get(`/inventario/computadora/edit/${id}/`, function (html) {
+            $("#modal-computadora-body").html(html);
         });
     });
 
-
-    // ------------------------------------------------------------
-    // 2. EVENTO: SUBMIT DEL FORMULARIO EDITAR (AJAX POST)
-    // ------------------------------------------------------------
-    $(document).on("submit", "#formEditarComputadora", function (e) {
+    // Guardar edición
+    $(document).on("submit", "#form-edit-computadora", function (e) {
         e.preventDefault();
 
-        const pcID = $("#computadora_id").val();
-        const url = `/inventario/computadoras/edit/${pcID}/`;
-        const formData = $(this).serialize();
+        let id = $("#computadora-id").val();
+        let formData = $(this).serialize();
 
-        // Deshabilitar botón mientras se envía
-        $("#btnSaveComputadora")
-            .prop("disabled", true)
-            .text("Guardando...");
-
-        $.post(url, formData, function (response) {
-            if (response === "OK") {
-                // Recargar página para ver cambios
-                location.reload();
+        $.post(`/inventario/computadora/edit/${id}/`, formData, function (resp) {
+            if (resp.ok) {
+                Swal.fire("Actualizado", "Los cambios fueron guardados.", "success")
+                    .then(() => location.reload());
+            } else {
+                Swal.fire("Error", "Verifica los campos ingresados.", "error");
             }
-        })
-        .fail(function () {
-            alert("Hubo un error al guardar los cambios.");
-        })
-        .always(function () {
-            $("#btnSaveComputadora")
-                .prop("disabled", false)
-                .text("Guardar Cambios");
+        });
+    });
+
+    // Eliminar
+    $(document).on("click", ".eliminar-computadora", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "¿Eliminar computadora?",
+            text: "Esta acción no se puede deshacer.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.post(`/inventario/computadora/delete/${id}/`, function (resp) {
+                    if (resp.ok) {
+                        Swal.fire("Eliminado", "Registro eliminado.", "success")
+                            .then(() => location.reload());
+                    }
+                });
+            }
         });
     });
 

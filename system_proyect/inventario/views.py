@@ -1,25 +1,30 @@
-# inventario/views.py
+# ==============================================================
+# INVENTARIO – VISTAS COMPLETAS Y COMPATIBLES CON AJAX + MODALES
+# ==============================================================
 
 import datetime
 import io
 import qrcode
 from PIL import Image
 
-from django.shortcuts           import render, redirect, get_object_or_404
-from django.urls                import reverse
-from django.db.models           import F, Value, CharField
-from django.http                import HttpResponse
-from django.contrib             import messages
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.db.models import F, Value, CharField
+from django.http import HttpResponse, JsonResponse
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 
-from reportlab.pdfgen           import canvas
-from reportlab.lib              import colors
-from reportlab.platypus         import Table, TableStyle
-from reportlab.lib.pagesizes    import letter, landscape
-from reportlab.lib.units        import cm
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib.pagesizes import letter, landscape
+from reportlab.lib.units import cm
 
-from .models    import Computadora, Televisor, Impresora, Router, DataShow, Monitor
-from .forms     import (
+from .models import (
+    Computadora, Televisor, Impresora, Router, DataShow, Monitor
+)
+
+from .forms import (
     CategoryUpdateForm,
     ComputadoraForm,
     TelevisorForm,
@@ -27,382 +32,480 @@ from .forms     import (
     RouterForm,
     DataShowForm,
     ComputadoraFilterForm,
-    MonitorForm,
+    MonitorForm
 )
 
+# ==============================================================
+# QR PARA FICHAS
+# ==============================================================
 
 def descargar_qr(request, tipo, pk):
-    """
-    Genera un código QR (JPEG) que apunta a la URL de descarga de la ficha PDF
-    de un objeto (computadora, televisor, etc.).
-    """
-    # Construye la URL absoluta al endpoint de PDF
-    path = reverse('inventario:download_model_pdf', args=[tipo.lower(), pk])
-    pdf_url = f"https://servicios.ana-hn.org:437{path}"  # ← SIEMPRE este dominio y puerto
+    path = reverse("inventario:download_model_pdf", args=[tipo.lower(), pk])
+    pdf_url = f"https://servicios.ana-hn.org:437{path}"
 
-    # Generación de QR y conversión a JPEG
     img = qrcode.make(pdf_url)
-    rgb_img = img.convert("RGB")
-    buf = io.BytesIO()
-    rgb_img.save(buf, format='JPEG', quality=85)
-    buf.seek(0)
+    rgb = img.convert("RGB")
+    buffer = io.BytesIO()
+    rgb.save(buffer, format="JPEG", quality=85)
+    buffer.seek(0)
 
-    # Devolver imagen como attachment
     return HttpResponse(
-        buf.read(),
-        content_type='image/jpeg',
-        headers={'Content-Disposition': f'attachment; filename="qr_{tipo}_{pk}.jpg"'}
+        buffer.read(),
+        content_type="image/jpeg",
+        headers={"Content-Disposition": f'attachment; filename="qr_{tipo}_{pk}.jpg"'}
     )
+
+# ==============================================================
+# DASHBOARD
+# ==============================================================
 
 @login_required
 def dashboard(request):
-    """
-    Vista principal del módulo de inventario.
-    Muestra el dashboard con enlaces a los diferentes submódulos.
-    """
     year = datetime.datetime.now().year
-    return render(request, 'inventario/dashboard.html', {'year': year})
+    return render(request, "inventario/dashboard.html", {"year": year})
+
+# ==============================================================
+# POR CATEGORÍA
+# ==============================================================
 
 @login_required
 def inventario_por_categoria(request):
-    """
-    Muestra un listado consolidado de todos los ítems de inventario,
-    agrupados por categoría. Incluye un formulario inline para actualizar
-    la categoría de cada registro.
-    """
     year = datetime.datetime.now().year
 
-    # Procesar el formulario de actualización de categoría
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CategoryUpdateForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Categoría actualizada correctamente.")
-            return redirect('inventario:inventario_por_categoria')
-        messages.error(request, "Error al actualizar categoría.")
+            messages.success(request, "Categoría actualizada con éxito.")
+            return redirect("inventario:inventario_por_categoria")
+        messages.error(request, "Error al actualizar la categoría.")
     else:
         form = CategoryUpdateForm()
 
-    # Unir los querysets de cada modelo en uno solo
     mapping = [
-        (Computadora, 'Computadora', 'modelo'),
-        (Televisor,   'Televisor',   'modelo'),
-        (Impresora,   'Impresora',   'nombre'),
-        (Router,      'Router',      'modelo'),
-        (DataShow,    'DataShow',    'serie'),
+        (Computadora, "Computadora", "modelo"),
+        (Televisor, "Televisor", "modelo"),
+        (Impresora, "Impresora", "nombre"),
+        (Router, "Router", "modelo"),
+        (DataShow, "DataShow", "serie"),
+        (Monitor, "Monitor", "modelo"),
     ]
-    items_qs = None
+
+    items = None
     for Model, label, field in mapping:
         qs = Model.objects.annotate(
             tipo=Value(label, output_field=CharField()),
             descripcion=F(field),
-            categoria=F('category'),
-        ).values('tipo', 'id', 'descripcion', 'categoria')
-        items_qs = qs if items_qs is None else items_qs.union(qs)
+            categoria=F("category"),
+        ).values("tipo", "id", "descripcion", "categoria")
 
-    return render(request, 'inventario/inventario_por_categoria.html', {
-        'items': items_qs,
-        'form':  form,
-        'year':  year,
+        items = qs if items is None else items.union(qs)
+
+    return render(request, "inventario/inventario_por_categoria.html", {
+        "items": items,
+        "form": form,
+        "year": year
     })
+
+# ==============================================================
+# INVENTARIOS (CREATE + LIST)
+# ==============================================================
 
 @login_required
 def inventario_computadoras(request):
-    """
-    Vista para crear nuevas computadoras y listar todas las computadoras
-    registradas, sin filtros avanzados. Ordena por ID descendente.
-    """
     year = datetime.datetime.now().year
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = ComputadoraForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventario:inventario_computadoras')
+            return redirect("inventario:inventario_computadoras")
     else:
         form = ComputadoraForm()
 
-    qs = Computadora.objects.order_by('-id')
-    return render(request, 'inventario/inventario_computadoras.html', {
-        'form':         form,
-        'year':         year,
-        'computadoras': qs,
+    return render(request, "inventario/inventario_computadoras.html", {
+        "form": form,
+        "year": year,
+        "computadoras": Computadora.objects.order_by("-id")
     })
+
 
 @login_required
 def computadoras_list(request):
-    """
-    Nueva vista de lista de computadoras con filtrado por campos.
-    Usa ComputadoraFilterForm para capturar criterios de búsqueda via GET.
-    """
     year = datetime.datetime.now().year
     form = ComputadoraFilterForm(request.GET or None)
+    qs = Computadora.objects.order_by("-fecha_instalado")
 
-    # Queryset inicial: todas las computadoras, ordenadas por fecha de instalación desc.
-    qs = Computadora.objects.order_by('-fecha_instalado')
-
-    # Aplicar filtros si el formulario es válido
     if form.is_valid():
         cd = form.cleaned_data
-        if cd['asset_id']:
-            qs = qs.filter(asset_id__icontains=cd['asset_id'])
-        if cd['modelo']:
-            qs = qs.filter(modelo__icontains=cd['modelo'])
-        if cd['serie']:
-            qs = qs.filter(serie__icontains=cd['serie'])
-        if cd['ip']:
-            qs = qs.filter(ip__icontains=cd['ip'])
-        if cd['asignado_a']:
-            qs = qs.filter(asignado_a__icontains=cd['asignado_a'])
-        if cd['area']:
-            qs = qs.filter(area__icontains=cd['area'])
-        if cd['grado']:
-            qs = qs.filter(grado__icontains=cd['grado'])
-        if cd['fecha_instalado']:
-            qs = qs.filter(fecha_instalado=cd['fecha_instalado'])
+        for field, val in cd.items():
+            if val:
+                qs = qs.filter(**{f"{field}__icontains": val})
 
-    return render(request, 'inventario/filtro_computadoras.html', {
-        'form':         form,
-        'computadoras': qs,
-        'year':         year,
+    return render(request, "inventario/filtro_computadoras.html", {
+        "form": form,
+        "computadoras": qs,
+        "year": year
     })
+
 
 @login_required
 def inventario_televisores(request):
-    """
-    Vista para crear y listar televisores. Ordena por ID descendente.
-    """
     year = datetime.datetime.now().year
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = TelevisorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventario:inventario_televisores')
+            return redirect("inventario:inventario_televisores")
     else:
         form = TelevisorForm()
 
-    qs = Televisor.objects.order_by('-id')
-    return render(request, 'inventario/inventario_televisores.html', {
-        'form':       form,
-        'year':       year,
-        'televisores': qs,
+    return render(request, "inventario/inventario_televisores.html", {
+        "form": form,
+        "year": year,
+        "televisores": Televisor.objects.order_by("-id")
     })
+
 
 @login_required
 def inventario_impresoras(request):
-    """
-    Vista para crear y listar impresoras. Ordena por ID descendente.
-    """
     year = datetime.datetime.now().year
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = ImpresoraForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventario:inventario_impresoras')
+            return redirect("inventario:inventario_impresoras")
     else:
         form = ImpresoraForm()
 
-    qs = Impresora.objects.order_by('-id')
-    return render(request, 'inventario/inventario_impresoras.html', {
-        'form':       form,
-        'year':       year,
-        'impresoras': qs,
+    return render(request, "inventario/inventario_impresoras.html", {
+        "form": form,
+        "year": year,
+        "impresoras": Impresora.objects.order_by("-id")
     })
+
 
 @login_required
 def inventario_routers(request):
-    """
-    Vista para crear y listar routers. Ordena por ID descendente.
-    """
     year = datetime.datetime.now().year
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = RouterForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventario:inventario_routers')
+            return redirect("inventario:inventario_routers")
     else:
         form = RouterForm()
 
-    qs = Router.objects.order_by('-id')
-    return render(request, 'inventario/inventario_routers.html', {
-        'form':    form,
-        'year':    year,
-        'routers': qs,
+    return render(request, "inventario/inventario_routers.html", {
+        "form": form,
+        "year": year,
+        "routers": Router.objects.order_by("-id")
     })
+
 
 @login_required
 def inventario_datashows(request):
-    """
-    Vista para crear y listar DataShows. Ordena por ID descendente.
-    """
     year = datetime.datetime.now().year
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = DataShowForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventario:inventario_datashows')
+            return redirect("inventario:inventario_datashows")
     else:
         form = DataShowForm()
 
-    qs = DataShow.objects.order_by('-id')
-    return render(request, 'inventario/inventario_datashows.html', {
-        'form':      form,
-        'year':      year,
-        'datashows': qs,
+    return render(request, "inventario/inventario_datashows.html", {
+        "form": form,
+        "year": year,
+        "datashows": DataShow.objects.order_by("-id")
     })
 
-@login_required
-def inventario_registros(request):
-    """
-    Vista que carga cada categoría de inventario en listas separadas
-    para que los TABS del template puedan mostrar los datos correctamente.
-    """
-
-    year = datetime.datetime.now().year
-
-    # Cargar registros individuales (orden correcto ascendente)
-    computadoras = Computadora.objects.all().order_by('id')
-    impresoras   = Impresora.objects.all().order_by('id')
-    televisores  = Televisor.objects.all().order_by('id')
-    routers      = Router.objects.all().order_by('id')
-    datashows    = DataShow.objects.all().order_by('id')
-
-    # MONITORES (si aún no existe el modelo, no romper)
-    try:
-        from .models import Monitor
-        monitores = Monitor.objects.all().order_by('id')
-    except:
-        monitores = []
-
-    # Enviar todo al HTML
-    return render(request, "inventario/inventario_registros.html", {
-        "computadoras": computadoras,
-        "impresoras":   impresoras,
-        "televisores":  televisores,
-        "routers":      routers,
-        "datashows":    datashows,
-        "monitores":    monitores,
-        "year":         year,
-    })
 
 @login_required
 def inventario_monitores(request):
-    """
-    Vista para crear y listar monitores. Ordena por ID descendente.
-    """
     year = datetime.datetime.now().year
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = MonitorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('inventario:inventario_monitores')
+            return redirect("inventario:inventario_monitores")
     else:
         form = MonitorForm()
 
-    qs = Monitor.objects.order_by('-id')
-
-    return render(request, 'inventario/inventario_monitores.html', {
-        'form':       form,
-        'year':       year,
-        'monitores':  qs,
+    return render(request, "inventario/inventario_monitores.html", {
+        "form": form,
+        "year": year,
+        "monitores": Monitor.objects.order_by("-id")
     })
+
+
+# ==============================================================
+# INVENTARIO REGISTROS (TABS CONSOLIDADOS)
+# ==============================================================
+
+@login_required
+def inventario_registros(request):
+    year = datetime.datetime.now().year
+
+    return render(request, "inventario/inventario_registros.html", {
+        "computadoras": Computadora.objects.order_by("id"),
+        "impresoras": Impresora.objects.order_by("id"),
+        "televisores": Televisor.objects.order_by("id"),
+        "routers": Router.objects.order_by("id"),
+        "datashows": DataShow.objects.order_by("id"),
+        "monitores": Monitor.objects.order_by("id"),
+        "year": year,
+    })
+
+# ==============================================================
+# GET (Cargar formulario en el modal)
+# ==============================================================
+
+@login_required
+def get_computadora(request, pk):
+    obj = get_object_or_404(Computadora, pk=pk)
+    form = ComputadoraForm(instance=obj)
+    return render(request, "inventario/edit_computadora.html", {"form": form, "obj": obj})
+
+@login_required
+def get_televisor(request, pk):
+    obj = get_object_or_404(Televisor, pk=pk)
+    form = TelevisorForm(instance=obj)
+    return render(request, "inventario/edit_televisor.html", {"form": form, "obj": obj})
+
+@login_required
+def get_impresora(request, pk):
+    obj = get_object_or_404(Impresora, pk=pk)
+    form = ImpresoraForm(instance=obj)
+    return render(request, "inventario/edit_impresora.html", {"form": form, "obj": obj})
+
+@login_required
+def get_router(request, pk):
+    obj = get_object_or_404(Router, pk=pk)
+    form = RouterForm(instance=obj)
+    return render(request, "inventario/edit_router.html", {"form": form, "obj": obj})
+
+@login_required
+def get_datashow(request, pk):
+    obj = get_object_or_404(DataShow, pk=pk)
+    form = DataShowForm(instance=obj)
+    return render(request, "inventario/edit_datashow.html", {"form": form, "obj": obj})
+
+@login_required
+def get_monitor(request, pk):
+    obj = get_object_or_404(Monitor, pk=pk)
+    form = MonitorForm(instance=obj)
+    return render(request, "inventario/edit_monitor.html", {"form": form, "obj": obj})
+
+# ==============================================================
+# UPDATE (Guardar cambios vía AJAX)
+# ==============================================================
+
+@login_required
+def update_computadora(request, pk):
+    obj = get_object_or_404(Computadora, pk=pk)
+    form = ComputadoraForm(request.POST, instance=obj)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "errors": form.errors})
+
+
+@login_required
+def update_televisor(request, pk):
+    obj = get_object_or_404(Televisor, pk=pk)
+    form = TelevisorForm(request.POST, instance=obj)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "errors": form.errors})
+
+
+@login_required
+def update_impresora(request, pk):
+    obj = get_object_or_404(Impresora, pk=pk)
+    form = ImpresoraForm(request.POST, instance=obj)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "errors": form.errors})
+
+
+@login_required
+def update_router(request, pk):
+    obj = get_object_or_404(Router, pk=pk)
+    form = RouterForm(request.POST, instance=obj)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "errors": form.errors})
+
+
+@login_required
+def update_datashow(request, pk):
+    obj = get_object_or_404(DataShow, pk=pk)
+    form = DataShowForm(request.POST, instance=obj)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "errors": form.errors})
+
+
+@login_required
+def update_monitor(request, pk):
+    obj = get_object_or_404(Monitor, pk=pk)
+    form = MonitorForm(request.POST, instance=obj)
+    if form.is_valid():
+        form.save()
+        return JsonResponse({"ok": True})
+    return JsonResponse({"ok": False, "errors": form.errors})
+
+# ==============================================================
+# DELETE (JSON)
+# ==============================================================
+
+@login_required
+def eliminar_computadora(request, pk):
+    get_object_or_404(Computadora, pk=pk).delete()
+    return JsonResponse({"ok": True})
+
+@login_required
+def eliminar_televisor(request, pk):
+    get_object_or_404(Televisor, pk=pk).delete()
+    return JsonResponse({"ok": True})
+
+@login_required
+def eliminar_impresora(request, pk):
+    get_object_or_404(Impresora, pk=pk).delete()
+    return JsonResponse({"ok": True})
+
+@login_required
+def eliminar_router(request, pk):
+    get_object_or_404(Router, pk=pk).delete()
+    return JsonResponse({"ok": True})
+
+@login_required
+def eliminar_datashow(request, pk):
+    get_object_or_404(DataShow, pk=pk).delete()
+    return JsonResponse({"ok": True})
+
+@login_required
+def eliminar_monitor(request, pk):
+    get_object_or_404(Monitor, pk=pk).delete()
+    return JsonResponse({"ok": True})
+
+
+# ==============================================================
+# PDF GENERATOR
+# ==============================================================
 
 def download_model_pdf(request, tipo, pk):
     model_map = {
-        'computadora': Computadora,
-        'televisor':   Televisor,
-        'impresora':   Impresora,
-        'router':      Router,
-        'datashow':    DataShow,
-    }
-    fields_map = {
-        'computadora': [
-            ('ID', 'asset_id'),
-            ('Modelo', 'modelo'),
-            ('Serie', 'serie'),
-            ('IP', 'ip'),
-            ('Categoría', 'category'),
-            ('Asignado a', 'asignado_a'),
-            ('Área', 'area'),
-            ('Grado', 'grado'),
-            ('Fecha Instalación', 'fecha_instalado'),
-            ('Observaciones', 'observaciones'),
-        ],
-        'televisor': [
-            ('ID', 'asset_id'),
-            ('Modelo', 'modelo'),
-            ('Serie', 'serie'),
-            ('IP', 'ip'),
-            ('Categoría', 'category'),
-            ('Grado', 'grado'),
-            ('Área', 'area'),
-            ('Observaciones', 'observaciones'),
-        ],
-        'impresora': [
-            ('ID', 'asset_id'),
-            ('Nombre', 'nombre'),
-            ('Modelo', 'modelo'),
-            ('Serie', 'serie'),
-            ('Categoría', 'category'),
-            ('Asignado a', 'asignado_a'),
-            ('Nivel Tinta', 'nivel_tinta'),
-            ('Últ. llenado', 'ultima_vez_llenado'),
-            ('Cant. impresiones', 'cantidad_impresiones'),
-            ('A color', 'a_color'),
-            ('Observaciones', 'observaciones'),
-        ],
-        'router': [
-            ('ID', 'asset_id'),
-            ('Modelo', 'modelo'),
-            ('Serie', 'serie'),
-            ('Categoría', 'category'),
-            ('Nombre Router', 'nombre_router'),
-            ('Clave Router', 'clave_router'),
-            ('IP Asignada', 'ip_asignada'),
-            ('IP de Uso', 'ip_uso'),
-            ('Ubicado', 'ubicado'),
-            ('Observaciones', 'observaciones'),
-        ],
-        'datashow': [
-            ('ID', 'asset_id'),
-            ('Nombre', 'nombre'),
-            ('Modelo', 'modelo'),
-            ('Serie', 'serie'),
-            ('Categoría', 'category'),
-            ('Estado', 'estado'),
-            ('Cable Corriente', 'cable_corriente'),
-            ('HDMI', 'hdmi'),
-            ('VGA', 'vga'),
-            ('Extensión', 'extension'),
-            ('Observaciones', 'observaciones'),
-        ],
+        "computadora": Computadora,
+        "televisor": Televisor,
+        "impresora": Impresora,
+        "router": Router,
+        "datashow": DataShow,
+        "monitor": Monitor,
     }
 
+    fields_map = {
+        "computadora": [
+            ("ID", "asset_id"),
+            ("Modelo", "modelo"),
+            ("Serie", "serie"),
+            ("IP", "ip"),
+            ("Categoría", "category"),
+            ("Asignado a", "asignado_a"),
+            ("Área", "area"),
+            ("Grado", "grado"),
+            ("Fecha Instalación", "fecha_instalado"),
+            ("Observaciones", "observaciones"),
+        ],
+        "televisor": [
+            ("ID", "asset_id"),
+            ("Modelo", "modelo"),
+            ("Serie", "serie"),
+            ("IP", "ip"),
+            ("Categoría", "category"),
+            ("Grado", "grado"),
+            ("Área", "area"),
+            ("Observaciones", "observaciones"),
+        ],
+        "impresora": [
+            ("ID", "asset_id"),
+            ("Nombre", "nombre"),
+            ("Modelo", "modelo"),
+            ("Serie", "serie"),
+            ("Categoría", "category"),
+            ("Asignado a", "asignado_a"),
+            ("Nivel Tinta", "nivel_tinta"),
+            ("Últ. Llenado", "ultima_vez_llenado"),
+            ("Cantidad Impresiones", "cantidad_impresiones"),
+            ("A Color", "a_color"),
+            ("Observaciones", "observaciones"),
+        ],
+        "router": [
+            ("ID", "asset_id"),
+            ("Modelo", "modelo"),
+            ("Serie", "serie"),
+            ("Categoría", "category"),
+            ("Nombre Router", "nombre_router"),
+            ("Clave Router", "clave_router"),
+            ("IP Asignada", "ip_asignada"),
+            ("IP de Uso", "ip_uso"),
+            ("Ubicado", "ubicado"),
+            ("Observaciones", "observaciones"),
+        ],
+        "datashow": [
+            ("ID", "asset_id"),
+            ("Nombre", "nombre"),
+            ("Modelo", "modelo"),
+            ("Serie", "serie"),
+            ("Categoría", "category"),
+            ("Estado", "estado"),
+            ("Cable Corriente", "cable_corriente"),
+            ("HDMI", "hdmi"),
+            ("VGA", "vga"),
+            ("Extensión", "extension"),
+            ("Observaciones", "observaciones"),
+        ],
+        "monitor": [
+            ("ID", "asset_id"),
+            ("Modelo", "modelo"),
+            ("Serie", "serie"),
+            ("Pulgadas", "pulgadas"),
+            ("Asignado a", "asignado_a"),
+            ("Área", "area"),
+            ("Grado", "grado"),
+            ("Categoría", "category"),
+            ("Observaciones", "observaciones"),
+        ],
+    }
 
     tipo = tipo.lower()
-    Modelo = model_map.get(tipo)
-    campos = fields_map.get(tipo)
-    if not Modelo or not campos:
-        return HttpResponse(status=404)
 
-    obj = get_object_or_404(Modelo, pk=pk)
+    if tipo not in model_map:
+        return HttpResponse("Modelo inválido", status=404)
 
-    # Preparar lienzo PDF en horizontal
+    Model = model_map[tipo]
+    campos = fields_map[tipo]
+
+    obj = get_object_or_404(Model, pk=pk)
+
     buffer = io.BytesIO()
     width, height = landscape(letter)
     pdf = canvas.Canvas(buffer, pagesize=(width, height))
-    pdf.setTitle(f"Ficha de {tipo.capitalize()} – {getattr(obj, 'asset_id', obj.pk)}")
 
-    # Fondo blanco
-    pdf.setFillColor(colors.white)
-    pdf.rect(0, 0, width, height, fill=1, stroke=0)
-
-    # Título
     pdf.setFont("Helvetica-Bold", 24)
-    pdf.setFillColor(colors.HexColor("#007bff"))
+    pdf.setFillColor(colors.HexColor("#0056b3"))
     pdf.drawCentredString(width / 2, height - 50, f"Ficha de {tipo.capitalize()}")
 
-    # Construir tabla con datos
     data = [["Campo", "Valor"]]
     for label, attr in campos:
         val = getattr(obj, attr)
@@ -410,34 +513,23 @@ def download_model_pdf(request, tipo, pk):
             val = "Sí" if val else "No"
         data.append([label, str(val)])
 
-    # Estilo de tabla
-    table_width = width - 4 * cm
-    col1 = table_width * 0.35
-    col2 = table_width * 0.65
-    table = Table(data, colWidths=[col1, col2], hAlign='CENTER')
+    table = Table(data, colWidths=[width * 0.3, width * 0.6])
     table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#007bff")),
-        ("TEXTCOLOR",  (0, 0), (-1, 0), colors.white),
-        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0, 0), (-1, 0), 14),
-        ("GRID",       (0, 0), (-1, -1), 0.5, colors.grey),
-        ("FONTNAME",   (0, 1), (-1, -1), "Helvetica"),
-        ("FONTSIZE",   (0, 1), (-1, -1), 12),
-        ("VALIGN",     (0, 0), (-1, -1), "MIDDLE"),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0056b3")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
     ]))
 
-    # Dibujar tabla centrada
     tw, th = table.wrap(0, 0)
     x = (width - tw) / 2
-    y = height - 80 - th
+    y = height - 100 - th
     table.drawOn(pdf, x, y)
 
     pdf.showPage()
     pdf.save()
     buffer.seek(0)
 
-    return HttpResponse(
-        buffer.read(),
-        content_type='application/pdf',
-        headers={'Content-Disposition': 'inline; filename="ficha.pdf"'}
-    )
+    return HttpResponse(buffer.read(), content_type="application/pdf")
