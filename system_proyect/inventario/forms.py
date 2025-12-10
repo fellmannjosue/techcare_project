@@ -8,6 +8,7 @@ from .models import (
     Impresora,
     Router,
     DataShow,
+    Monitor,
 )
 
 # Form para crear o actualizar un ítem de inventario genérico
@@ -269,3 +270,27 @@ class ComputadoraFilterForm(forms.Form):
             'class': 'form-control'
         })
     )
+
+class MonitorForm(forms.ModelForm):
+    class Meta:
+        model = Monitor
+        fields = [
+            "asset_id", "modelo", "serie",
+            "ubicacion_tipo",  # dropdown nuevo
+            "laboratorio", "asignado_a",
+            "observaciones", "category"
+        ]
+
+        widgets = {
+            "asset_id": forms.TextInput(attrs={"class": "form-control"}),
+            "modelo": forms.TextInput(attrs={"class": "form-control"}),
+            "serie": forms.TextInput(attrs={"class": "form-control"}),
+
+            "ubicacion_tipo": forms.Select(attrs={"class": "form-select"}),
+
+            "laboratorio": forms.TextInput(attrs={"class": "form-control", "disabled": True}),
+            "asignado_a": forms.TextInput(attrs={"class": "form-control", "disabled": True}),
+
+            "observaciones": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
+            "category": forms.Select(attrs={"class": "form-select"}),
+        }

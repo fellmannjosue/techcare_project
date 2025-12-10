@@ -120,3 +120,39 @@ class DataShow(models.Model):
         choices=InventoryItem.CATEGORY_CHOICES,
         blank=True, null=True
     )
+
+class Monitor(models.Model):
+
+    OPCIONES_UBICACION = [
+        ("laboratorio", "Laboratorio"),
+        ("persona", "Asignado a persona"),
+    ]
+
+    asset_id      = models.CharField("ID Monitor", max_length=50, unique=True)
+    modelo        = models.CharField("Modelo", max_length=100)
+    serie         = models.CharField("Serie", max_length=100)
+
+    # NUEVO: Dropdown para controlar qué campo se habilita
+    ubicacion_tipo = models.CharField(
+        "Tipo de ubicación",
+        max_length=50,
+        choices=OPCIONES_UBICACION,
+        blank=True,
+        null=True
+    )
+
+    laboratorio   = models.CharField("Laboratorio", max_length=100, blank=True, null=True)
+    asignado_a    = models.CharField("Asignado a (Persona)", max_length=100, blank=True, null=True)
+
+    observaciones = models.TextField("Observaciones", blank=True, null=True)
+
+    category = models.CharField(
+        "Categoría",
+        max_length=100,
+        choices=InventoryItem.CATEGORY_CHOICES,
+        blank=True,
+        null=True
+    )
+
+    def __str__(self):
+        return f"{self.asset_id} – {self.modelo}"

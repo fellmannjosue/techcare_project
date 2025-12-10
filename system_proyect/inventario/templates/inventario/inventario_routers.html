@@ -47,66 +47,88 @@
 <div class="d-flex" id="wrapper">
 
   <!-- Sidebar CONSISTENTE -->
-  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:230px;">
+  <nav class="bg-dark text-white sidebar flex-shrink-0 p-3" style="min-width:220px;">
     <div class="d-flex align-items-center mb-3">
       <img src="{% static 'accounts/img/ana-transformed.png' %}" alt="Logo" style="width:42px;" class="me-2">
       <span class="fs-5 fw-bold">TechCare</span>
     </div>
+
     <hr class="text-secondary">
     <ul class="nav nav-pills flex-column mb-auto">
-      <li>
-        <a href="{% url 'menu' %}" class="nav-link text-white">
-          <i class="fa-solid fa-house me-2"></i> Menú Principal
-        </a>
-      </li>
+
       <li>
         <a href="{% url 'inventario:inventario_computadoras' %}" class="nav-link text-white">
-          <i class="fa-solid fa-desktop me-2 text-primary"></i> Computadoras
+          <i class="fa-solid fa-desktop me-2"></i> Computadoras
         </a>
       </li>
+
       <li>
         <a href="{% url 'inventario:inventario_televisores' %}" class="nav-link text-white">
-          <i class="fa-solid fa-tv me-2 text-info"></i> Televisores
+          <i class="fa-solid fa-tv me-2"></i> Televisores
         </a>
       </li>
+
       <li>
         <a href="{% url 'inventario:inventario_impresoras' %}" class="nav-link text-white">
-          <i class="fa-solid fa-print me-2 text-warning"></i> Impresoras
+          <i class="fa-solid fa-print me-2"></i> Impresoras
         </a>
       </li>
+
       <li>
-        <a href="{% url 'inventario:inventario_routers' %}" class="nav-link text-white active">
-          <i class="fa-solid fa-wifi me-2 text-success"></i> Routers
+        <a href="{% url 'inventario:inventario_routers' %}" class="nav-link text-white">
+          <i class="fa-solid fa-wifi me-2"></i> Routers
         </a>
       </li>
+
       <li>
         <a href="{% url 'inventario:inventario_datashows' %}" class="nav-link text-white">
-          <i class="fa-solid fa-video me-2 text-secondary"></i> DataShows
+          <i class="fa-solid fa-video me-2"></i> DataShows
         </a>
       </li>
+
+      <!-- ✅ NUEVO MÓDULO: MONITORES -->
+      <li>
+        <a href="{% url 'inventario:inventario_monitores' %}" class="nav-link text-white">
+          <i class="fa-solid fa-display me-2"></i> Monitores
+        </a>
+      </li>
+
       <li>
         <a href="{% url 'inventario:inventario_por_categoria' %}" class="nav-link text-white">
-          <i class="fa-solid fa-layer-group me-2 text-primary"></i> Por Categoría
+          <i class="fa-solid fa-layer-group me-2"></i> Por Categoría
         </a>
       </li>
+
       <li>
         <a href="{% url 'inventario:inventario_registros' %}" class="nav-link text-white">
-          <i class="fa-solid fa-clipboard-list me-2 text-info"></i> Ver registros
+          <i class="fa-solid fa-clipboard-list me-2"></i> Ver registros
         </a>
       </li>
+
+      <li>
+        <a href="{% url 'inventario:dashboard' %}" class="nav-link text-white">
+          <i class="fa-solid fa-house me-2"></i> Volver al menú
+        </a>
+      </li>
+
     </ul>
+
     <hr class="text-secondary">
+
     <div class="dropdown">
       <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-        <img src="{% static 'accounts/img/user.png' %}" alt="" width="32" height="32" class="rounded-circle me-2">
+        <img src="{% static 'accounts/img/user.png' %}" width="32" height="32" class="rounded-circle me-2">
         <strong>{{ request.user.username }}</strong>
       </a>
+
       <ul class="dropdown-menu dropdown-menu-dark text-small shadow">
-        
-        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a></li>
+        <li><a class="dropdown-item" href="{% url 'logout' %}">
+          <i class="fa fa-sign-out-alt me-2"></i> Cerrar Sesión</a>
+        </li>
       </ul>
     </div>
   </nav>
+
   <!-- /Sidebar -->
 
   <!-- Main content -->

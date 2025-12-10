@@ -1,0 +1,74 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Monitor – {{ monitor.asset_id }}</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<div class="container py-5">
+
+    <div class="card shadow mx-auto" style="max-width: 650px;">
+        <div class="card-header bg-dark text-white">
+            <h4 class="mb-0">Detalle del Monitor – {{ monitor.asset_id }}</h4>
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th>Asset ID</th>
+                        <td>{{ monitor.asset_id }}</td>
+                    </tr>
+                    <tr>
+                        <th>Modelo</th>
+                        <td>{{ monitor.modelo }}</td>
+                    </tr>
+                    <tr>
+                        <th>Serie</th>
+                        <td>{{ monitor.serie }}</td>
+                    </tr>
+                    <tr>
+                        <th>Laboratorio</th>
+                        <td>{{ monitor.laboratorio }}</td>
+                    </tr>
+                    <tr>
+                        <th>Asignado a</th>
+                        <td>{{ monitor.asignado_a }}</td>
+                    </tr>
+                    <tr>
+                        <th>Categoría</th>
+                        <td>{{ monitor.category }}</td>
+                    </tr>
+                    <tr>
+                        <th>Observaciones</th>
+                        <td>{{ monitor.observaciones }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="mt-4 d-flex justify-content-between">
+                <a href="{% url 'inventario:inventario_monitores' %}" class="btn btn-secondary">
+                    ← Volver
+                </a>
+                <a href="{% url 'inventario:edit_monitor' monitor.id %}" class="btn btn-primary">
+                    Editar
+                </a>
+            </div>
+
+        </div>
+
+        <div class="card-footer small text-center text-muted">
+            © {{ year }} Soporte Técnico – Asociación Nuevo Amanecer
+        </div>
+    </div>
+
+</div>
+
+</body>
+</html>

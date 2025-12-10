@@ -18,7 +18,7 @@ from reportlab.platypus         import Table, TableStyle
 from reportlab.lib.pagesizes    import letter, landscape
 from reportlab.lib.units        import cm
 
-from .models    import Computadora, Televisor, Impresora, Router, DataShow
+from .models    import Computadora, Televisor, Impresora, Router, DataShow, Monitor
 from .forms     import (
     CategoryUpdateForm,
     ComputadoraForm,
@@ -26,7 +26,8 @@ from .forms     import (
     ImpresoraForm,
     RouterForm,
     DataShowForm,
-    ComputadoraFilterForm,   # formulario de filtrado agregado
+    ComputadoraFilterForm,
+    MonitorForm,
 )
 
 
@@ -292,6 +293,28 @@ def inventario_registros(request):
         "year":         year,
     })
 
+@login_required
+def inventario_monitores(request):
+    """
+    Vista para crear y listar monitores. Ordena por ID descendente.
+    """
+    year = datetime.datetime.now().year
+
+    if request.method == 'POST':
+        form = MonitorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('inventario:inventario_monitores')
+    else:
+        form = MonitorForm()
+
+    qs = Monitor.objects.order_by('-id')
+
+    return render(request, 'inventario/inventario_monitores.html', {
+        'form':       form,
+        'year':       year,
+        'monitores':  qs,
+    })
 
 
 def download_model_pdf(request, tipo, pk):

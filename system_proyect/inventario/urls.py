@@ -33,6 +33,8 @@ urlpatterns = [
     # Listado consolidado de todos los registros (sin edición inline)
     path('registros/', views.inventario_registros, name='inventario_registros'),
 
+    path('monitores/', views.inventario_monitores, name='inventario_monitores'),
+
     # Generar y descargar ficha PDF para cualquier tipo de ítem
     path('download/<str:tipo>/<int:pk>/', views.download_model_pdf, name='download_model_pdf'),
 
