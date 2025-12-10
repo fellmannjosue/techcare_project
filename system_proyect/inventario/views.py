@@ -54,7 +54,6 @@ def descargar_qr(request, tipo, pk):
         headers={'Content-Disposition': f'attachment; filename="qr_{tipo}_{pk}.jpg"'}
     )
 
-
 @login_required
 def dashboard(request):
     """
@@ -63,7 +62,6 @@ def dashboard(request):
     """
     year = datetime.datetime.now().year
     return render(request, 'inventario/dashboard.html', {'year': year})
-
 
 @login_required
 def inventario_por_categoria(request):
@@ -108,7 +106,6 @@ def inventario_por_categoria(request):
         'year':  year,
     })
 
-
 @login_required
 def inventario_computadoras(request):
     """
@@ -130,7 +127,6 @@ def inventario_computadoras(request):
         'year':         year,
         'computadoras': qs,
     })
-
 
 @login_required
 def computadoras_list(request):
@@ -170,7 +166,6 @@ def computadoras_list(request):
         'year':         year,
     })
 
-
 @login_required
 def inventario_televisores(request):
     """
@@ -191,7 +186,6 @@ def inventario_televisores(request):
         'year':       year,
         'televisores': qs,
     })
-
 
 @login_required
 def inventario_impresoras(request):
@@ -214,7 +208,6 @@ def inventario_impresoras(request):
         'impresoras': qs,
     })
 
-
 @login_required
 def inventario_routers(request):
     """
@@ -236,7 +229,6 @@ def inventario_routers(request):
         'routers': qs,
     })
 
-
 @login_required
 def inventario_datashows(request):
     """
@@ -257,7 +249,6 @@ def inventario_datashows(request):
         'year':      year,
         'datashows': qs,
     })
-
 
 @login_required
 def inventario_registros(request):
@@ -315,7 +306,6 @@ def inventario_monitores(request):
         'year':       year,
         'monitores':  qs,
     })
-
 
 def download_model_pdf(request, tipo, pk):
     model_map = {
